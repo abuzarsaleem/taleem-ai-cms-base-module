@@ -1,0 +1,73 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: taleem-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-taleem}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-taleem_secret}
+      POSTGRES_DB: ${POSTGRES_DB:-taleem_platform}
+    ports:
+      - '${POSTGRES_PORT:-5432}:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ../migrations/sql:/docker-entrypoint-initdb.d/migrations:ro
+      - ./postgres/init/00-run-migrations.sh:/docker-entrypoint-initdb.d/00-run-migrations.sh:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-taleem} -d ${POSTGRES_DB:-taleem_platform}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - taleem-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: taleem-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    ports:
+      - '${REDIS_PORT:-6379}:6379'
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - taleem-network
+
+  base-api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: development
+    container_name: taleem-base-api
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      NODE_ENV: development
+      DATABASE_HOST: postgres
+      REDIS_HOST: redis
+    ports:
+      - '${APP_PORT:-3000}:3000'
+    volumes:
+      - ..:/app
+      - /app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - taleem-network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  taleem-network:
+    driver: bridge
