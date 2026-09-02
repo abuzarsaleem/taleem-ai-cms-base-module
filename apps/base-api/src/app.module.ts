@@ -9,6 +9,7 @@ import { UserModule } from './modules/user/user.module.js';
 import { OauthModule } from './modules/oauth/oauth.module.js';
 import { RbacModule } from './modules/rbac/rbac.module.js';
 import { NotificationModule } from './modules/notification/notification.module.js';
+import { SubscriptionModule } from './modules/subscription/subscription.module.js';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { NotificationModule } from './modules/notification/notification.module.j
     OauthModule,
     RbacModule,
     NotificationModule,
+    SubscriptionModule,
   ],
 })
 export class AppModule {}

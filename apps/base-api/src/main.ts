@@ -33,6 +33,11 @@ async function bootstrap() {
     .addTag('Tenant Assets', 'Logos, banners, documents')
     .addTag('Tenant Branding', 'Visual identity and email branding')
     .addTag('Tenant Admin Invitations', 'Invite and manage tenant administrators')
+    .addTag('Applications', 'Platform application catalog')
+    .addTag('Subscription Plans', 'Commercial subscription plan templates')
+    .addTag('Tenant Subscriptions', 'Assign and lifecycle-manage tenant subscriptions')
+    .addTag('Tenant Entitlements', 'Tenant application entitlement')
+    .addTag('Tenant Application Availability', 'Applications a tenant may currently use')
     .addTag('Auth', 'Registration, login, and invitation acceptance')
     .addTag('Health', 'Service health checks')
     .build();
