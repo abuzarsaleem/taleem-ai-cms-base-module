@@ -4,25 +4,20 @@ import { In, QueryFailedError, Repository } from 'typeorm';
 import type {
   IApplicationRepository,
   IAuditEventRepository,
-  ISubscriptionPlanRepository,
   ISubscriptionRepository,
   ITenantEntitlementRepository,
 } from '../../domain/subscription.repository.interface.js';
-import {
-  EMPTY_PLAN_LIMITS,
-  type ApplicationProps,
-  type AuditEventProps,
-  type AuditEventSearchFilters,
-  type PlanLimits,
-  type SubscriptionPlanProps,
-  type SubscriptionProps,
-  type TenantEntitlementProps,
+import type {
+  ApplicationProps,
+  AuditEventProps,
+  AuditEventSearchFilters,
+  SubscriptionProps,
+  TenantEntitlementProps,
 } from '../../domain/subscription.types.js';
 import {
   ApplicationEntity,
   AuditEventEntity,
   SubscriptionEntity,
-  SubscriptionPlanEntity,
   TenantEntitlementEntity,
 } from './subscription.entities.js';
 
@@ -46,9 +41,8 @@ function asDateOnly(value: string | Date | undefined): string | undefined {
   return value.toISOString().slice(0, 10);
 }
 
-function normalizeLimits(limits?: PlanLimits | Record<string, unknown> | null): PlanLimits {
-  const codes = (limits as PlanLimits | undefined)?.applicationCodes;
-  return { applicationCodes: Array.isArray(codes) ? codes : [] };
+function normalizeCodes(codes?: string[] | null): string[] {
+  return Array.isArray(codes) ? codes : [];
 }
 
 @Injectable()
@@ -121,89 +115,6 @@ export class TypeOrmApplicationRepository implements IApplicationRepository {
 }
 
 @Injectable()
-export class TypeOrmSubscriptionPlanRepository implements ISubscriptionPlanRepository {
-  constructor(
-    @InjectRepository(SubscriptionPlanEntity)
-    private readonly repo: Repository<SubscriptionPlanEntity>,
-  ) {}
-
-  async findById(id: string) {
-    const row = await this.repo.findOne({ where: { id } });
-    return row ? this.map(row) : null;
-  }
-
-  async findByCode(planCode: string) {
-    const row = await this.repo.findOne({ where: { planCode } });
-    return row ? this.map(row) : null;
-  }
-
-  async findAll(page: number, limit: number) {
-    const [rows, total] = await this.repo.findAndCount({
-      skip: (page - 1) * limit,
-      take: limit,
-      order: { createdAt: 'DESC' },
-    });
-    return { data: rows.map((row) => this.map(row)), total };
-  }
-
-  async create(props: SubscriptionPlanProps) {
-    try {
-      return this.map(
-        await this.repo.save(
-          this.repo.create({
-            planCode: props.planCode,
-            planName: props.planName,
-            planType: props.planType,
-            billingCycle: props.billingCycle,
-            price: String(props.price ?? 0),
-            trialDays: props.trialDays,
-            limits: normalizeLimits(props.limits),
-            isActive: props.isActive ?? true,
-            createdBy: props.createdBy,
-            updatedBy: props.updatedBy,
-          }),
-        ),
-      );
-    } catch (error) {
-      rethrowUnique(error, `Plan code '${props.planCode}' already exists`);
-    }
-  }
-
-  async update(id: string, props: Partial<SubscriptionPlanProps>) {
-    if (!(await this.findById(id))) notFound('Subscription plan', id);
-    const patch: Partial<SubscriptionPlanEntity> = {};
-    if (props.planName !== undefined) patch.planName = props.planName;
-    if (props.planType !== undefined) patch.planType = props.planType;
-    if (props.billingCycle !== undefined) patch.billingCycle = props.billingCycle;
-    if (props.trialDays !== undefined) patch.trialDays = props.trialDays;
-    if (props.isActive !== undefined) patch.isActive = props.isActive;
-    if (props.updatedBy !== undefined) patch.updatedBy = props.updatedBy;
-    if (props.limits) patch.limits = normalizeLimits(props.limits);
-    if (props.price !== undefined) patch.price = String(props.price);
-    await this.repo.update(id, patch);
-    return this.map(await this.repo.findOneOrFail({ where: { id } }));
-  }
-
-  private map(e: SubscriptionPlanEntity): SubscriptionPlanProps {
-    return {
-      id: e.id,
-      planCode: e.planCode,
-      planName: e.planName,
-      planType: e.planType,
-      billingCycle: e.billingCycle,
-      price: Number(e.price),
-      trialDays: e.trialDays,
-      limits: normalizeLimits(e.limits ?? EMPTY_PLAN_LIMITS),
-      isActive: e.isActive,
-      createdBy: e.createdBy,
-      updatedBy: e.updatedBy,
-      createdAt: e.createdAt,
-      updatedAt: e.updatedAt,
-    };
-  }
-}
-
-@Injectable()
 export class TypeOrmSubscriptionRepository implements ISubscriptionRepository {
   constructor(
     @InjectRepository(SubscriptionEntity)
@@ -238,7 +149,14 @@ export class TypeOrmSubscriptionRepository implements ISubscriptionRepository {
 
   async create(props: SubscriptionProps) {
     try {
-      return this.map(await this.repo.save(this.repo.create(props)));
+      return this.map(
+        await this.repo.save(
+          this.repo.create({
+            ...props,
+            applicationCodes: normalizeCodes(props.applicationCodes),
+          }),
+        ),
+      );
     } catch (error) {
       rethrowUnique(error, `Subscription code '${props.subscriptionCode}' already exists`);
     }
@@ -246,7 +164,14 @@ export class TypeOrmSubscriptionRepository implements ISubscriptionRepository {
 
   async update(tenantId: string, id: string, props: Partial<SubscriptionProps>) {
     if (!(await this.findById(tenantId, id))) notFound('Subscription', id);
-    await this.repo.update({ id, tenantId }, { ...props, updatedAt: new Date() });
+    const patch: Partial<SubscriptionEntity> = { updatedAt: new Date() };
+    if (props.status !== undefined) patch.status = props.status;
+    if (props.planType !== undefined) patch.planType = props.planType;
+    if (props.billingCycle !== undefined) patch.billingCycle = props.billingCycle;
+    if (props.applicationCodes !== undefined) patch.applicationCodes = normalizeCodes(props.applicationCodes);
+    if (props.startDate !== undefined) patch.startDate = props.startDate;
+    if (props.endDate !== undefined) patch.endDate = props.endDate;
+    await this.repo.update({ id, tenantId }, patch);
     return this.map(await this.repo.findOneOrFail({ where: { id, tenantId } }));
   }
 
@@ -254,9 +179,11 @@ export class TypeOrmSubscriptionRepository implements ISubscriptionRepository {
     return {
       id: e.id,
       tenantId: e.tenantId,
-      planId: e.planId,
       subscriptionCode: e.subscriptionCode,
       status: e.status,
+      planType: e.planType,
+      billingCycle: e.billingCycle,
+      applicationCodes: normalizeCodes(e.applicationCodes),
       startDate: asDateOnly(e.startDate) ?? e.startDate,
       endDate: asDateOnly(e.endDate),
       createdBy: e.createdBy,

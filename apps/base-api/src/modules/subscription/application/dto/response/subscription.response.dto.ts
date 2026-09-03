@@ -25,37 +25,17 @@ export class ApplicationListResponseDto {
   @ApiProperty({ type: PaginationMetaDto }) meta!: PaginationMetaDto;
 }
 
-export class PlanLimitsResponseDto {
-  @ApiProperty({ type: [String], example: ['ALUMNI'] }) applicationCodes!: string[];
-}
-
-export class SubscriptionPlanResponseDto {
-  @ApiProperty({ format: 'uuid' }) id!: string;
-  @ApiProperty() planCode!: string;
-  @ApiProperty() planName!: string;
-  @ApiProperty({ enum: PlanType }) planType!: PlanType;
-  @ApiPropertyOptional({ enum: BillingCycle }) billingCycle?: BillingCycle;
-  @ApiProperty() price!: number;
-  @ApiPropertyOptional() trialDays?: number;
-  @ApiProperty({ type: PlanLimitsResponseDto }) limits!: PlanLimitsResponseDto;
-  @ApiProperty() isActive!: boolean;
-  @ApiProperty() createdAt!: Date;
-  @ApiProperty() updatedAt!: Date;
-}
-
-export class SubscriptionPlanListResponseDto {
-  @ApiProperty({ type: [SubscriptionPlanResponseDto] }) data!: SubscriptionPlanResponseDto[];
-  @ApiProperty({ type: PaginationMetaDto }) meta!: PaginationMetaDto;
-}
-
 export class SubscriptionResponseDto {
   @ApiProperty({ format: 'uuid' }) id!: string;
   @ApiProperty({ format: 'uuid' }) tenantId!: string;
-  @ApiPropertyOptional({ format: 'uuid' }) planId?: string;
   @ApiProperty() subscriptionCode!: string;
-  @ApiProperty({ enum: SubscriptionStatus }) status!: SubscriptionStatus;
+  @ApiProperty({ enum: SubscriptionStatus, description: 'INACTIVE when the period has ended or status was set inactive' })
+  status!: SubscriptionStatus;
+  @ApiProperty({ enum: PlanType }) planType!: PlanType;
+  @ApiPropertyOptional({ enum: BillingCycle }) billingCycle?: BillingCycle;
+  @ApiProperty({ type: [String], example: ['ALUMNI'] }) applicationCodes!: string[];
   @ApiProperty({ example: '2026-09-01' }) startDate!: string;
-  @ApiPropertyOptional({ example: '2027-08-31' }) endDate?: string;
+  @ApiProperty({ example: '2027-08-31' }) endDate!: string;
   @ApiProperty() createdAt!: Date;
   @ApiProperty() updatedAt!: Date;
 }
@@ -82,28 +62,6 @@ export class EntitlementResponseDto {
 export class EntitlementListResponseDto {
   @ApiProperty({ type: [EntitlementResponseDto] }) data!: EntitlementResponseDto[];
   @ApiProperty({ type: PaginationMetaDto }) meta!: PaginationMetaDto;
-}
-
-export class ReconciliationSummaryDto {
-  @ApiProperty({ description: 'Active tenant memberships; they are not deleted on entitlement change' })
-  activeMemberships!: number;
-
-  @ApiProperty({ type: [String], example: ['ALUMNI'] })
-  applicationsNowUnavailable!: string[];
-
-  @ApiProperty({ example: true })
-  membershipsUnchanged!: true;
-}
-
-export class EntitlementChangeResponseDto extends EntitlementResponseDto {
-  @ApiProperty({ type: ReconciliationSummaryDto })
-  reconciliation!: ReconciliationSummaryDto;
-}
-
-export class SubscriptionChangeResponseDto {
-  @ApiProperty({ type: SubscriptionResponseDto }) subscription!: SubscriptionResponseDto;
-  @ApiProperty({ type: [EntitlementResponseDto] }) affectedEntitlements!: EntitlementResponseDto[];
-  @ApiProperty({ type: ReconciliationSummaryDto }) reconciliation!: ReconciliationSummaryDto;
 }
 
 export class AvailableApplicationResponseDto {

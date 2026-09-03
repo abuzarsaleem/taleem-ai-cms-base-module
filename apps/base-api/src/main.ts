@@ -9,6 +9,10 @@ async function bootstrap() {
   const config = app.get(ConfigService);
   const prefix = config.get<string>('app.prefix', 'api/v1');
 
+  app.enableCors({
+    origin: true,
+    credentials: true,
+  });
   app.setGlobalPrefix(prefix);
   app.useGlobalPipes(
     new ValidationPipe({
@@ -35,11 +39,10 @@ async function bootstrap() {
     .addTag('Tenant Member Invitations', 'Invite regular tenant members')
     .addTag('Tenant Memberships', 'Tenant user memberships')
     .addTag('User Memberships', 'Current user tenant memberships')
-    .addTag('Applications', 'Platform application catalog')
-    .addTag('Subscription Plans', 'Commercial subscription plan templates')
-    .addTag('Tenant Subscriptions', 'Assign and lifecycle-manage tenant subscriptions')
+    .addTag('Applications', 'Application catalog and tenant application availability')
+    .addTag('Tenant Subscriptions', 'Tenant subscription period, type, billing, and applications')
     .addTag('Tenant Entitlements', 'Tenant application entitlement')
-    .addTag('Tenant Application Availability', 'Applications a tenant may currently use')
+    .addTag('Platform Audit', 'Search platform audit events')
     .addTag('OAuth', 'OAuth 2.0 authorization server (PKCE)')
     .addTag('OAuth Clients', 'OAuth client registration')
     .addTag('Auth', 'Registration, login, password reset, and email verification')

@@ -2,13 +2,11 @@ import type {
   ApplicationProps,
   AuditEventProps,
   AuditEventSearchFilters,
-  SubscriptionPlanProps,
   SubscriptionProps,
   TenantEntitlementProps,
 } from './subscription.types.js';
 
 export const APPLICATION_REPOSITORY = Symbol('APPLICATION_REPOSITORY');
-export const SUBSCRIPTION_PLAN_REPOSITORY = Symbol('SUBSCRIPTION_PLAN_REPOSITORY');
 export const SUBSCRIPTION_REPOSITORY = Symbol('SUBSCRIPTION_REPOSITORY');
 export const TENANT_ENTITLEMENT_REPOSITORY = Symbol('TENANT_ENTITLEMENT_REPOSITORY');
 export const AUDIT_EVENT_REPOSITORY = Symbol('AUDIT_EVENT_REPOSITORY');
@@ -21,14 +19,6 @@ export interface IApplicationRepository {
   findAll(page: number, limit: number): Promise<{ data: ApplicationProps[]; total: number }>;
   create(props: ApplicationProps): Promise<ApplicationProps>;
   update(id: string, props: Partial<ApplicationProps>): Promise<ApplicationProps>;
-}
-
-export interface ISubscriptionPlanRepository {
-  findById(id: string): Promise<SubscriptionPlanProps | null>;
-  findByCode(planCode: string): Promise<SubscriptionPlanProps | null>;
-  findAll(page: number, limit: number): Promise<{ data: SubscriptionPlanProps[]; total: number }>;
-  create(props: SubscriptionPlanProps): Promise<SubscriptionPlanProps>;
-  update(id: string, props: Partial<SubscriptionPlanProps>): Promise<SubscriptionPlanProps>;
 }
 
 export interface ISubscriptionRepository {

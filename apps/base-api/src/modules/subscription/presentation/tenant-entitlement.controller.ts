@@ -13,7 +13,6 @@ import {
   UpdateTenantEntitlementDto,
 } from '../application/dto/request/subscription.request.dto.js';
 import {
-  EntitlementChangeResponseDto,
   EntitlementListResponseDto,
   EntitlementResponseDto,
 } from '../application/dto/response/subscription.response.dto.js';
@@ -28,7 +27,7 @@ export class TenantEntitlementController {
   @RequirePermissions(PlatformPermission.SUBSCRIPTION_MANAGE)
   @ApiOperation({
     summary: 'Establish tenant application entitlement',
-    description: 'Reactivates a previously suspended, expired, or removed entitlement for the same application.',
+    description: 'Creates an ACTIVE entitlement, or turns an INACTIVE one back to ACTIVE.',
   })
   @ApiCreatedResponse({ type: EntitlementResponseDto })
   create(
@@ -60,7 +59,10 @@ export class TenantEntitlementController {
 
   @Patch(':entitlementId')
   @RequirePermissions(PlatformPermission.SUBSCRIPTION_MANAGE)
-  @ApiOperation({ summary: 'Change entitlement period or linked subscription' })
+  @ApiOperation({
+    summary: 'Update entitlement',
+    description: 'Set status to ACTIVE or INACTIVE, and optionally change period or linked subscription.',
+  })
   @ApiOkResponse({ type: EntitlementResponseDto })
   update(
     @Param('tenantId', ParseUUIDPipe) tenantId: string,
@@ -69,41 +71,5 @@ export class TenantEntitlementController {
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.service.update(tenantId, entitlementId, dto, user.userId);
-  }
-
-  @Post(':entitlementId/activate')
-  @RequirePermissions(PlatformPermission.SUBSCRIPTION_MANAGE)
-  @ApiOperation({ summary: 'Activate a suspended entitlement' })
-  @ApiOkResponse({ type: EntitlementChangeResponseDto })
-  activate(
-    @Param('tenantId', ParseUUIDPipe) tenantId: string,
-    @Param('entitlementId', ParseUUIDPipe) entitlementId: string,
-    @CurrentUser() user: AuthenticatedUser,
-  ) {
-    return this.service.activate(tenantId, entitlementId, user.userId);
-  }
-
-  @Post(':entitlementId/suspend')
-  @RequirePermissions(PlatformPermission.SUBSCRIPTION_MANAGE)
-  @ApiOperation({ summary: 'Suspend entitlement; application leaves availability' })
-  @ApiOkResponse({ type: EntitlementChangeResponseDto })
-  suspend(
-    @Param('tenantId', ParseUUIDPipe) tenantId: string,
-    @Param('entitlementId', ParseUUIDPipe) entitlementId: string,
-    @CurrentUser() user: AuthenticatedUser,
-  ) {
-    return this.service.suspend(tenantId, entitlementId, user.userId);
-  }
-
-  @Post(':entitlementId/revoke')
-  @RequirePermissions(PlatformPermission.SUBSCRIPTION_MANAGE)
-  @ApiOperation({ summary: 'Remove entitlement; future access is denied. Memberships are unchanged.' })
-  @ApiOkResponse({ type: EntitlementChangeResponseDto })
-  revoke(
-    @Param('tenantId', ParseUUIDPipe) tenantId: string,
-    @Param('entitlementId', ParseUUIDPipe) entitlementId: string,
-    @CurrentUser() user: AuthenticatedUser,
-  ) {
-    return this.service.revoke(tenantId, entitlementId, user.userId);
   }
 }

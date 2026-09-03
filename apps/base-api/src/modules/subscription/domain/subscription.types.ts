@@ -16,38 +16,23 @@ export enum BillingCycle {
 
 export enum SubscriptionStatus {
   ACTIVE = 'ACTIVE',
-  SUSPENDED = 'SUSPENDED',
-  CANCELLED = 'CANCELLED',
+  INACTIVE = 'INACTIVE',
 }
 
 export enum EntitlementStatus {
   ACTIVE = 'ACTIVE',
-  SUSPENDED = 'SUSPENDED',
-  EXPIRED = 'EXPIRED',
-  REMOVED = 'REMOVED',
+  INACTIVE = 'INACTIVE',
 }
 
 export enum AuditAction {
   APPLICATION_CREATED = 'APPLICATION_CREATED',
   APPLICATION_UPDATED = 'APPLICATION_UPDATED',
   APPLICATION_DEACTIVATED = 'APPLICATION_DEACTIVATED',
-  PLAN_CREATED = 'PLAN_CREATED',
-  PLAN_UPDATED = 'PLAN_UPDATED',
   SUBSCRIPTION_CREATED = 'SUBSCRIPTION_CREATED',
-  SUBSCRIPTION_ACTIVATED = 'SUBSCRIPTION_ACTIVATED',
-  SUBSCRIPTION_SUSPENDED = 'SUBSCRIPTION_SUSPENDED',
-  SUBSCRIPTION_CANCELLED = 'SUBSCRIPTION_CANCELLED',
-  ENTITLEMENT_ACTIVATED = 'ENTITLEMENT_ACTIVATED',
+  SUBSCRIPTION_UPDATED = 'SUBSCRIPTION_UPDATED',
+  ENTITLEMENT_CREATED = 'ENTITLEMENT_CREATED',
   ENTITLEMENT_UPDATED = 'ENTITLEMENT_UPDATED',
-  ENTITLEMENT_SUSPENDED = 'ENTITLEMENT_SUSPENDED',
-  ENTITLEMENT_REMOVED = 'ENTITLEMENT_REMOVED',
 }
-
-export interface PlanLimits {
-  applicationCodes: string[];
-}
-
-export const EMPTY_PLAN_LIMITS: PlanLimits = { applicationCodes: [] };
 
 export interface ApplicationProps {
   id?: string;
@@ -63,28 +48,14 @@ export interface ApplicationProps {
   updatedAt?: Date;
 }
 
-export interface SubscriptionPlanProps {
-  id?: string;
-  planCode: string;
-  planName: string;
-  planType: PlanType;
-  billingCycle?: BillingCycle;
-  price?: number;
-  trialDays?: number;
-  limits?: PlanLimits;
-  isActive?: boolean;
-  createdBy?: string;
-  updatedBy?: string;
-  createdAt?: Date;
-  updatedAt?: Date;
-}
-
 export interface SubscriptionProps {
   id?: string;
   tenantId: string;
-  planId?: string;
   subscriptionCode: string;
   status?: SubscriptionStatus;
+  planType: PlanType;
+  billingCycle?: BillingCycle;
+  applicationCodes: string[];
   startDate: string;
   endDate?: string;
   createdBy?: string;
@@ -126,19 +97,11 @@ export interface AuditEventSearchFilters {
   to?: Date;
 }
 
-export interface ReconciliationSummary {
-  activeMemberships: number;
-  applicationsNowUnavailable: string[];
-  membershipsUnchanged: true;
-}
-
 export type AccessDeniedReason =
   | 'APPLICATION_NOT_FOUND'
   | 'APPLICATION_INACTIVE'
   | 'ENTITLEMENT_NOT_FOUND'
-  | 'ENTITLEMENT_SUSPENDED'
-  | 'ENTITLEMENT_REMOVED'
-  | 'ENTITLEMENT_EXPIRED'
+  | 'ENTITLEMENT_INACTIVE'
   | 'ENTITLEMENT_NOT_YET_EFFECTIVE'
   | 'SUBSCRIPTION_INACTIVE'
-  | 'SUBSCRIPTION_EXPIRED';
+  | 'SUBSCRIPTION_ENDED';

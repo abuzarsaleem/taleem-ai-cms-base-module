@@ -3,16 +3,29 @@ import {
   EntitlementStatus,
   SubscriptionStatus,
   type ApplicationProps,
-  type SubscriptionPlanProps,
   type SubscriptionProps,
   type TenantEntitlementProps,
 } from '../../domain/subscription.types.js';
+import { toDateOnly } from '../date.util.js';
 import type {
   ApplicationResponseDto,
   EntitlementResponseDto,
-  SubscriptionPlanResponseDto,
   SubscriptionResponseDto,
 } from '../dto/response/subscription.response.dto.js';
+
+export function effectiveSubscriptionStatus(
+  subscription: SubscriptionProps,
+  at = new Date(),
+): SubscriptionStatus {
+  if (subscription.status === SubscriptionStatus.INACTIVE) {
+    return SubscriptionStatus.INACTIVE;
+  }
+  const today = toDateOnly(at);
+  if (subscription.endDate && subscription.endDate < today) {
+    return SubscriptionStatus.INACTIVE;
+  }
+  return SubscriptionStatus.ACTIVE;
+}
 
 export function toApplicationResponse(props: ApplicationProps): ApplicationResponseDto {
   return {
@@ -28,31 +41,17 @@ export function toApplicationResponse(props: ApplicationProps): ApplicationRespo
   };
 }
 
-export function toPlanResponse(props: SubscriptionPlanProps): SubscriptionPlanResponseDto {
-  return {
-    id: props.id!,
-    planCode: props.planCode,
-    planName: props.planName,
-    planType: props.planType,
-    billingCycle: props.billingCycle,
-    price: props.price ?? 0,
-    trialDays: props.trialDays,
-    limits: { applicationCodes: props.limits?.applicationCodes ?? [] },
-    isActive: props.isActive ?? true,
-    createdAt: props.createdAt!,
-    updatedAt: props.updatedAt!,
-  };
-}
-
 export function toSubscriptionResponse(props: SubscriptionProps): SubscriptionResponseDto {
   return {
     id: props.id!,
     tenantId: props.tenantId,
-    planId: props.planId,
     subscriptionCode: props.subscriptionCode,
-    status: props.status ?? SubscriptionStatus.ACTIVE,
+    status: effectiveSubscriptionStatus(props),
+    planType: props.planType,
+    billingCycle: props.billingCycle,
+    applicationCodes: props.applicationCodes ?? [],
     startDate: props.startDate,
-    endDate: props.endDate,
+    endDate: props.endDate ?? '',
     createdAt: props.createdAt!,
     updatedAt: props.updatedAt!,
   };

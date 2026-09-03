@@ -12,7 +12,6 @@ import {
   EntitlementStatus,
   PlanType,
   SubscriptionStatus,
-  type PlanLimits,
 } from '../../domain/subscription.types.js';
 
 @Entity({ name: 'applications', schema: DATABASE_SCHEMA })
@@ -51,48 +50,6 @@ export class ApplicationEntity {
   updatedAt!: Date;
 }
 
-@Entity({ name: 'subscription_plans', schema: DATABASE_SCHEMA })
-export class SubscriptionPlanEntity {
-  @PrimaryGeneratedColumn('uuid')
-  id!: string;
-
-  @Column({ name: 'plan_code', type: 'varchar', length: 50, unique: true })
-  planCode!: string;
-
-  @Column({ name: 'plan_name', type: 'varchar', length: 100 })
-  planName!: string;
-
-  @Column({ name: 'plan_type', type: 'varchar', length: 30 })
-  planType!: PlanType;
-
-  @Column({ name: 'billing_cycle', type: 'varchar', length: 30, nullable: true })
-  billingCycle?: BillingCycle;
-
-  @Column({ type: 'numeric', precision: 10, scale: 2, default: 0 })
-  price!: string;
-
-  @Column({ name: 'trial_days', type: 'int', nullable: true })
-  trialDays?: number;
-
-  @Column({ type: 'jsonb', default: () => "'{}'" })
-  limits!: PlanLimits;
-
-  @Column({ name: 'is_active', type: 'boolean', default: true })
-  isActive!: boolean;
-
-  @Column({ name: 'created_by', type: 'uuid', nullable: true })
-  createdBy?: string;
-
-  @Column({ name: 'updated_by', type: 'uuid', nullable: true })
-  updatedBy?: string;
-
-  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
-  createdAt!: Date;
-
-  @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
-  updatedAt!: Date;
-}
-
 @Entity({ name: 'subscriptions', schema: DATABASE_SCHEMA })
 export class SubscriptionEntity {
   @PrimaryGeneratedColumn('uuid')
@@ -101,14 +58,20 @@ export class SubscriptionEntity {
   @Column({ name: 'tenant_id', type: 'uuid' })
   tenantId!: string;
 
-  @Column({ name: 'plan_id', type: 'uuid', nullable: true })
-  planId?: string;
-
   @Column({ name: 'subscription_code', type: 'varchar', length: 100, unique: true })
   subscriptionCode!: string;
 
   @Column({ type: 'varchar', length: 30, default: SubscriptionStatus.ACTIVE })
   status!: SubscriptionStatus;
+
+  @Column({ name: 'plan_type', type: 'varchar', length: 30 })
+  planType!: PlanType;
+
+  @Column({ name: 'billing_cycle', type: 'varchar', length: 30, nullable: true })
+  billingCycle?: BillingCycle;
+
+  @Column({ name: 'application_codes', type: 'jsonb', default: () => "'[]'" })
+  applicationCodes!: string[];
 
   @Column({ name: 'start_date', type: 'date' })
   startDate!: string;

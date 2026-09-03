@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiCreatedResponse,
@@ -8,9 +8,11 @@ import {
 } from '@nestjs/swagger';
 import { CurrentUser, PaginationQueryDto, PlatformPermission, RequirePermissions, type AuthenticatedUser } from '@app/common';
 import { TenantSubscriptionService } from '../application/tenant-subscription.service.js';
-import { CreateTenantSubscriptionDto } from '../application/dto/request/subscription.request.dto.js';
 import {
-  SubscriptionChangeResponseDto,
+  CreateTenantSubscriptionDto,
+  UpdateTenantSubscriptionDto,
+} from '../application/dto/request/subscription.request.dto.js';
+import {
   SubscriptionListResponseDto,
   SubscriptionResponseDto,
 } from '../application/dto/response/subscription.response.dto.js';
@@ -24,8 +26,9 @@ export class TenantSubscriptionController {
   @Post()
   @RequirePermissions(PlatformPermission.SUBSCRIPTION_MANAGE)
   @ApiOperation({
-    summary: 'Subscribe a tenant to a plan',
-    description: 'Creates the subscription and entitles applications listed in the plan limits.',
+    summary: 'Create a tenant subscription',
+    description:
+      'Records plan type, billing cycle, dates, and application codes on this subscription and entitles those applications. When the period ends this row stays inactive; continue by creating a new subscription.',
   })
   @ApiCreatedResponse({ type: SubscriptionResponseDto })
   create(
@@ -55,39 +58,20 @@ export class TenantSubscriptionController {
     return this.service.get(tenantId, subscriptionId);
   }
 
-  @Post(':subscriptionId/activate')
+  @Patch(':subscriptionId')
   @RequirePermissions(PlatformPermission.SUBSCRIPTION_MANAGE)
-  @ApiOperation({ summary: 'Activate a suspended subscription and restore linked entitlements' })
-  @ApiOkResponse({ type: SubscriptionChangeResponseDto })
-  activate(
+  @ApiOperation({
+    summary: 'Update a tenant subscription',
+    description:
+      'Update dates, plan type, billing cycle, application codes, or status (ACTIVE / INACTIVE). An ended period cannot be set back to ACTIVE — create a new subscription instead.',
+  })
+  @ApiOkResponse({ type: SubscriptionResponseDto })
+  update(
     @Param('tenantId', ParseUUIDPipe) tenantId: string,
     @Param('subscriptionId', ParseUUIDPipe) subscriptionId: string,
+    @Body() dto: UpdateTenantSubscriptionDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.service.activate(tenantId, subscriptionId, user.userId);
-  }
-
-  @Post(':subscriptionId/suspend')
-  @RequirePermissions(PlatformPermission.SUBSCRIPTION_MANAGE)
-  @ApiOperation({ summary: 'Suspend a subscription and linked entitlements' })
-  @ApiOkResponse({ type: SubscriptionChangeResponseDto })
-  suspend(
-    @Param('tenantId', ParseUUIDPipe) tenantId: string,
-    @Param('subscriptionId', ParseUUIDPipe) subscriptionId: string,
-    @CurrentUser() user: AuthenticatedUser,
-  ) {
-    return this.service.suspend(tenantId, subscriptionId, user.userId);
-  }
-
-  @Post(':subscriptionId/cancel')
-  @RequirePermissions(PlatformPermission.SUBSCRIPTION_MANAGE)
-  @ApiOperation({ summary: 'Cancel a subscription and revoke linked entitlements' })
-  @ApiOkResponse({ type: SubscriptionChangeResponseDto })
-  cancel(
-    @Param('tenantId', ParseUUIDPipe) tenantId: string,
-    @Param('subscriptionId', ParseUUIDPipe) subscriptionId: string,
-    @CurrentUser() user: AuthenticatedUser,
-  ) {
-    return this.service.cancel(tenantId, subscriptionId, user.userId);
+    return this.service.update(tenantId, subscriptionId, dto, user.userId);
   }
 }
