@@ -9,6 +9,7 @@ import { RbacModule } from '../rbac/rbac.module.js';
 import { NotificationModule } from '../notification/notification.module.js';
 import { OauthModule } from '../oauth/oauth.module.js';
 import { StorageModule } from '../storage/storage.module.js';
+import { InvitationModule } from '../invitation/invitation.module.js';
 import { UserIdentityEntity } from '../invitation/infrastructure/persistence/invitation.entities.js';
 import { AuthService } from './application/auth.service.js';
 import { AuthEmailService } from './application/auth-email.service.js';
@@ -37,6 +38,7 @@ import { USER_REFRESH_TOKEN_REPOSITORY } from './domain/refresh-token.repository
     NotificationModule,
     StorageModule,
     forwardRef(() => OauthModule),
+    forwardRef(() => InvitationModule),
     TypeOrmModule.forFeature([
       UserVerificationTokenEntity,
       UserRefreshTokenEntity,

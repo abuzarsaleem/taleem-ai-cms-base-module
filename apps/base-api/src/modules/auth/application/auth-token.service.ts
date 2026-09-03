@@ -9,6 +9,11 @@ import {
   FILE_STORAGE,
   type IFileStorageService,
 } from '../../storage/domain/storage.service.interface.js';
+import {
+  TENANT_MEMBERSHIP_REPOSITORY,
+  type ITenantMembershipRepository,
+} from '../../invitation/domain/invitation.repository.interface.js';
+import { MembershipStatus } from '../../invitation/domain/membership.types.js';
 import { USER_REFRESH_TOKEN_REPOSITORY } from '../domain/refresh-token.repository.interface.js';
 import type { IUserRefreshTokenRepository } from '../domain/refresh-token.repository.interface.js';
 import {
@@ -26,6 +31,8 @@ export class AuthTokenService {
     @Inject(USER_REFRESH_TOKEN_REPOSITORY)
     private readonly refreshTokenRepository: IUserRefreshTokenRepository,
     @Inject(FILE_STORAGE) private readonly storage: IFileStorageService,
+    @Inject(TENANT_MEMBERSHIP_REPOSITORY)
+    private readonly membershipRepository: ITenantMembershipRepository,
   ) {}
 
   async issueTokenPair(userId: string) {
@@ -35,6 +42,17 @@ export class AuthTokenService {
     }
 
     const access = await this.rbacService.getUserAccess(userId);
+    const { data: memberships } = await this.membershipRepository.findByUser(userId, 1, 100);
+    const tenantRoles = [
+      ...new Set(
+        memberships
+          .filter((m) => m.membershipStatus === MembershipStatus.ACTIVE)
+          .map((m) => m.role)
+          .filter(Boolean),
+      ),
+    ];
+    const roles = [...new Set([...access.roles, ...tenantRoles])].sort();
+
     const payload = { sub: userId, email: user.email };
     const accessToken = this.jwtService.sign(payload);
 
@@ -60,7 +78,7 @@ export class AuthTokenService {
         fullName: user.fullName,
         emailVerified: user.emailVerified ?? false,
         avatarUrl: user.avatarUrl ? await this.storage.resolveUrl(user.avatarUrl) : undefined,
-        roles: access.roles,
+        roles,
       },
     };
   }

@@ -18,7 +18,12 @@ class AuthUserResponseDto {
   @ApiProperty() emailVerified!: boolean;
   @ApiPropertyOptional({ description: 'Resolved public URL for the profile picture' })
   avatarUrl?: string;
-  @ApiProperty({ example: ['PLATFORM_ADMIN'], type: [String] }) roles!: string[];
+  @ApiProperty({
+    example: ['TENANT_ADMIN'],
+    type: [String],
+    description: 'Platform roles plus active tenant membership roles (TENANT_ADMIN / TENANT_MEMBER)',
+  })
+  roles!: string[];
 }
 
 export class AuthTokenResponseDto {
