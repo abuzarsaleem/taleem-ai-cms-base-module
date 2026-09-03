@@ -1,34 +1,31 @@
-import type { TenantAdminInvitationProps, TenantMemberInvitationProps } from '../../domain/invitation.types.js';
+import type { UserTokenProps } from '../../../auth/domain/user-token.types.js';
+import { InvitationStatus } from '../../domain/invitation.types.js';
 import { MembershipRole } from '../../domain/membership.types.js';
 import type {
   CreateTenantInvitationResponseDto,
   TenantInvitationResponseDto,
 } from '../dto/response/invitation.response.dto.js';
 
-export function toInvitationResponse(
-  props: TenantAdminInvitationProps | TenantMemberInvitationProps,
-  role: MembershipRole,
-): TenantInvitationResponseDto {
+export function toInvitationResponse(props: UserTokenProps): TenantInvitationResponseDto {
   return {
     id: props.id!,
-    tenantId: props.tenantId,
-    email: props.email,
-    role,
-    status: props.status,
+    tenantId: props.tenantId!,
+    email: props.email!,
+    role: (props.membershipRole as MembershipRole) ?? MembershipRole.MEMBER,
+    status: props.status as InvitationStatus,
     expiresAt: props.expiresAt,
-    acceptedAt: props.acceptedAt,
-    invitedBy: props.invitedBy,
+    acceptedAt: props.usedAt,
+    invitedBy: props.invitedBy!,
     createdAt: props.createdAt!,
   };
 }
 
 export function toCreateInvitationResponse(
-  props: TenantAdminInvitationProps | TenantMemberInvitationProps,
+  props: UserTokenProps,
   invitationToken: string,
-  role: MembershipRole,
 ): CreateTenantInvitationResponseDto {
   return {
-    ...toInvitationResponse(props, role),
+    ...toInvitationResponse(props),
     invitationToken,
   };
 }

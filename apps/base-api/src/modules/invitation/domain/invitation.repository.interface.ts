@@ -1,24 +1,4 @@
-import type { TenantAdminInvitationProps, TenantMemberInvitationProps } from './invitation.types.js';
 import type { MembershipRole, MembershipStatus } from './membership.types.js';
-
-export const TENANT_ADMIN_INVITATION_REPOSITORY = Symbol('TENANT_ADMIN_INVITATION_REPOSITORY');
-
-export interface ITenantAdminInvitationRepository {
-  findByTenant(
-    tenantId: string,
-    page: number,
-    limit: number,
-  ): Promise<{ data: TenantAdminInvitationProps[]; total: number }>;
-  findById(tenantId: string, id: string): Promise<TenantAdminInvitationProps | null>;
-  findPendingByEmail(tenantId: string, email: string): Promise<TenantAdminInvitationProps | null>;
-  findByTokenHash(tokenHash: string): Promise<TenantAdminInvitationProps | null>;
-  create(props: TenantAdminInvitationProps): Promise<TenantAdminInvitationProps>;
-  update(
-    tenantId: string,
-    id: string,
-    props: Partial<TenantAdminInvitationProps>,
-  ): Promise<TenantAdminInvitationProps>;
-}
 
 export const TENANT_MEMBERSHIP_REPOSITORY = Symbol('TENANT_MEMBERSHIP_REPOSITORY');
 
@@ -93,23 +73,4 @@ export interface UserIdentityProps {
 export interface IUserIdentityRepository {
   findLocalByUserId(userId: string): Promise<UserIdentityProps | null>;
   createLocal(userId: string, email: string): Promise<UserIdentityProps>;
-}
-
-export const TENANT_MEMBER_INVITATION_REPOSITORY = Symbol('TENANT_MEMBER_INVITATION_REPOSITORY');
-
-export interface ITenantMemberInvitationRepository {
-  findByTenant(
-    tenantId: string,
-    page: number,
-    limit: number,
-  ): Promise<{ data: TenantMemberInvitationProps[]; total: number }>;
-  findById(tenantId: string, id: string): Promise<TenantMemberInvitationProps | null>;
-  findPendingByEmail(tenantId: string, email: string): Promise<TenantMemberInvitationProps | null>;
-  findByTokenHash(tokenHash: string): Promise<TenantMemberInvitationProps | null>;
-  create(props: TenantMemberInvitationProps): Promise<TenantMemberInvitationProps>;
-  update(
-    tenantId: string,
-    id: string,
-    props: Partial<TenantMemberInvitationProps>,
-  ): Promise<TenantMemberInvitationProps>;
 }

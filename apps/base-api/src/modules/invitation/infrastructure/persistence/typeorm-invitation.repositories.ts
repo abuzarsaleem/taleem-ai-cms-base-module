@@ -2,11 +2,8 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { DATABASE_SCHEMA } from '@app/common';
-import type { TenantAdminInvitationProps, TenantMemberInvitationProps } from '../../domain/invitation.types.js';
 import { MembershipRole, MembershipStatus } from '../../domain/membership.types.js';
 import {
-  ITenantAdminInvitationRepository,
-  ITenantMemberInvitationRepository,
   ITenantMembershipRepository,
   IUserIdentityRepository,
   type TenantMembershipDetailProps,
@@ -14,10 +11,7 @@ import {
   type UserIdentityProps,
   type UserTenantMembershipProps,
 } from '../../domain/invitation.repository.interface.js';
-import { InvitationStatus } from '../../domain/invitation.types.js';
 import {
-  TenantAdminInvitationEntity,
-  TenantMemberInvitationEntity,
   TenantMembershipEntity,
   UserIdentityEntity,
 } from './invitation.entities.js';
@@ -29,164 +23,6 @@ function notFound(resource: string, id: string): never {
 
 function isAdminRole(role: string | undefined): boolean {
   return role === MembershipRole.ADMIN;
-}
-
-@Injectable()
-export class TypeOrmTenantAdminInvitationRepository implements ITenantAdminInvitationRepository {
-  constructor(
-    @InjectRepository(TenantAdminInvitationEntity)
-    private readonly repo: Repository<TenantAdminInvitationEntity>,
-  ) {}
-
-  findByTenant(tenantId: string, page: number, limit: number) {
-    return this.repo
-      .findAndCount({
-        where: { tenantId },
-        skip: (page - 1) * limit,
-        take: limit,
-        order: { createdAt: 'DESC' },
-      })
-      .then(([rows, total]) => ({ data: rows.map((row) => this.map(row)), total }));
-  }
-
-  async findById(tenantId: string, id: string) {
-    const row = await this.repo.findOne({ where: { id, tenantId } });
-    return row ? this.map(row) : null;
-  }
-
-  async findPendingByEmail(tenantId: string, email: string) {
-    const row = await this.repo.findOne({
-      where: { tenantId, email: email.toLowerCase(), status: InvitationStatus.PENDING },
-    });
-    return row ? this.map(row) : null;
-  }
-
-  async findByTokenHash(tokenHash: string) {
-    const row = await this.repo.findOne({ where: { tokenHash } });
-    return row ? this.map(row) : null;
-  }
-
-  async create(props: TenantAdminInvitationProps) {
-    return this.map(
-      await this.repo.save(
-        this.repo.create({
-          tenantId: props.tenantId,
-          email: props.email.toLowerCase(),
-          firstName: props.firstName,
-          lastName: props.lastName,
-          tokenHash: props.tokenHash,
-          status: props.status,
-          expiresAt: props.expiresAt,
-          invitedBy: props.invitedBy,
-        }),
-      ),
-    );
-  }
-
-  async update(tenantId: string, id: string, props: Partial<TenantAdminInvitationProps>) {
-    if (!(await this.findById(tenantId, id))) notFound('Invitation', id);
-    await this.repo.update({ id, tenantId }, {
-      firstName: props.firstName,
-      lastName: props.lastName,
-      tokenHash: props.tokenHash,
-      status: props.status,
-      expiresAt: props.expiresAt,
-      acceptedAt: props.acceptedAt,
-    });
-    return this.map(await this.repo.findOneOrFail({ where: { id, tenantId } }));
-  }
-
-  private map(e: TenantAdminInvitationEntity): TenantAdminInvitationProps {
-    return {
-      id: e.id,
-      tenantId: e.tenantId,
-      email: e.email,
-      firstName: e.firstName,
-      lastName: e.lastName,
-      tokenHash: e.tokenHash,
-      status: e.status as InvitationStatus,
-      expiresAt: e.expiresAt,
-      acceptedAt: e.acceptedAt,
-      invitedBy: e.invitedBy,
-      createdAt: e.createdAt,
-    };
-  }
-}
-
-@Injectable()
-export class TypeOrmTenantMemberInvitationRepository implements ITenantMemberInvitationRepository {
-  constructor(
-    @InjectRepository(TenantMemberInvitationEntity)
-    private readonly repo: Repository<TenantMemberInvitationEntity>,
-  ) {}
-
-  findByTenant(tenantId: string, page: number, limit: number) {
-    return this.repo
-      .findAndCount({
-        where: { tenantId },
-        skip: (page - 1) * limit,
-        take: limit,
-        order: { createdAt: 'DESC' },
-      })
-      .then(([rows, total]) => ({ data: rows.map((row) => this.map(row)), total }));
-  }
-
-  async findById(tenantId: string, id: string) {
-    const row = await this.repo.findOne({ where: { id, tenantId } });
-    return row ? this.map(row) : null;
-  }
-
-  async findPendingByEmail(tenantId: string, email: string) {
-    const row = await this.repo.findOne({
-      where: { tenantId, email: email.toLowerCase(), status: InvitationStatus.PENDING },
-    });
-    return row ? this.map(row) : null;
-  }
-
-  async findByTokenHash(tokenHash: string) {
-    const row = await this.repo.findOne({ where: { tokenHash } });
-    return row ? this.map(row) : null;
-  }
-
-  async create(props: TenantMemberInvitationProps) {
-    return this.map(
-      await this.repo.save(
-        this.repo.create({
-          tenantId: props.tenantId,
-          email: props.email.toLowerCase(),
-          tokenHash: props.tokenHash,
-          status: props.status,
-          expiresAt: props.expiresAt,
-          invitedBy: props.invitedBy,
-        }),
-      ),
-    );
-  }
-
-  async update(tenantId: string, id: string, props: Partial<TenantMemberInvitationProps>) {
-    if (!(await this.findById(tenantId, id))) notFound('Invitation', id);
-    await this.repo.update({ id, tenantId }, {
-      tokenHash: props.tokenHash,
-      status: props.status,
-      expiresAt: props.expiresAt,
-      acceptedAt: props.acceptedAt,
-    });
-    return this.map(await this.repo.findOneOrFail({ where: { id, tenantId } }));
-  }
-
-  private map(e: TenantMemberInvitationEntity): TenantMemberInvitationProps {
-    return {
-      id: e.id,
-      tenantId: e.tenantId,
-      email: e.email,
-      tokenHash: e.tokenHash,
-      status: e.status as InvitationStatus,
-      expiresAt: e.expiresAt,
-      acceptedAt: e.acceptedAt,
-      invitedBy: e.invitedBy,
-      createdAt: e.createdAt,
-    };
-  }
 }
 
 @Injectable()
@@ -434,4 +270,3 @@ export class TypeOrmUserIdentityRepository implements IUserIdentityRepository {
     };
   }
 }
-

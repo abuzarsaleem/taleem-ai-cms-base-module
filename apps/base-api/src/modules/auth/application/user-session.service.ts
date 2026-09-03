@@ -6,14 +6,14 @@ import {
   type IOAuthSessionRepository,
   type IRefreshTokenRepository,
 } from '../../oauth/domain/oauth.repository.interface.js';
-import { USER_REFRESH_TOKEN_REPOSITORY } from '../domain/refresh-token.repository.interface.js';
-import type { IUserRefreshTokenRepository } from '../domain/refresh-token.repository.interface.js';
+import { USER_TOKEN_REPOSITORY } from '../domain/user-token.repository.interface.js';
+import type { IUserTokenRepository } from '../domain/user-token.repository.interface.js';
+import { UserTokenType } from '../domain/user-token.types.js';
 
 @Injectable()
 export class UserSessionService {
   constructor(
-    @Inject(USER_REFRESH_TOKEN_REPOSITORY)
-    private readonly platformRefreshRepo: IUserRefreshTokenRepository,
+    @Inject(USER_TOKEN_REPOSITORY) private readonly tokenRepository: IUserTokenRepository,
     @Inject(OAUTH_SESSION_REPOSITORY)
     private readonly oauthSessionRepo: IOAuthSessionRepository,
     @Inject(REFRESH_TOKEN_REPOSITORY)
@@ -22,7 +22,7 @@ export class UserSessionService {
 
   async list(userId: string, page: number, limit: number) {
     const [platform, oauth] = await Promise.all([
-      this.platformRefreshRepo.listActiveByUser(userId, 1, 1000),
+      this.tokenRepository.listActiveByUser(userId, UserTokenType.REFRESH_TOKEN, 1, 1000),
       this.oauthSessionRepo.listByUser(userId, 1, 1000),
     ]);
 
@@ -62,9 +62,13 @@ export class UserSessionService {
     const type = sessionRef.slice(0, colonIdx);
     const id = sessionRef.slice(colonIdx + 1);
     if (type === 'platform') {
-      const token = await this.platformRefreshRepo.findByIdForUser(id, userId);
+      const token = await this.tokenRepository.findByIdForUser(
+        id,
+        userId,
+        UserTokenType.REFRESH_TOKEN,
+      );
       if (!token?.id) throw new NotFoundException('Session not found');
-      await this.platformRefreshRepo.revoke(token.id);
+      await this.tokenRepository.revoke(token.id);
       return { revoked: true };
     }
 
@@ -80,9 +84,14 @@ export class UserSessionService {
   }
 
   async revokeAll(userId: string) {
-    const platform = await this.platformRefreshRepo.listActiveByUser(userId, 1, 1000);
+    const platform = await this.tokenRepository.listActiveByUser(
+      userId,
+      UserTokenType.REFRESH_TOKEN,
+      1,
+      1000,
+    );
     for (const token of platform.data) {
-      if (token.id) await this.platformRefreshRepo.revoke(token.id);
+      if (token.id) await this.tokenRepository.revoke(token.id);
     }
 
     const oauth = await this.oauthSessionRepo.listByUser(userId, 1, 1000);

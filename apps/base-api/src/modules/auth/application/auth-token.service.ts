@@ -14,12 +14,10 @@ import {
   type ITenantMembershipRepository,
 } from '../../invitation/domain/invitation.repository.interface.js';
 import { MembershipStatus } from '../../invitation/domain/membership.types.js';
-import { USER_REFRESH_TOKEN_REPOSITORY } from '../domain/refresh-token.repository.interface.js';
-import type { IUserRefreshTokenRepository } from '../domain/refresh-token.repository.interface.js';
-import {
-  generateVerificationToken,
-  hashVerificationToken,
-} from './verification-token.util.js';
+import { USER_TOKEN_REPOSITORY } from '../domain/user-token.repository.interface.js';
+import type { IUserTokenRepository } from '../domain/user-token.repository.interface.js';
+import { UserTokenType } from '../domain/user-token.types.js';
+import { generateToken, hashToken } from './token.util.js';
 
 @Injectable()
 export class AuthTokenService {
@@ -28,8 +26,7 @@ export class AuthTokenService {
     private readonly jwtService: JwtService,
     private readonly rbacService: RbacService,
     @Inject(USER_REPOSITORY) private readonly userRepository: IUserRepository,
-    @Inject(USER_REFRESH_TOKEN_REPOSITORY)
-    private readonly refreshTokenRepository: IUserRefreshTokenRepository,
+    @Inject(USER_TOKEN_REPOSITORY) private readonly tokenRepository: IUserTokenRepository,
     @Inject(FILE_STORAGE) private readonly storage: IFileStorageService,
     @Inject(TENANT_MEMBERSHIP_REPOSITORY)
     private readonly membershipRepository: ITenantMembershipRepository,
@@ -56,12 +53,13 @@ export class AuthTokenService {
     const payload = { sub: userId, email: user.email };
     const accessToken = this.jwtService.sign(payload);
 
-    const { raw, hash } = generateVerificationToken();
+    const { raw, hash } = generateToken();
     const refreshExpiresIn = this.config.get<string>('jwt.refreshExpiresIn', '7d');
     const expiresAt = this.resolveRefreshExpiry(refreshExpiresIn);
 
-    await this.refreshTokenRepository.create({
+    await this.tokenRepository.create({
       userId,
+      tokenType: UserTokenType.REFRESH_TOKEN,
       tokenHash: hash,
       expiresAt,
     });
@@ -84,27 +82,33 @@ export class AuthTokenService {
   }
 
   async refresh(refreshToken: string) {
-    const tokenHash = hashVerificationToken(refreshToken);
-    const stored = await this.refreshTokenRepository.findValidByHash(tokenHash);
+    const tokenHash = hashToken(refreshToken);
+    const stored = await this.tokenRepository.findValidByHash(
+      tokenHash,
+      UserTokenType.REFRESH_TOKEN,
+    );
     if (!stored?.id) {
       throw new UnauthorizedException('Invalid or expired refresh token');
     }
 
-    await this.refreshTokenRepository.revoke(stored.id);
-    return this.issueTokenPair(stored.userId);
+    await this.tokenRepository.revoke(stored.id);
+    return this.issueTokenPair(stored.userId!);
   }
 
   async logout(refreshToken: string) {
-    const tokenHash = hashVerificationToken(refreshToken);
-    const stored = await this.refreshTokenRepository.findValidByHash(tokenHash);
+    const tokenHash = hashToken(refreshToken);
+    const stored = await this.tokenRepository.findValidByHash(
+      tokenHash,
+      UserTokenType.REFRESH_TOKEN,
+    );
     if (stored?.id) {
-      await this.refreshTokenRepository.revoke(stored.id);
+      await this.tokenRepository.revoke(stored.id);
     }
     return { loggedOut: true };
   }
 
   async logoutAll(userId: string) {
-    await this.refreshTokenRepository.revokeAllForUser(userId);
+    await this.tokenRepository.revokeAllForUser(userId, UserTokenType.REFRESH_TOKEN);
     return { loggedOut: true };
   }
 

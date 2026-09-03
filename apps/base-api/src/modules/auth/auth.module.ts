@@ -24,12 +24,9 @@ import { UserSessionController } from './presentation/user-session.controller.js
 import { SocialAuthController } from './presentation/social-auth.controller.js';
 import { JwtStrategy } from './infrastructure/strategies/jwt.strategy.js';
 import { JwtAuthGuard } from './infrastructure/guards/jwt-auth.guard.js';
-import { UserVerificationTokenEntity } from './infrastructure/persistence/verification.entity.js';
-import { UserRefreshTokenEntity } from './infrastructure/persistence/refresh-token.entity.js';
-import { TypeOrmVerificationTokenRepository } from './infrastructure/persistence/typeorm-verification.repository.js';
-import { TypeOrmUserRefreshTokenRepository } from './infrastructure/persistence/typeorm-refresh-token.repository.js';
-import { VERIFICATION_TOKEN_REPOSITORY } from './domain/verification.repository.interface.js';
-import { USER_REFRESH_TOKEN_REPOSITORY } from './domain/refresh-token.repository.interface.js';
+import { UserTokenEntity } from './infrastructure/persistence/user-token.entity.js';
+import { TypeOrmUserTokenRepository } from './infrastructure/persistence/typeorm-user-token.repository.js';
+import { USER_TOKEN_REPOSITORY } from './domain/user-token.repository.interface.js';
 
 @Module({
   imports: [
@@ -39,11 +36,7 @@ import { USER_REFRESH_TOKEN_REPOSITORY } from './domain/refresh-token.repository
     StorageModule,
     forwardRef(() => OauthModule),
     forwardRef(() => InvitationModule),
-    TypeOrmModule.forFeature([
-      UserVerificationTokenEntity,
-      UserRefreshTokenEntity,
-      UserIdentityEntity,
-    ]),
+    TypeOrmModule.forFeature([UserTokenEntity, UserIdentityEntity]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       inject: [ConfigService],
@@ -71,18 +64,14 @@ import { USER_REFRESH_TOKEN_REPOSITORY } from './domain/refresh-token.repository
     SocialAuthService,
     JwtStrategy,
     {
-      provide: VERIFICATION_TOKEN_REPOSITORY,
-      useClass: TypeOrmVerificationTokenRepository,
-    },
-    {
-      provide: USER_REFRESH_TOKEN_REPOSITORY,
-      useClass: TypeOrmUserRefreshTokenRepository,
+      provide: USER_TOKEN_REPOSITORY,
+      useClass: TypeOrmUserTokenRepository,
     },
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
     },
   ],
-  exports: [AuthService, AuthTokenService, JwtModule, USER_REFRESH_TOKEN_REPOSITORY],
+  exports: [AuthService, AuthTokenService, JwtModule, USER_TOKEN_REPOSITORY],
 })
 export class AuthModule {}

@@ -197,25 +197,25 @@ export const entitlementService = {
 }
 
 export const invitationService = {
-  list(tenantId: string, page = 1, limit = 50) {
+  list(tenantId: string, page = 1, limit = 50, role = 'TENANT_ADMIN') {
     return apiRequest<Paginated<import('@/lib/types').AdminInvitation>>(
-      `/tenant/${tenantId}/admin-invitation?page=${page}&limit=${limit}`,
+      `/tenant/${tenantId}/invitation?page=${page}&limit=${limit}&role=${role}`,
     )
   },
-  create(tenantId: string, email: string) {
+  create(tenantId: string, email: string, role: 'TENANT_ADMIN' | 'TENANT_MEMBER' = 'TENANT_ADMIN') {
     return apiRequest<import('@/lib/types').AdminInvitation & { invitationToken?: string }>(
-      `/tenant/${tenantId}/admin-invitation`,
-      { method: 'POST', body: { email } },
+      `/tenant/${tenantId}/invitation`,
+      { method: 'POST', body: { email, role } },
     )
   },
   resend(tenantId: string, id: string) {
     return apiRequest<import('@/lib/types').AdminInvitation & { invitationToken?: string }>(
-      `/tenant/${tenantId}/admin-invitation/${id}/resend`,
+      `/tenant/${tenantId}/invitation/${id}/resend`,
       { method: 'POST' },
     )
   },
   cancel(tenantId: string, id: string) {
-    return apiRequest<import('@/lib/types').AdminInvitation>(`/tenant/${tenantId}/admin-invitation/${id}`, {
+    return apiRequest<import('@/lib/types').AdminInvitation>(`/tenant/${tenantId}/invitation/${id}`, {
       method: 'DELETE',
     })
   },

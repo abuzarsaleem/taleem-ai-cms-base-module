@@ -9,14 +9,11 @@ import * as bcrypt from 'bcrypt';
 import { EMAIL_SERVICE, type IEmailService } from '../../notification/domain/email.service.interface.js';
 import { USER_REPOSITORY } from '../../user/domain/user.repository.interface.js';
 import type { IUserRepository } from '../../user/domain/user.repository.interface.js';
-import { VERIFICATION_TOKEN_REPOSITORY } from '../domain/verification.repository.interface.js';
-import type { IVerificationTokenRepository } from '../domain/verification.repository.interface.js';
-import { VerificationTokenType } from '../domain/verification.types.js';
+import { USER_TOKEN_REPOSITORY } from '../domain/user-token.repository.interface.js';
+import type { IUserTokenRepository } from '../domain/user-token.repository.interface.js';
+import { UserTokenType } from '../domain/user-token.types.js';
 import { AuthEmailService } from './auth-email.service.js';
-import {
-  generateVerificationToken,
-  hashVerificationToken,
-} from './verification-token.util.js';
+import { generateToken, hashToken } from './token.util.js';
 
 @Injectable()
 export class UserVerificationService {
@@ -24,8 +21,7 @@ export class UserVerificationService {
     private readonly config: ConfigService,
     private readonly authEmail: AuthEmailService,
     @Inject(USER_REPOSITORY) private readonly userRepository: IUserRepository,
-    @Inject(VERIFICATION_TOKEN_REPOSITORY)
-    private readonly tokenRepository: IVerificationTokenRepository,
+    @Inject(USER_TOKEN_REPOSITORY) private readonly tokenRepository: IUserTokenRepository,
     @Inject(EMAIL_SERVICE) private readonly emailService: IEmailService,
   ) {}
 
@@ -51,16 +47,16 @@ export class UserVerificationService {
   }
 
   async verifyEmail(token: string) {
-    const tokenHash = hashVerificationToken(token);
+    const tokenHash = hashToken(token);
     const stored = await this.tokenRepository.findValidByHash(
       tokenHash,
-      VerificationTokenType.EMAIL_VERIFICATION,
+      UserTokenType.EMAIL_VERIFICATION,
     );
     if (!stored?.id) {
       throw new BadRequestException('Invalid or expired verification token');
     }
 
-    await this.userRepository.update(stored.userId, { emailVerified: true });
+    await this.userRepository.update(stored.userId!, { emailVerified: true });
     await this.tokenRepository.markUsed(stored.id);
 
     return { verified: true, message: 'Email verified successfully' };
@@ -77,15 +73,15 @@ export class UserVerificationService {
 
     const ttlHours = this.config.get<number>('auth.passwordResetTokenTtlHours', 1);
     const expiresAt = new Date(Date.now() + ttlHours * 60 * 60 * 1000);
-    const { raw, hash } = generateVerificationToken();
+    const { raw, hash } = generateToken();
 
     await this.tokenRepository.invalidatePendingForUser(
       user.id,
-      VerificationTokenType.PASSWORD_RESET,
+      UserTokenType.PASSWORD_RESET,
     );
     await this.tokenRepository.create({
       userId: user.id,
-      tokenType: VerificationTokenType.PASSWORD_RESET,
+      tokenType: UserTokenType.PASSWORD_RESET,
       tokenHash: hash,
       expiresAt,
       ipAddress,
@@ -105,17 +101,17 @@ export class UserVerificationService {
   }
 
   async resetPassword(token: string, newPassword: string) {
-    const tokenHash = hashVerificationToken(token);
+    const tokenHash = hashToken(token);
     const stored = await this.tokenRepository.findValidByHash(
       tokenHash,
-      VerificationTokenType.PASSWORD_RESET,
+      UserTokenType.PASSWORD_RESET,
     );
     if (!stored?.id) {
       throw new BadRequestException('Invalid or expired reset token');
     }
 
     const saltRounds = this.config.get<number>('auth.bcryptSaltRounds', 12);
-    await this.userRepository.update(stored.userId, {
+    await this.userRepository.update(stored.userId!, {
       passwordHash: await bcrypt.hash(newPassword, saltRounds),
     });
     await this.tokenRepository.markUsed(stored.id);
@@ -150,15 +146,15 @@ export class UserVerificationService {
   ) {
     const ttlHours = this.config.get<number>('auth.verificationTokenTtlHours', 24);
     const expiresAt = new Date(Date.now() + ttlHours * 60 * 60 * 1000);
-    const { raw, hash } = generateVerificationToken();
+    const { raw, hash } = generateToken();
 
     await this.tokenRepository.invalidatePendingForUser(
       userId,
-      VerificationTokenType.EMAIL_VERIFICATION,
+      UserTokenType.EMAIL_VERIFICATION,
     );
     await this.tokenRepository.create({
       userId,
-      tokenType: VerificationTokenType.EMAIL_VERIFICATION,
+      tokenType: UserTokenType.EMAIL_VERIFICATION,
       tokenHash: hash,
       expiresAt,
       ipAddress,
