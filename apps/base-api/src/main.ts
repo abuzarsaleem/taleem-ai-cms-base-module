@@ -9,9 +9,13 @@ async function bootstrap() {
   const config = app.get(ConfigService);
   const prefix = config.get<string>('app.prefix', 'api/v1');
 
+  // Temporary: allow all origins. Tighten via config before production.
   app.enableCors({
     origin: true,
     credentials: true,
+    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With'],
+    exposedHeaders: ['Content-Disposition'],
   });
   app.setGlobalPrefix(prefix);
   app.useGlobalPipes(
@@ -48,7 +52,6 @@ async function bootstrap() {
     .addTag('Auth', 'Registration, login, password reset, and email verification')
     .addTag('User Profile', 'Current user profile and password management')
     .addTag('Platform Users', 'Platform user administration and role assignment')
-    .addTag('User Sessions', 'List and revoke active login sessions')
     .addTag('Health', 'Service health checks')
     .build();
 

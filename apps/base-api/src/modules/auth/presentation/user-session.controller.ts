@@ -1,11 +1,5 @@
 import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Post, Query } from '@nestjs/common';
-import {
-  ApiBearerAuth,
-  ApiNoContentResponse,
-  ApiOkResponse,
-  ApiOperation,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiBearerAuth, ApiExcludeController, ApiNoContentResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CurrentUser, PaginationQueryDto, type AuthenticatedUser } from '@app/common';
 import {
   RevokeAllSessionsResponseDto,
@@ -14,6 +8,7 @@ import {
 } from '../application/dto/user-session.dto.js';
 import { UserSessionService } from '../application/user-session.service.js';
 
+@ApiExcludeController()
 @ApiTags('User Sessions')
 @ApiBearerAuth()
 @Controller('user/me/session')
