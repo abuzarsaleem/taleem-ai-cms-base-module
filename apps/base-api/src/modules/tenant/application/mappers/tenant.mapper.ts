@@ -3,7 +3,6 @@ import type {
   InstitutionProfileProps,
   TenantAddressProps,
   TenantAssetProps,
-  TenantBrandingProps,
   TenantConfigurationProps,
   TenantContactProps,
   TenantIdentifierProps,
@@ -13,7 +12,6 @@ import type {
   InstitutionProfileResponseDto,
   TenantAddressResponseDto,
   TenantAssetResponseDto,
-  TenantBrandingResponseDto,
   TenantConfigurationResponseDto,
   TenantContactResponseDto,
   TenantIdentifierResponseDto,
@@ -38,7 +36,8 @@ export function toIdentifierResponse(props: TenantIdentifierProps): TenantIdenti
 }
 
 export function toConfigurationResponse(props: TenantConfigurationProps): TenantConfigurationResponseDto {
-  return { ...props } as TenantConfigurationResponseDto;
+  const { logoUrl: _logoUrl, ...rest } = props;
+  return { ...rest } as TenantConfigurationResponseDto;
 }
 
 export function toSmtpResponse(props: TenantSmtpConfigurationProps): TenantSmtpResponseDto {
@@ -51,8 +50,4 @@ export function toAssetResponse(props: TenantAssetProps): TenantAssetResponseDto
 
 export function toInstitutionProfileResponse(props: InstitutionProfileProps): InstitutionProfileResponseDto {
   return { ...props } as InstitutionProfileResponseDto;
-}
-
-export function toBrandingResponse(props: TenantBrandingProps): TenantBrandingResponseDto {
-  return { ...props } as TenantBrandingResponseDto;
 }

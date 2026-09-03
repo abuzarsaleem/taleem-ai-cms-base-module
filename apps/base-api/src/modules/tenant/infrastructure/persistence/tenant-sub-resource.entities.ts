@@ -45,6 +45,9 @@ export class TenantContactEntity {
   @Column({ name: 'landline_phone', type: 'varchar', length: 30, nullable: true })
   landlinePhone?: string;
 
+  @Column({ name: 'whatsapp_number', type: 'varchar', length: 30, nullable: true })
+  whatsappNumber?: string;
+
   @Column({ name: 'is_primary', type: 'boolean', default: false })
   isPrimary!: boolean;
 
@@ -171,6 +174,36 @@ export class TenantConfigurationEntity {
   @Column({ name: 'logo_url', type: 'varchar', length: 500, nullable: true })
   logoUrl?: string;
 
+  @Column({ name: 'logo_asset_id', type: 'uuid', nullable: true })
+  logoAssetId?: string;
+
+  @Column({ name: 'logo_dark_asset_id', type: 'uuid', nullable: true })
+  logoDarkAssetId?: string;
+
+  @Column({ name: 'favicon_asset_id', type: 'uuid', nullable: true })
+  faviconAssetId?: string;
+
+  @Column({ name: 'primary_color', type: 'char', length: 7, nullable: true })
+  primaryColor?: string;
+
+  @Column({ name: 'secondary_color', type: 'char', length: 7, nullable: true })
+  secondaryColor?: string;
+
+  @Column({ name: 'accent_color', type: 'char', length: 7, nullable: true })
+  accentColor?: string;
+
+  @Column({ name: 'font_family', type: 'text', nullable: true })
+  fontFamily?: string;
+
+  @Column({ name: 'email_from_name', type: 'text', nullable: true })
+  emailFromName?: string;
+
+  @Column({ name: 'email_from_address', type: 'varchar', nullable: true })
+  emailFromAddress?: string;
+
+  @Column({ name: 'support_email', type: 'varchar', nullable: true })
+  supportEmail?: string;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
 
@@ -295,47 +328,65 @@ export class InstitutionProfileEntity {
   updatedAt!: Date;
 }
 
-@Entity({ name: 'tenant_branding', schema: DATABASE_SCHEMA })
-export class TenantBrandingEntity {
+@Entity({ name: 'departments', schema: DATABASE_SCHEMA })
+export class DepartmentEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ name: 'tenant_id', type: 'uuid', unique: true })
-  tenantId!: string;
+  @Column({ type: 'varchar', length: 50, unique: true })
+  code!: string;
 
-  @Column({ name: 'logo_asset_id', type: 'uuid', nullable: true })
-  logoAssetId?: string;
+  @Column({ type: 'varchar', length: 150 })
+  name!: string;
 
-  @Column({ name: 'logo_dark_asset_id', type: 'uuid', nullable: true })
-  logoDarkAssetId?: string;
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  description?: string;
 
-  @Column({ name: 'favicon_asset_id', type: 'uuid', nullable: true })
-  faviconAssetId?: string;
-
-  @Column({ name: 'primary_color', type: 'char', length: 7, nullable: true })
-  primaryColor?: string;
-
-  @Column({ name: 'secondary_color', type: 'char', length: 7, nullable: true })
-  secondaryColor?: string;
-
-  @Column({ name: 'accent_color', type: 'char', length: 7, nullable: true })
-  accentColor?: string;
-
-  @Column({ name: 'font_family', type: 'text', nullable: true })
-  fontFamily?: string;
-
-  @Column({ name: 'email_from_name', type: 'text', nullable: true })
-  emailFromName?: string;
-
-  @Column({ name: 'email_from_address', type: 'varchar', nullable: true })
-  emailFromAddress?: string;
-
-  @Column({ name: 'support_email', type: 'varchar', nullable: true })
-  supportEmail?: string;
+  @Column({ name: 'is_active', type: 'boolean', default: true })
+  isActive!: boolean;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
+}
 
-  @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
-  updatedAt!: Date;
+@Entity({ name: 'designations', schema: DATABASE_SCHEMA })
+export class DesignationEntity {
+  @PrimaryGeneratedColumn('uuid')
+  id!: string;
+
+  @Column({ type: 'varchar', length: 50, unique: true })
+  code!: string;
+
+  @Column({ type: 'varchar', length: 150 })
+  name!: string;
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  description?: string;
+
+  @Column({ name: 'is_active', type: 'boolean', default: true })
+  isActive!: boolean;
+
+  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
+  createdAt!: Date;
+}
+
+@Entity({ name: 'identifier_types', schema: DATABASE_SCHEMA })
+export class IdentifierTypeEntity {
+  @PrimaryGeneratedColumn('uuid')
+  id!: string;
+
+  @Column({ type: 'varchar', length: 50, unique: true })
+  code!: string;
+
+  @Column({ type: 'varchar', length: 150 })
+  name!: string;
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  description?: string;
+
+  @Column({ name: 'is_active', type: 'boolean', default: true })
+  isActive!: boolean;
+
+  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
+  createdAt!: Date;
 }

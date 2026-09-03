@@ -1,6 +1,31 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEmail, IsOptional, IsString, MaxLength, MinLength, ValidateIf } from 'class-validator';
+import {
+  IsEmail,
+  IsEnum,
+  IsOptional,
+  IsString,
+  MaxLength,
+  MinLength,
+  ValidateIf,
+} from 'class-validator';
+import { MembershipRole } from '../../../domain/membership.types.js';
 
+export class CreateTenantInvitationDto {
+  @ApiProperty({ example: 'user@university.edu' })
+  @IsEmail()
+  @MaxLength(255)
+  email!: string;
+
+  @ApiProperty({
+    enum: MembershipRole,
+    example: MembershipRole.MEMBER,
+    description: 'TENANT_ADMIN or TENANT_MEMBER — same accept link either way',
+  })
+  @IsEnum(MembershipRole)
+  role!: MembershipRole;
+}
+
+/** @deprecated Use CreateTenantInvitationDto */
 export class CreateTenantAdminInvitationDto {
   @ApiProperty({ example: 'admin@university.edu' })
   @IsEmail()

@@ -91,12 +91,11 @@ On first Docker Postgres startup, migrations run automatically via `docker/postg
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | GET | `/api/v1/health` | Public | Service health |
-| POST | `/api/v1/auth/register` | Public | User registration |
 | POST | `/api/v1/auth/login` | Public | User login (JWT) |
-| POST | `/api/v1/tenants` | JWT | Create tenant |
-| GET | `/api/v1/tenants` | JWT | List tenants |
-| GET | `/api/v1/tenants/:id` | JWT | Get tenant |
-| PATCH | `/api/v1/tenants/:id` | JWT | Update tenant |
+| POST | `/api/v1/tenant` | JWT | Create tenant |
+| GET | `/api/v1/tenant` | JWT | List tenants |
+| GET | `/api/v1/tenant/:id` | JWT | Get tenant |
+| PATCH | `/api/v1/tenant/:id` | JWT | Update tenant |
 
 ## Docker services
 

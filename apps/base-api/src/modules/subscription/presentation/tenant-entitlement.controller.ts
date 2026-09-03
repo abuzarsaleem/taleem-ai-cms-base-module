@@ -20,7 +20,7 @@ import {
 
 @ApiTags('Tenant Entitlements')
 @ApiBearerAuth()
-@Controller('tenants/:tenantId/entitlements')
+@Controller('tenant/:tenantId/entitlement')
 export class TenantEntitlementController {
   constructor(private readonly service: TenantEntitlementService) {}
 

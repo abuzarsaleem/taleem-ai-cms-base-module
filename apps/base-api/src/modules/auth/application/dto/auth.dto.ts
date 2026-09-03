@@ -1,23 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsString, MaxLength, MinLength } from 'class-validator';
-
-export class RegisterDto {
-  @ApiProperty({ example: 'admin@taleem.ai' })
-  @IsEmail()
-  @MaxLength(150)
-  email!: string;
-
-  @ApiProperty({ example: 'SecurePass123!', minLength: 8 })
-  @IsString()
-  @MinLength(8)
-  @MaxLength(128)
-  password!: string;
-
-  @ApiProperty({ example: 'Platform Admin' })
-  @IsString()
-  @MaxLength(150)
-  fullName!: string;
-}
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsEmail, IsString, MinLength } from 'class-validator';
 
 export class LoginDto {
   @ApiProperty({ example: 'admin@taleem.ai' })
@@ -33,13 +15,31 @@ class AuthUserResponseDto {
   @ApiProperty({ format: 'uuid' }) id!: string;
   @ApiProperty() email!: string;
   @ApiProperty() fullName!: string;
+  @ApiProperty() emailVerified!: boolean;
+  @ApiPropertyOptional({ description: 'Resolved public URL for the profile picture' })
+  avatarUrl?: string;
   @ApiProperty({ example: ['PLATFORM_ADMIN'], type: [String] }) roles!: string[];
-  @ApiProperty({ example: ['platform.tenant.create'], type: [String] }) permissions!: string[];
 }
 
 export class AuthTokenResponseDto {
   @ApiProperty() accessToken!: string;
+  @ApiProperty() refreshToken!: string;
   @ApiProperty({ example: 'Bearer' }) tokenType!: string;
   @ApiProperty({ example: '15m' }) expiresIn!: string;
+  @ApiProperty({ example: '7d' }) refreshExpiresIn!: string;
   @ApiProperty({ type: AuthUserResponseDto }) user!: AuthUserResponseDto;
+}
+
+export class RefreshTokenDto {
+  @ApiProperty()
+  @IsString()
+  @MinLength(16)
+  refreshToken!: string;
+}
+
+export class LogoutDto {
+  @ApiProperty()
+  @IsString()
+  @MinLength(16)
+  refreshToken!: string;
 }

@@ -26,9 +26,28 @@ export default () => ({
         accessExpiresIn: process.env.JWT_ACCESS_EXPIRES_IN ?? '15m',
         refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN ?? '7d',
     },
+    oauth: {
+        issuer: process.env.OAUTH_ISSUER ?? 'http://localhost:3000/api/v1',
+        authorizationCodeTtlSeconds: parseInt(process.env.OAUTH_AUTHORIZATION_CODE_TTL_SECONDS ?? '300', 10),
+        sessionTtlSeconds: parseInt(process.env.OAUTH_SESSION_TTL_SECONDS ?? '604800', 10),
+    },
     auth: {
         bcryptSaltRounds: parseInt(process.env.BCRYPT_SALT_ROUNDS ?? '12', 10),
-        authorizationCodeTtlSeconds: parseInt(process.env.OAUTH_AUTHORIZATION_CODE_TTL_SECONDS ?? '300', 10),
+        registrationEnabled: process.env.AUTH_REGISTRATION_ENABLED !== 'false',
+        requireEmailVerification: process.env.AUTH_REQUIRE_EMAIL_VERIFICATION === 'true',
+        sendVerificationOnRegister: process.env.AUTH_SEND_VERIFICATION_ON_REGISTER !== 'false',
+        verificationTokenTtlHours: parseInt(process.env.AUTH_VERIFICATION_TOKEN_TTL_HOURS ?? '24', 10),
+        passwordResetTokenTtlHours: parseInt(process.env.AUTH_PASSWORD_RESET_TOKEN_TTL_HOURS ?? '1', 10),
+        emailVerificationUrlBase: process.env.AUTH_EMAIL_VERIFICATION_URL_BASE ?? 'http://localhost:3000/verify-email',
+        passwordResetUrlBase: process.env.AUTH_PASSWORD_RESET_URL_BASE ?? 'http://localhost:3000/reset-password',
+        social: {
+            google: {
+                clientId: process.env.GOOGLE_OAUTH_CLIENT_ID ?? '',
+                clientSecret: process.env.GOOGLE_OAUTH_CLIENT_SECRET ?? '',
+                redirectUri: process.env.GOOGLE_OAUTH_REDIRECT_URI ??
+                    'http://localhost:3000/api/v1/auth/social/google/callback',
+            },
+        },
     },
     storage: {
         driver: process.env.STORAGE_DRIVER ?? 'b2',

@@ -8,6 +8,11 @@ import { RbacService } from '../../../rbac/application/rbac.service.js';
 interface JwtPayload {
   sub: string;
   email: string;
+  tenantId?: string;
+  clientId?: string;
+  scope?: string;
+  sessionId?: string;
+  type?: string;
 }
 
 @Injectable()
@@ -29,6 +34,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     return {
       userId: payload.sub,
       email: payload.email,
+      tenantId: payload.tenantId,
       roles: access.roles,
       permissions: access.permissions,
     };

@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Alumni LMS — Callback</title>
+    <link rel="stylesheet" href="/demo.css" />
+    <!--DEMO_CONFIG-->
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="card">
+        <h1>OAuth callback</h1>
+        <p class="sub">Mock LMS received the redirect. Exchange the code for tokens.</p>
+        <div id="error" class="error hidden"></div>
+        <div id="info" class="ok hidden"></div>
+
+        <pre id="params-preview"></pre>
+
+        <button id="exchange-btn" class="hidden">Exchange code for tokens</button>
+        <button id="home-btn" class="secondary">Back to mock LMS</button>
+
+        <h1 style="margin-top: 24px; font-size: 1.1rem">Token response</h1>
+        <pre id="token-preview">(not exchanged yet)</pre>
+      </div>
+    </div>
+    <script type="module">
+      import { apiJson, loadPkceSession, showError, hideError } from '/demo.js';
+
+      const errorEl = document.getElementById('error');
+      const infoEl = document.getElementById('info');
+      const params = new URLSearchParams(window.location.search);
+      const code = params.get('code');
+      const state = params.get('state');
+      const oauthError = params.get('error');
+
+      document.getElementById('params-preview').textContent = [...params.entries()]
+        .map(([k, v]) => `${k}=${v}`)
+        .join('\n');
+
+      const pkce = loadPkceSession();
+
+      if (oauthError) {
+        showError(errorEl, `Authorization denied: ${oauthError}`);
+      } else if (!code) {
+        showError(errorEl, 'No authorization code in callback URL.');
+      } else if (!pkce || pkce.state !== state) {
+        showError(errorEl, 'PKCE session missing or state mismatch. Start again from /.');
+      } else {
+        infoEl.textContent = 'Authorization code received. Click below to exchange (server-side, secret not exposed).';
+        infoEl.classList.remove('hidden');
+        document.getElementById('exchange-btn').classList.remove('hidden');
+      }
+
+      document.getElementById('exchange-btn')?.addEventListener('click', async () => {
+        hideError(errorEl);
+        try {
+          const tokens = await apiJson('/oauth/token', {
+            method: 'POST',
+            body: JSON.stringify({
+              grant_type: 'authorization_code',
+              code,
+              code_verifier: pkce.codeVerifier,
+            }),
+          });
+          document.getElementById('token-preview').textContent = JSON.stringify(tokens, null, 2);
+        } catch (err) {
+          showError(errorEl, err.message ?? String(err));
+        }
+      });
+
+      document.getElementById('home-btn').addEventListener('click', () => {
+        window.location.href = '/';
+      });
+    </script>
+  </body>
+</html>

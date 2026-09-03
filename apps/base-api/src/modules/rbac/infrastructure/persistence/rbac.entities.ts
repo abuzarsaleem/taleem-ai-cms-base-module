@@ -91,6 +91,9 @@ export class UserRoleEntity {
   @Column({ name: 'granted_at', type: 'timestamptz', default: () => 'now()' })
   grantedAt!: Date;
 
+  @Column({ name: 'granted_by', type: 'uuid', nullable: true })
+  grantedBy?: string;
+
   @ManyToOne(() => RoleEntity)
   @JoinColumn({ name: 'role_id' })
   role!: RoleEntity;

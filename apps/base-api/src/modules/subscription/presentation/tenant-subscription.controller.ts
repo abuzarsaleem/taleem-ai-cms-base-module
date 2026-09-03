@@ -17,7 +17,7 @@ import {
 
 @ApiTags('Tenant Subscriptions')
 @ApiBearerAuth()
-@Controller('tenants/:tenantId/subscriptions')
+@Controller('tenant/:tenantId/subscription')
 export class TenantSubscriptionController {
   constructor(private readonly service: TenantSubscriptionService) {}
 

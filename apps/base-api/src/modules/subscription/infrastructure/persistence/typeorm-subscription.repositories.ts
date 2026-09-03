@@ -12,6 +12,7 @@ import {
   EMPTY_PLAN_LIMITS,
   type ApplicationProps,
   type AuditEventProps,
+  type AuditEventSearchFilters,
   type PlanLimits,
   type SubscriptionPlanProps,
   type SubscriptionProps,
@@ -343,6 +344,33 @@ export class TypeOrmAuditEventRepository implements IAuditEventRepository {
     return this.map(await this.repo.save(this.repo.create(props)));
   }
 
+  async search(filters: AuditEventSearchFilters, page: number, limit: number) {
+    const qb = this.repo.createQueryBuilder('audit').orderBy('audit.created_at', 'DESC');
+
+    if (filters.tenantId) {
+      qb.andWhere('audit.tenant_id = :tenantId', { tenantId: filters.tenantId });
+    }
+    if (filters.actorUserId) {
+      qb.andWhere('audit.actor_user_id = :actorUserId', { actorUserId: filters.actorUserId });
+    }
+    if (filters.action) {
+      qb.andWhere('audit.action = :action', { action: filters.action });
+    }
+    if (filters.from) {
+      qb.andWhere('audit.created_at >= :from', { from: filters.from });
+    }
+    if (filters.to) {
+      qb.andWhere('audit.created_at <= :to', { to: filters.to });
+    }
+
+    const [rows, total] = await qb
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    return { data: rows.map((row) => this.map(row)), total };
+  }
+
   private map(e: AuditEventEntity): AuditEventProps {
     return {
       id: e.id,
@@ -353,6 +381,7 @@ export class TypeOrmAuditEventRepository implements IAuditEventRepository {
       entityId: e.entityId,
       oldValue: e.oldValue,
       newValue: e.newValue,
+      ipAddress: e.ipAddress,
       createdAt: e.createdAt,
     };
   }

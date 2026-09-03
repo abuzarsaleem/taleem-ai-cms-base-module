@@ -26,9 +26,27 @@ declare const _default: () => {
         accessExpiresIn: string;
         refreshExpiresIn: string;
     };
+    oauth: {
+        issuer: string;
+        authorizationCodeTtlSeconds: number;
+        sessionTtlSeconds: number;
+    };
     auth: {
         bcryptSaltRounds: number;
-        authorizationCodeTtlSeconds: number;
+        registrationEnabled: boolean;
+        requireEmailVerification: boolean;
+        sendVerificationOnRegister: boolean;
+        verificationTokenTtlHours: number;
+        passwordResetTokenTtlHours: number;
+        emailVerificationUrlBase: string;
+        passwordResetUrlBase: string;
+        social: {
+            google: {
+                clientId: string;
+                clientSecret: string;
+                redirectUri: string;
+            };
+        };
     };
     storage: {
         driver: string;

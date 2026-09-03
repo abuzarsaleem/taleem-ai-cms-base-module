@@ -6,7 +6,6 @@ import {
   CampusType,
   ContactType,
   DeploymentModel,
-  IdentifierType,
   SmtpEncryption,
   TenantStatus,
 } from '../../../domain/tenant.types.js';
@@ -48,6 +47,7 @@ export class TenantContactResponseDto {
   @ApiPropertyOptional() email?: string;
   @ApiPropertyOptional() mobilePhone?: string;
   @ApiPropertyOptional() landlinePhone?: string;
+  @ApiPropertyOptional() whatsappNumber?: string;
   @ApiProperty() isPrimary!: boolean;
   @ApiProperty() isActive!: boolean;
   @ApiProperty() createdAt!: Date;
@@ -85,7 +85,7 @@ export class TenantAddressListResponseDto {
 export class TenantIdentifierResponseDto {
   @ApiProperty({ format: 'uuid' }) id!: string;
   @ApiProperty({ format: 'uuid' }) tenantId!: string;
-  @ApiProperty({ enum: IdentifierType }) identifierType!: string;
+  @ApiProperty({ example: 'REGISTRATION' }) identifierType!: string;
   @ApiProperty() identifierValue!: string;
   @ApiPropertyOptional() issuingAuthority?: string;
   @ApiPropertyOptional() issueDate?: Date;
@@ -109,7 +109,16 @@ export class TenantConfigurationResponseDto {
   @ApiPropertyOptional() dateFormat?: string;
   @ApiProperty() currencyCode!: string;
   @ApiPropertyOptional() brandingName?: string;
-  @ApiPropertyOptional() logoUrl?: string;
+  @ApiPropertyOptional() logoAssetId?: string;
+  @ApiPropertyOptional() logoDarkAssetId?: string;
+  @ApiPropertyOptional() faviconAssetId?: string;
+  @ApiPropertyOptional({ example: '#1A73E8' }) primaryColor?: string;
+  @ApiPropertyOptional() secondaryColor?: string;
+  @ApiPropertyOptional() accentColor?: string;
+  @ApiPropertyOptional() fontFamily?: string;
+  @ApiPropertyOptional() emailFromName?: string;
+  @ApiPropertyOptional() emailFromAddress?: string;
+  @ApiPropertyOptional() supportEmail?: string;
   @ApiProperty() createdAt!: Date;
   @ApiProperty() updatedAt!: Date;
 }
@@ -162,28 +171,4 @@ export class InstitutionProfileResponseDto {
   @ApiPropertyOptional() countryCode?: string;
   @ApiProperty() createdAt!: Date;
   @ApiProperty() updatedAt!: Date;
-}
-
-export class TenantBrandingResponseDto {
-  @ApiProperty({ format: 'uuid' }) id!: string;
-  @ApiProperty({ format: 'uuid' }) tenantId!: string;
-  @ApiPropertyOptional() logoAssetId?: string;
-  @ApiPropertyOptional() logoDarkAssetId?: string;
-  @ApiPropertyOptional() faviconAssetId?: string;
-  @ApiPropertyOptional({ example: '#1A73E8' }) primaryColor?: string;
-  @ApiPropertyOptional() secondaryColor?: string;
-  @ApiPropertyOptional() accentColor?: string;
-  @ApiPropertyOptional() fontFamily?: string;
-  @ApiPropertyOptional() emailFromName?: string;
-  @ApiPropertyOptional() emailFromAddress?: string;
-  @ApiPropertyOptional() supportEmail?: string;
-  @ApiProperty() createdAt!: Date;
-  @ApiProperty() updatedAt!: Date;
-}
-
-export class OnboardTenantResponseDto {
-  @ApiProperty({ type: TenantResponseDto }) tenant!: TenantResponseDto;
-  @ApiProperty({ type: InstitutionProfileResponseDto }) institutionProfile!: InstitutionProfileResponseDto;
-  @ApiPropertyOptional({ type: TenantConfigurationResponseDto }) configuration?: TenantConfigurationResponseDto;
-  @ApiPropertyOptional({ type: [TenantContactResponseDto] }) contacts?: TenantContactResponseDto[];
 }

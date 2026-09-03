@@ -5,7 +5,6 @@ import type {
   IInstitutionProfileRepository,
   ITenantAddressRepository,
   ITenantAssetRepository,
-  ITenantBrandingRepository,
   ITenantConfigurationRepository,
   ITenantContactRepository,
   ITenantIdentifierRepository,
@@ -13,7 +12,6 @@ import type {
   InstitutionProfileProps,
   TenantAddressProps,
   TenantAssetProps,
-  TenantBrandingProps,
   TenantConfigurationProps,
   TenantContactProps,
   TenantIdentifierProps,
@@ -23,7 +21,6 @@ import {
   InstitutionProfileEntity,
   TenantAddressEntity,
   TenantAssetEntity,
-  TenantBrandingEntity,
   TenantConfigurationEntity,
   TenantContactEntity,
   TenantIdentifierEntity,
@@ -73,8 +70,8 @@ export class TypeOrmTenantContactRepository implements ITenantContactRepository 
       id: e.id, tenantId: e.tenantId, contactType: e.contactType, firstName: e.firstName,
       middleName: e.middleName, lastName: e.lastName, designation: e.designation,
       department: e.department, responsibility: e.responsibility, email: e.email,
-      mobilePhone: e.mobilePhone, landlinePhone: e.landlinePhone, isPrimary: e.isPrimary,
-      isActive: e.isActive, createdAt: e.createdAt, updatedAt: e.updatedAt,
+      mobilePhone: e.mobilePhone, landlinePhone: e.landlinePhone, whatsappNumber: e.whatsappNumber,
+      isPrimary: e.isPrimary, isActive: e.isActive, createdAt: e.createdAt, updatedAt: e.updatedAt,
     };
   }
 }
@@ -181,9 +178,26 @@ export class TypeOrmTenantConfigurationRepository implements ITenantConfiguratio
 
   private map(e: TenantConfigurationEntity): TenantConfigurationProps {
     return {
-      id: e.id, tenantId: e.tenantId, timezone: e.timezone, locale: e.locale,
-      dateFormat: e.dateFormat, currencyCode: e.currencyCode, brandingName: e.brandingName,
-      logoUrl: e.logoUrl, createdAt: e.createdAt, updatedAt: e.updatedAt,
+      id: e.id,
+      tenantId: e.tenantId,
+      timezone: e.timezone,
+      locale: e.locale,
+      dateFormat: e.dateFormat,
+      currencyCode: e.currencyCode,
+      brandingName: e.brandingName,
+      logoUrl: e.logoUrl,
+      logoAssetId: e.logoAssetId,
+      logoDarkAssetId: e.logoDarkAssetId,
+      faviconAssetId: e.faviconAssetId,
+      primaryColor: e.primaryColor,
+      secondaryColor: e.secondaryColor,
+      accentColor: e.accentColor,
+      fontFamily: e.fontFamily,
+      emailFromName: e.emailFromName,
+      emailFromAddress: e.emailFromAddress,
+      supportEmail: e.supportEmail,
+      createdAt: e.createdAt,
+      updatedAt: e.updatedAt,
     };
   }
 }
@@ -286,40 +300,6 @@ export class TypeOrmInstitutionProfileRepository implements IInstitutionProfileR
       institutionType: e.institutionType, website: e.website, addressLine1: e.addressLine1,
       addressLine2: e.addressLine2, city: e.city, stateProvince: e.stateProvince,
       postalCode: e.postalCode, countryCode: e.countryCode, createdAt: e.createdAt, updatedAt: e.updatedAt,
-    };
-  }
-}
-
-@Injectable()
-export class TypeOrmTenantBrandingRepository implements ITenantBrandingRepository {
-  constructor(@InjectRepository(TenantBrandingEntity) private readonly repo: Repository<TenantBrandingEntity>) {}
-
-  async findByTenantId(tenantId: string) {
-    const row = await this.repo.findOne({ where: { tenantId } });
-    return row ? this.map(row) : null;
-  }
-
-  async create(props: TenantBrandingProps) {
-    return this.map(await this.repo.save(this.repo.create(props)));
-  }
-
-  async update(tenantId: string, props: Partial<TenantBrandingProps>) {
-    await this.repo.update({ tenantId }, props);
-    return this.map(await this.repo.findOneOrFail({ where: { tenantId } }));
-  }
-
-  async delete(tenantId: string) {
-    if (!(await this.repo.delete({ tenantId })).affected) notFound('Branding', tenantId);
-  }
-
-  private map(e: TenantBrandingEntity): TenantBrandingProps {
-    return {
-      id: e.id, tenantId: e.tenantId, logoAssetId: e.logoAssetId,
-      logoDarkAssetId: e.logoDarkAssetId, faviconAssetId: e.faviconAssetId,
-      primaryColor: e.primaryColor, secondaryColor: e.secondaryColor, accentColor: e.accentColor,
-      fontFamily: e.fontFamily, emailFromName: e.emailFromName,
-      emailFromAddress: e.emailFromAddress, supportEmail: e.supportEmail,
-      createdAt: e.createdAt, updatedAt: e.updatedAt,
     };
   }
 }

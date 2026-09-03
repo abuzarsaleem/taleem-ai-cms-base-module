@@ -114,7 +114,16 @@ export interface AuditEventProps {
   entityId?: string;
   oldValue?: Record<string, unknown> | null;
   newValue?: Record<string, unknown> | null;
+  ipAddress?: string;
   createdAt?: Date;
+}
+
+export interface AuditEventSearchFilters {
+  tenantId?: string;
+  actorUserId?: string;
+  action?: string;
+  from?: Date;
+  to?: Date;
 }
 
 export interface ReconciliationSummary {

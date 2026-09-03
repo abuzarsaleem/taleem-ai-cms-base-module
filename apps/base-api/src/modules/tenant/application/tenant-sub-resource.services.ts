@@ -1,14 +1,14 @@
 import { randomUUID } from 'node:crypto';
-import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { UploadedAssetFile } from './uploaded-asset-file.js';
 import { paginatedResponse } from '@app/common';
 import { TenantContextService } from './tenant-context.service.js';
+import { TenantCatalogService } from './tenant-catalog.service.js';
 import type {
   IInstitutionProfileRepository,
   ITenantAddressRepository,
   ITenantAssetRepository,
-  ITenantBrandingRepository,
   ITenantConfigurationRepository,
   ITenantContactRepository,
   ITenantIdentifierRepository,
@@ -18,7 +18,6 @@ import {
   INSTITUTION_PROFILE_REPOSITORY,
   TENANT_ADDRESS_REPOSITORY,
   TENANT_ASSET_REPOSITORY,
-  TENANT_BRANDING_REPOSITORY,
   TENANT_CONFIGURATION_REPOSITORY,
   TENANT_CONTACT_REPOSITORY,
   TENANT_IDENTIFIER_REPOSITORY,
@@ -39,7 +38,6 @@ import {
   CreateInstitutionProfileDto,
   CreateTenantAddressDto,
   CreateTenantAssetDto,
-  CreateTenantBrandingDto,
   CreateTenantConfigurationDto,
   CreateTenantContactDto,
   CreateTenantIdentifierDto,
@@ -47,7 +45,6 @@ import {
   UpdateInstitutionProfileDto,
   UpdateTenantAddressDto,
   UpdateTenantAssetDto,
-  UpdateTenantBrandingDto,
   UpdateTenantConfigurationDto,
   UpdateTenantContactDto,
   UpdateTenantIdentifierDto,
@@ -56,7 +53,6 @@ import {
 import {
   toAddressResponse,
   toAssetResponse,
-  toBrandingResponse,
   toConfigurationResponse,
   toContactResponse,
   toIdentifierResponse,
@@ -136,6 +132,7 @@ export class TenantAddressService {
 export class TenantIdentifierService {
   constructor(
     private readonly tenantContext: TenantContextService,
+    private readonly catalogService: TenantCatalogService,
     @Inject(TENANT_IDENTIFIER_REPOSITORY) private readonly repo: ITenantIdentifierRepository,
   ) {}
 
@@ -154,9 +151,11 @@ export class TenantIdentifierService {
 
   async create(tenantId: string, dto: CreateTenantIdentifierDto) {
     await this.tenantContext.ensureTenantExists(tenantId);
+    await this.assertIdentifierType(dto.identifierType);
     return toIdentifierResponse(
       await this.repo.create({
         ...dto,
+        identifierType: dto.identifierType.toUpperCase(),
         tenantId,
         issueDate: dto.issueDate ? new Date(dto.issueDate) : undefined,
         expiryDate: dto.expiryDate ? new Date(dto.expiryDate) : undefined,
@@ -165,8 +164,12 @@ export class TenantIdentifierService {
   }
 
   async update(tenantId: string, id: string, dto: UpdateTenantIdentifierDto) {
+    if (dto.identifierType) {
+      await this.assertIdentifierType(dto.identifierType);
+    }
     const updates = {
       ...dto,
+      identifierType: dto.identifierType?.toUpperCase(),
       issueDate: dto.issueDate ? new Date(dto.issueDate) : undefined,
       expiryDate: dto.expiryDate ? new Date(dto.expiryDate) : undefined,
     };
@@ -176,6 +179,15 @@ export class TenantIdentifierService {
   async delete(tenantId: string, id: string) {
     await this.repo.delete(tenantId, id);
   }
+
+  private async assertIdentifierType(code: string) {
+    const found = await this.catalogService.findIdentifierType(code);
+    if (!found) {
+      throw new BadRequestException(
+        `Unknown identifier type '${code}'. Use GET /catalog/identifier-type for valid codes.`,
+      );
+    }
+  }
 }
 
 @Injectable()
@@ -183,6 +195,7 @@ export class TenantConfigurationService {
   constructor(
     private readonly tenantContext: TenantContextService,
     @Inject(TENANT_CONFIGURATION_REPOSITORY) private readonly repo: ITenantConfigurationRepository,
+    @Inject(TENANT_ASSET_REPOSITORY) private readonly assetRepo: ITenantAssetRepository,
   ) {}
 
   async get(tenantId: string) {
@@ -197,16 +210,28 @@ export class TenantConfigurationService {
     if (await this.repo.findByTenantId(tenantId)) {
       throw new ConflictException(`Configuration already exists for tenant '${tenantId}'`);
     }
+    await this.validateAssetRefs(tenantId, dto);
     return toConfigurationResponse(await this.repo.create({ ...dto, tenantId }));
   }
 
   async update(tenantId: string, dto: UpdateTenantConfigurationDto) {
     await this.get(tenantId);
+    await this.validateAssetRefs(tenantId, dto);
     return toConfigurationResponse(await this.repo.update(tenantId, dto));
   }
 
   async delete(tenantId: string) {
     await this.repo.delete(tenantId);
+  }
+
+  private async validateAssetRefs(tenantId: string, dto: CreateTenantConfigurationDto) {
+    const assetIds = [dto.logoAssetId, dto.logoDarkAssetId, dto.faviconAssetId].filter(Boolean);
+    for (const assetId of assetIds) {
+      const asset = await this.assetRepo.findById(tenantId, assetId!);
+      if (!asset) {
+        throw new NotFoundException(`Asset '${assetId}' not found for tenant '${tenantId}'`);
+      }
+    }
   }
 }
 
@@ -351,50 +376,5 @@ export class InstitutionProfileService {
 
   async delete(tenantId: string) {
     await this.repo.delete(tenantId);
-  }
-}
-
-@Injectable()
-export class TenantBrandingService {
-  constructor(
-    private readonly tenantContext: TenantContextService,
-    @Inject(TENANT_BRANDING_REPOSITORY) private readonly repo: ITenantBrandingRepository,
-    @Inject(TENANT_ASSET_REPOSITORY) private readonly assetRepo: ITenantAssetRepository,
-  ) {}
-
-  async get(tenantId: string) {
-    await this.tenantContext.ensureTenantExists(tenantId);
-    const row = await this.repo.findByTenantId(tenantId);
-    if (!row) throw new NotFoundException(`Branding for tenant '${tenantId}' not found`);
-    return toBrandingResponse(row);
-  }
-
-  async create(tenantId: string, dto: CreateTenantBrandingDto) {
-    await this.tenantContext.ensureTenantExists(tenantId);
-    if (await this.repo.findByTenantId(tenantId)) {
-      throw new ConflictException(`Branding already exists for tenant '${tenantId}'`);
-    }
-    await this.validateAssetRefs(tenantId, dto);
-    return toBrandingResponse(await this.repo.create({ ...dto, tenantId }));
-  }
-
-  async update(tenantId: string, dto: UpdateTenantBrandingDto) {
-    await this.get(tenantId);
-    await this.validateAssetRefs(tenantId, dto);
-    return toBrandingResponse(await this.repo.update(tenantId, dto));
-  }
-
-  async delete(tenantId: string) {
-    await this.repo.delete(tenantId);
-  }
-
-  private async validateAssetRefs(tenantId: string, dto: CreateTenantBrandingDto) {
-    const assetIds = [dto.logoAssetId, dto.logoDarkAssetId, dto.faviconAssetId].filter(Boolean);
-    for (const assetId of assetIds) {
-      const asset = await this.assetRepo.findById(tenantId, assetId!);
-      if (!asset) {
-        throw new NotFoundException(`Asset '${assetId}' not found for tenant '${tenantId}'`);
-      }
-    }
   }
 }

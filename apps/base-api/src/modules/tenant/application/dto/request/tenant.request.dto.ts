@@ -23,15 +23,18 @@ import {
   CampusType,
   ContactType,
   DeploymentModel,
-  IdentifierType,
   SmtpEncryption,
   TenantStatus,
 } from '../../../domain/tenant.types.js';
 
 export class CreateTenantDto {
-  @ApiProperty({ example: 'uol-lahore', maxLength: 50 })
-  @IsString() @MinLength(2) @MaxLength(50)
-  tenantCode!: string;
+  @ApiPropertyOptional({
+    example: 'uol-lahore',
+    maxLength: 50,
+    description: 'Optional. Auto-generated from displayName when omitted.',
+  })
+  @IsOptional() @IsString() @MinLength(2) @MaxLength(50)
+  tenantCode?: string;
 
   @ApiProperty({ example: 'University of Lahore (Private) Limited' })
   @IsString() @MaxLength(255)
@@ -89,6 +92,7 @@ export class CreateTenantContactDto {
   @ApiPropertyOptional({ example: 'ali@uol.edu.pk' }) @IsOptional() @IsEmail() @MaxLength(255) email?: string;
   @ApiPropertyOptional({ example: '+923001234567' }) @IsOptional() @IsString() @MaxLength(30) mobilePhone?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(30) landlinePhone?: string;
+  @ApiPropertyOptional({ example: '+923001234567' }) @IsOptional() @IsString() @MaxLength(30) whatsappNumber?: string;
   @ApiPropertyOptional({ default: false }) @IsOptional() @IsBoolean() isPrimary?: boolean;
   @ApiPropertyOptional({ default: true }) @IsOptional() @IsBoolean() isActive?: boolean;
 }
@@ -104,6 +108,7 @@ export class UpdateTenantContactDto {
   @ApiPropertyOptional() @IsOptional() @IsEmail() @MaxLength(255) email?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(30) mobilePhone?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(30) landlinePhone?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(30) whatsappNumber?: string;
   @ApiPropertyOptional() @IsOptional() @IsBoolean() isPrimary?: boolean;
   @ApiPropertyOptional() @IsOptional() @IsBoolean() isActive?: boolean;
 }
@@ -138,8 +143,12 @@ export class UpdateTenantAddressDto {
 }
 
 export class CreateTenantIdentifierDto {
-  @ApiProperty({ enum: IdentifierType, example: IdentifierType.REGISTRATION })
-  @IsEnum(IdentifierType) identifierType!: IdentifierType;
+  @ApiProperty({
+    example: 'REGISTRATION',
+    description: 'Must match an active code from GET /catalog/identifier-type',
+  })
+  @IsString() @MinLength(2) @MaxLength(50)
+  identifierType!: string;
   @ApiProperty({ example: 'REG-12345-2020' }) @IsString() @MaxLength(150) identifierValue!: string;
   @ApiPropertyOptional({ example: 'SECP' }) @IsOptional() @IsString() @MaxLength(150) issuingAuthority?: string;
   @ApiPropertyOptional({ example: '2020-01-15' }) @IsOptional() @IsDateString() issueDate?: string;
@@ -147,7 +156,12 @@ export class CreateTenantIdentifierDto {
 }
 
 export class UpdateTenantIdentifierDto {
-  @ApiPropertyOptional({ enum: IdentifierType }) @IsOptional() @IsEnum(IdentifierType) identifierType?: IdentifierType;
+  @ApiPropertyOptional({
+    example: 'HEC',
+    description: 'Must match an active code from GET /catalog/identifier-type',
+  })
+  @IsOptional() @IsString() @MinLength(2) @MaxLength(50)
+  identifierType?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(150) identifierValue?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(150) issuingAuthority?: string;
   @ApiPropertyOptional() @IsOptional() @IsDateString() issueDate?: string;
@@ -161,7 +175,17 @@ export class CreateTenantConfigurationDto {
   @ApiPropertyOptional({ example: 'DD/MM/YYYY' }) @IsOptional() @IsString() @MaxLength(30) dateFormat?: string;
   @ApiPropertyOptional({ default: 'PKR' }) @IsOptional() @IsString() @MaxLength(3) currencyCode?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(255) brandingName?: string;
-  @ApiPropertyOptional() @IsOptional() @IsUrl() @MaxLength(500) logoUrl?: string;
+  @ApiPropertyOptional({ description: 'Asset id from POST /tenant/:tenantId/asset/upload with assetType=LOGO' })
+  @IsOptional() @IsUUID() logoAssetId?: string;
+  @ApiPropertyOptional() @IsOptional() @IsUUID() logoDarkAssetId?: string;
+  @ApiPropertyOptional() @IsOptional() @IsUUID() faviconAssetId?: string;
+  @ApiPropertyOptional({ example: '#1A73E8' }) @IsOptional() @Matches(/^#[0-9A-Fa-f]{6}$/) primaryColor?: string;
+  @ApiPropertyOptional({ example: '#FFFFFF' }) @IsOptional() @Matches(/^#[0-9A-Fa-f]{6}$/) secondaryColor?: string;
+  @ApiPropertyOptional({ example: '#FF5722' }) @IsOptional() @Matches(/^#[0-9A-Fa-f]{6}$/) accentColor?: string;
+  @ApiPropertyOptional({ example: 'Inter, sans-serif' }) @IsOptional() @IsString() fontFamily?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() emailFromName?: string;
+  @ApiPropertyOptional() @IsOptional() @IsEmail() emailFromAddress?: string;
+  @ApiPropertyOptional() @IsOptional() @IsEmail() supportEmail?: string;
 }
 
 export class UpdateTenantConfigurationDto extends CreateTenantConfigurationDto {}
@@ -216,39 +240,6 @@ export class CreateInstitutionProfileDto {
 }
 
 export class UpdateInstitutionProfileDto extends CreateInstitutionProfileDto {}
-
-export class CreateTenantBrandingDto {
-  @ApiPropertyOptional() @IsOptional() @IsUUID() logoAssetId?: string;
-  @ApiPropertyOptional() @IsOptional() @IsUUID() logoDarkAssetId?: string;
-  @ApiPropertyOptional() @IsOptional() @IsUUID() faviconAssetId?: string;
-  @ApiPropertyOptional({ example: '#1A73E8' }) @IsOptional() @Matches(/^#[0-9A-Fa-f]{6}$/) primaryColor?: string;
-  @ApiPropertyOptional({ example: '#FFFFFF' }) @IsOptional() @Matches(/^#[0-9A-Fa-f]{6}$/) secondaryColor?: string;
-  @ApiPropertyOptional({ example: '#FF5722' }) @IsOptional() @Matches(/^#[0-9A-Fa-f]{6}$/) accentColor?: string;
-  @ApiPropertyOptional({ example: 'Inter, sans-serif' }) @IsOptional() @IsString() fontFamily?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() emailFromName?: string;
-  @ApiPropertyOptional() @IsOptional() @IsEmail() emailFromAddress?: string;
-  @ApiPropertyOptional() @IsOptional() @IsEmail() supportEmail?: string;
-}
-
-export class UpdateTenantBrandingDto extends CreateTenantBrandingDto {}
-
-export class OnboardTenantDto {
-  @ApiProperty({ type: CreateTenantDto })
-  @ValidateNested() @Type(() => CreateTenantDto)
-  tenant!: CreateTenantDto;
-
-  @ApiProperty({ type: CreateInstitutionProfileDto })
-  @ValidateNested() @Type(() => CreateInstitutionProfileDto)
-  institutionProfile!: CreateInstitutionProfileDto;
-
-  @ApiPropertyOptional({ type: CreateTenantConfigurationDto })
-  @IsOptional() @ValidateNested() @Type(() => CreateTenantConfigurationDto)
-  configuration?: CreateTenantConfigurationDto;
-
-  @ApiPropertyOptional({ type: [CreateTenantContactDto] })
-  @IsOptional() @ValidateNested({ each: true }) @Type(() => CreateTenantContactDto)
-  contacts?: CreateTenantContactDto[];
-}
 
 export class TenantIdParamDto {
   @ApiProperty({ format: 'uuid' }) @IsUUID() tenantId!: string;

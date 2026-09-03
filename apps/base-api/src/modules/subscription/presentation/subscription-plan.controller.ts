@@ -19,7 +19,7 @@ import {
 
 @ApiTags('Subscription Plans')
 @ApiBearerAuth()
-@Controller('subscription-plans')
+@Controller('subscription-plan')
 export class SubscriptionPlanController {
   constructor(private readonly service: SubscriptionPlanService) {}
 

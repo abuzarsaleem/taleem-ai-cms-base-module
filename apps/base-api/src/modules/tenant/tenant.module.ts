@@ -2,10 +2,12 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { StorageModule } from '../storage/storage.module.js';
 import {
+  DEPARTMENT_REPOSITORY,
+  DESIGNATION_REPOSITORY,
+  IDENTIFIER_TYPE_REPOSITORY,
   INSTITUTION_PROFILE_REPOSITORY,
   TENANT_ADDRESS_REPOSITORY,
   TENANT_ASSET_REPOSITORY,
-  TENANT_BRANDING_REPOSITORY,
   TENANT_CONFIGURATION_REPOSITORY,
   TENANT_CONTACT_REPOSITORY,
   TENANT_IDENTIFIER_REPOSITORY,
@@ -14,44 +16,50 @@ import {
 } from './domain/tenant.repository.interface.js';
 import { TenantEntity } from './infrastructure/persistence/tenant.entity.js';
 import {
+  DepartmentEntity,
+  DesignationEntity,
+  IdentifierTypeEntity,
   InstitutionProfileEntity,
   TenantAddressEntity,
   TenantAssetEntity,
-  TenantBrandingEntity,
   TenantConfigurationEntity,
   TenantContactEntity,
   TenantIdentifierEntity,
   TenantSmtpConfigurationEntity,
 } from './infrastructure/persistence/tenant-sub-resource.entities.js';
-import { TypeOrmTenantRepository } from './infrastructure/persistence/typeorm-tenant.repository.js';
-import {
-  TypeOrmInstitutionProfileRepository,
-  TypeOrmTenantAddressRepository,
-  TypeOrmTenantAssetRepository,
-  TypeOrmTenantBrandingRepository,
-  TypeOrmTenantConfigurationRepository,
-  TypeOrmTenantContactRepository,
-  TypeOrmTenantIdentifierRepository,
-  TypeOrmTenantSmtpRepository,
-} from './infrastructure/persistence/typeorm-tenant-sub-resource.repositories.js';
 import { TenantService } from './application/tenant.service.js';
 import { TenantContextService } from './application/tenant-context.service.js';
+import { TenantCatalogService } from './application/tenant-catalog.service.js';
 import {
   InstitutionProfileService,
   TenantAddressService,
   TenantAssetService,
-  TenantBrandingService,
   TenantConfigurationService,
   TenantContactService,
   TenantIdentifierService,
   TenantSmtpService,
 } from './application/tenant-sub-resource.services.js';
+import { TypeOrmTenantRepository } from './infrastructure/persistence/typeorm-tenant.repository.js';
+import {
+  TypeOrmInstitutionProfileRepository,
+  TypeOrmTenantAddressRepository,
+  TypeOrmTenantAssetRepository,
+  TypeOrmTenantConfigurationRepository,
+  TypeOrmTenantContactRepository,
+  TypeOrmTenantIdentifierRepository,
+  TypeOrmTenantSmtpRepository,
+} from './infrastructure/persistence/typeorm-tenant-sub-resource.repositories.js';
+import {
+  TypeOrmDepartmentRepository,
+  TypeOrmDesignationRepository,
+  TypeOrmIdentifierTypeRepository,
+} from './infrastructure/persistence/typeorm-catalog.repositories.js';
 import { TenantController } from './presentation/tenant.controller.js';
+import { TenantCatalogController } from './presentation/tenant-catalog.controller.js';
 import {
   InstitutionProfileController,
   TenantAddressController,
   TenantAssetController,
-  TenantBrandingController,
   TenantConfigurationController,
   TenantContactController,
   TenantIdentifierController,
@@ -67,7 +75,9 @@ const entities = [
   TenantSmtpConfigurationEntity,
   TenantAssetEntity,
   InstitutionProfileEntity,
-  TenantBrandingEntity,
+  DepartmentEntity,
+  DesignationEntity,
+  IdentifierTypeEntity,
 ];
 
 const repositories = [
@@ -79,13 +89,16 @@ const repositories = [
   { provide: TENANT_SMTP_REPOSITORY, useClass: TypeOrmTenantSmtpRepository },
   { provide: TENANT_ASSET_REPOSITORY, useClass: TypeOrmTenantAssetRepository },
   { provide: INSTITUTION_PROFILE_REPOSITORY, useClass: TypeOrmInstitutionProfileRepository },
-  { provide: TENANT_BRANDING_REPOSITORY, useClass: TypeOrmTenantBrandingRepository },
+  { provide: DEPARTMENT_REPOSITORY, useClass: TypeOrmDepartmentRepository },
+  { provide: DESIGNATION_REPOSITORY, useClass: TypeOrmDesignationRepository },
+  { provide: IDENTIFIER_TYPE_REPOSITORY, useClass: TypeOrmIdentifierTypeRepository },
 ];
 
 @Module({
   imports: [TypeOrmModule.forFeature(entities), StorageModule],
   controllers: [
     TenantController,
+    TenantCatalogController,
     TenantContactController,
     TenantAddressController,
     TenantIdentifierController,
@@ -93,11 +106,11 @@ const repositories = [
     TenantSmtpController,
     TenantAssetController,
     InstitutionProfileController,
-    TenantBrandingController,
   ],
   providers: [
     TenantService,
     TenantContextService,
+    TenantCatalogService,
     TenantContactService,
     TenantAddressService,
     TenantIdentifierService,
@@ -105,7 +118,6 @@ const repositories = [
     TenantSmtpService,
     TenantAssetService,
     InstitutionProfileService,
-    TenantBrandingService,
     ...repositories,
   ],
   exports: [TenantService, TenantContextService, TENANT_REPOSITORY],

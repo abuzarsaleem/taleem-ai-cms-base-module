@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Taleem — Authorize App</title>
+    <link rel="stylesheet" href="/demo.css" />
+    <!--DEMO_CONFIG-->
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="card">
+        <h1>Authorize application</h1>
+        <p class="sub">Sign in to Taleem, review scopes, then allow access.</p>
+        <div id="error" class="error hidden"></div>
+
+        <section id="login-section">
+          <label for="email">Email</label>
+          <input id="email" type="email" placeholder="sara@greenvalley.edu" autocomplete="username" />
+          <label for="password">Password</label>
+          <input id="password" type="password" placeholder="Password" autocomplete="current-password" />
+          <button id="login-btn">Sign in</button>
+        </section>
+
+        <section id="consent-section" class="hidden">
+          <div id="logged-in" class="ok hidden"></div>
+          <p><strong id="client-name"></strong> is requesting access.</p>
+          <p class="sub">Application: <span id="app-code"></span></p>
+
+          <label>Scopes</label>
+          <ul id="scopes" class="scope-list"></ul>
+
+          <label for="tenant">Institution</label>
+          <select id="tenant"></select>
+
+          <div class="row">
+            <button id="allow-btn">Allow</button>
+            <button id="deny-btn" class="danger">Deny</button>
+          </div>
+        </section>
+
+        <section id="loading-section" class="hidden">
+          <p class="sub">Loading authorization preview…</p>
+        </section>
+      </div>
+    </div>
+    <script type="module">
+      import {
+        apiJson,
+        getConfig,
+        loadPkceSession,
+        loadPlatformToken,
+        savePlatformToken,
+        showError,
+        hideError,
+      } from '/demo.js';
+
+      const errorEl = document.getElementById('error');
+      const loginSection = document.getElementById('login-section');
+      const consentSection = document.getElementById('consent-section');
+      const loadingSection = document.getElementById('loading-section');
+
+      const params = new URLSearchParams(window.location.search);
+      const oauthParams = {
+        client_id: params.get('client_id'),
+        response_type: params.get('response_type') ?? 'code',
+        redirect_uri: params.get('redirect_uri'),
+        scope: params.get('scope'),
+        state: params.get('state'),
+        code_challenge: params.get('code_challenge'),
+        code_challenge_method: params.get('code_challenge_method') ?? 'S256',
+      };
+
+      const pkce = loadPkceSession();
+      if (!pkce || pkce.state !== oauthParams.state) {
+        showError(errorEl, 'Missing PKCE session. Start from the mock LMS at /.');
+      }
+
+      function authHeaders() {
+        const token = loadPlatformToken();
+        if (!token) throw new Error('Not signed in');
+        return { authorization: `Bearer ${token}` };
+      }
+
+      async function loadPreview() {
+        hideError(errorEl);
+        loginSection.classList.add('hidden');
+        loadingSection.classList.remove('hidden');
+
+        const qs = new URLSearchParams(oauthParams);
+        const preview = await apiJson(`/oauth/authorize?${qs.toString()}`, {
+          headers: authHeaders(),
+        });
+
+        loadingSection.classList.add('hidden');
+        consentSection.classList.remove('hidden');
+
+        document.getElementById('client-name').textContent = preview.clientName ?? preview.clientId;
+        document.getElementById('app-code').textContent = preview.applicationCode ?? '—';
+
+        const scopesEl = document.getElementById('scopes');
+        scopesEl.innerHTML = '';
+        for (const s of preview.scopes ?? []) {
+          const li = document.createElement('li');
+          li.textContent = `${s.name ?? s.scopeCode} (${s.scopeCode})`;
+          scopesEl.appendChild(li);
+        }
+
+        const tenantEl = document.getElementById('tenant');
+        tenantEl.innerHTML = '';
+        for (const t of preview.tenants ?? []) {
+          const opt = document.createElement('option');
+          opt.value = t.tenantId;
+          opt.textContent = `${t.displayName} (${t.tenantCode})`;
+          tenantEl.appendChild(opt);
+        }
+
+        if (!preview.tenants?.length) {
+          throw new Error('No entitled tenants for this user and application.');
+        }
+      }
+
+      document.getElementById('login-btn').addEventListener('click', async () => {
+        hideError(errorEl);
+        try {
+          const result = await apiJson('/auth/login', {
+            method: 'POST',
+            body: JSON.stringify({
+              email: document.getElementById('email').value.trim(),
+              password: document.getElementById('password').value,
+            }),
+          });
+          savePlatformToken(result.accessToken);
+          document.getElementById('logged-in').textContent = `Signed in as ${result.user.email}`;
+          document.getElementById('logged-in').classList.remove('hidden');
+          await loadPreview();
+        } catch (err) {
+          showError(errorEl, err.message ?? String(err));
+          loginSection.classList.remove('hidden');
+          loadingSection.classList.add('hidden');
+        }
+      });
+
+      async function submitConsent(approved) {
+        hideError(errorEl);
+        try {
+          const result = await apiJson('/oauth/authorize/consent', {
+            method: 'POST',
+            headers: authHeaders(),
+            body: JSON.stringify({
+              client_id: oauthParams.client_id,
+              redirect_uri: oauthParams.redirect_uri,
+              scope: oauthParams.scope,
+              state: oauthParams.state,
+              code_challenge: oauthParams.code_challenge,
+              code_challenge_method: oauthParams.code_challenge_method,
+              tenant_id: document.getElementById('tenant').value,
+              approved,
+            }),
+          });
+          window.location.href = result.redirectUri;
+        } catch (err) {
+          showError(errorEl, err.message ?? String(err));
+        }
+      }
+
+      document.getElementById('allow-btn').addEventListener('click', () => submitConsent(true));
+      document.getElementById('deny-btn').addEventListener('click', () => submitConsent(false));
+
+      if (loadPlatformToken()) {
+        document.getElementById('logged-in').textContent = 'Using existing session…';
+        document.getElementById('logged-in').classList.remove('hidden');
+        loadPreview().catch((err) => {
+          showError(errorEl, err.message ?? String(err));
+          loginSection.classList.remove('hidden');
+          loadingSection.classList.add('hidden');
+        });
+      }
+    </script>
+  </body>
+</html>

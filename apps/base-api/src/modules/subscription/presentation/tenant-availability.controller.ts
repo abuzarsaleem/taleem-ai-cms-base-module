@@ -9,7 +9,7 @@ import {
 
 @ApiTags('Tenant Application Availability')
 @ApiBearerAuth()
-@Controller('tenants/:tenantId/applications')
+@Controller('tenant/:tenantId/application')
 export class TenantAvailabilityController {
   constructor(private readonly service: TenantAvailabilityService) {}
 

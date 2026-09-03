@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Alumni LMS — Demo</title>
+    <link rel="stylesheet" href="/demo.css" />
+    <!--DEMO_CONFIG-->
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="card">
+        <h1>Alumni LMS <span class="badge">demo</span></h1>
+        <p class="sub">Mock external app. Starts OAuth with PKCE and sends you to the consent screen.</p>
+        <div id="error" class="error hidden"></div>
+        <button id="sign-in">Sign in with Taleem</button>
+        <p class="sub" style="margin-top: 20px; margin-bottom: 0">
+          Uses client <code id="client-id"></code> · redirect <code id="redirect-uri"></code>
+        </p>
+      </div>
+    </div>
+    <script type="module">
+      import {
+        getConfig,
+        randomBase64Url,
+        sha256Base64Url,
+        savePkceSession,
+        showError,
+        hideError,
+      } from '/demo.js';
+
+      const cfg = getConfig();
+      document.getElementById('client-id').textContent = cfg.clientId;
+      document.getElementById('redirect-uri').textContent = cfg.redirectUri;
+      const errorEl = document.getElementById('error');
+
+      document.getElementById('sign-in').addEventListener('click', async () => {
+        hideError(errorEl);
+        try {
+          const codeVerifier = randomBase64Url(32);
+          const codeChallenge = await sha256Base64Url(codeVerifier);
+          const state = randomBase64Url(16);
+
+          savePkceSession({
+            codeVerifier,
+            codeChallenge,
+            state,
+            clientId: cfg.clientId,
+            redirectUri: cfg.redirectUri,
+            scope: cfg.defaultScope,
+          });
+
+          const params = new URLSearchParams({
+            client_id: cfg.clientId,
+            response_type: 'code',
+            redirect_uri: cfg.redirectUri,
+            scope: cfg.defaultScope,
+            state,
+            code_challenge: codeChallenge,
+            code_challenge_method: 'S256',
+          });
+
+          window.location.href = `/consent?${params.toString()}`;
+        } catch (err) {
+          showError(errorEl, err.message ?? String(err));
+        }
+      });
+    </script>
+  </body>
+</html>

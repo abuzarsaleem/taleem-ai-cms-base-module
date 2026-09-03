@@ -8,5 +8,6 @@ export * from './decorators/public.decorator.js';
 export * from './decorators/current-user.decorator.js';
 export * from './decorators/tenant-context.decorator.js';
 export * from './decorators/require-permissions.decorator.js';
+export * from './decorators/require-tenant-permissions.decorator.js';
 export * from './decorators/require-roles.decorator.js';
 //# sourceMappingURL=index.js.map

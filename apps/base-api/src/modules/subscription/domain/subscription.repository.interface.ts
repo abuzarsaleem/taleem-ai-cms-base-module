@@ -1,6 +1,7 @@
 import type {
   ApplicationProps,
   AuditEventProps,
+  AuditEventSearchFilters,
   SubscriptionPlanProps,
   SubscriptionProps,
   TenantEntitlementProps,
@@ -66,4 +67,9 @@ export interface ITenantEntitlementRepository {
 
 export interface IAuditEventRepository {
   create(props: AuditEventProps): Promise<AuditEventProps>;
+  search(
+    filters: AuditEventSearchFilters,
+    page: number,
+    limit: number,
+  ): Promise<{ data: AuditEventProps[]; total: number }>;
 }

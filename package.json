@@ -27,7 +27,9 @@
     "docker:down": "docker compose -f docker/docker-compose.yml down",
     "docker:logs": "docker compose -f docker/docker-compose.yml logs -f",
     "migration:run": "node --env-file=.env scripts/run-migrations.mjs",
-    "seed:platform-admin": "node --env-file=.env scripts/seed-platform-admin.mjs"
+    "seed:platform-admin": "node --env-file=.env scripts/seed-platform-admin.mjs",
+    "seed:oauth-client": "node --env-file=.env scripts/seed-oauth-client.mjs",
+    "demo:oauth": "node --env-file=.env scripts/serve-oauth-demo.mjs"
   },
   "dependencies": {
     "@app/common": "workspace:*",

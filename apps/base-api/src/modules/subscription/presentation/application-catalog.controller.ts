@@ -16,7 +16,7 @@ import {
 
 @ApiTags('Applications')
 @ApiBearerAuth()
-@Controller('applications')
+@Controller('application')
 export class ApplicationCatalogController {
   constructor(private readonly service: ApplicationCatalogService) {}
 

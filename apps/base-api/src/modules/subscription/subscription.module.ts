@@ -29,11 +29,13 @@ import { SubscriptionPlanService } from './application/subscription-plan.service
 import { TenantAvailabilityService } from './application/tenant-availability.service.js';
 import { TenantEntitlementService } from './application/tenant-entitlement.service.js';
 import { TenantSubscriptionService } from './application/tenant-subscription.service.js';
+import { AuditQueryService } from './application/audit-query.service.js';
 import { ApplicationCatalogController } from './presentation/application-catalog.controller.js';
 import { SubscriptionPlanController } from './presentation/subscription-plan.controller.js';
 import { TenantAvailabilityController } from './presentation/tenant-availability.controller.js';
 import { TenantEntitlementController } from './presentation/tenant-entitlement.controller.js';
 import { TenantSubscriptionController } from './presentation/tenant-subscription.controller.js';
+import { AuditEventController } from './presentation/audit-event.controller.js';
 
 const entities = [
   ApplicationEntity,
@@ -59,9 +61,11 @@ const repositories = [
     TenantSubscriptionController,
     TenantEntitlementController,
     TenantAvailabilityController,
+    AuditEventController,
   ],
   providers: [
     AuditService,
+    AuditQueryService,
     EntitlementPolicyService,
     ApplicationCatalogService,
     SubscriptionPlanService,
@@ -70,6 +74,6 @@ const repositories = [
     TenantAvailabilityService,
     ...repositories,
   ],
-  exports: [EntitlementPolicyService],
+  exports: [EntitlementPolicyService, APPLICATION_REPOSITORY],
 })
 export class SubscriptionModule {}

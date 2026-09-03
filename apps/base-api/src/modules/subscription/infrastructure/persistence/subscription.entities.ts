@@ -185,6 +185,9 @@ export class AuditEventEntity {
   @Column({ name: 'new_value', type: 'jsonb', nullable: true })
   newValue?: Record<string, unknown> | null;
 
+  @Column({ name: 'ip_address', type: 'varchar', length: 45, nullable: true })
+  ipAddress?: string;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
 }

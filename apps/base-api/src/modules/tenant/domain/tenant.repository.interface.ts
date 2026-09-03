@@ -18,7 +18,23 @@ export const TENANT_CONFIGURATION_REPOSITORY = Symbol('TENANT_CONFIGURATION_REPO
 export const TENANT_SMTP_REPOSITORY = Symbol('TENANT_SMTP_REPOSITORY');
 export const TENANT_ASSET_REPOSITORY = Symbol('TENANT_ASSET_REPOSITORY');
 export const INSTITUTION_PROFILE_REPOSITORY = Symbol('INSTITUTION_PROFILE_REPOSITORY');
-export const TENANT_BRANDING_REPOSITORY = Symbol('TENANT_BRANDING_REPOSITORY');
+export const DEPARTMENT_REPOSITORY = Symbol('DEPARTMENT_REPOSITORY');
+export const DESIGNATION_REPOSITORY = Symbol('DESIGNATION_REPOSITORY');
+export const IDENTIFIER_TYPE_REPOSITORY = Symbol('IDENTIFIER_TYPE_REPOSITORY');
+
+export interface CatalogItemProps {
+  id?: string;
+  code: string;
+  name: string;
+  description?: string;
+  isActive?: boolean;
+  createdAt?: Date;
+}
+
+export interface ICatalogRepository {
+  findActive(): Promise<CatalogItemProps[]>;
+  findActiveByCode(code: string): Promise<CatalogItemProps | null>;
+}
 
 export interface TenantContactProps {
   id?: string;
@@ -33,6 +49,7 @@ export interface TenantContactProps {
   email?: string;
   mobilePhone?: string;
   landlinePhone?: string;
+  whatsappNumber?: string;
   isPrimary?: boolean;
   isActive?: boolean;
   createdAt?: Date;
@@ -81,6 +98,16 @@ export interface TenantConfigurationProps {
   currencyCode?: string;
   brandingName?: string;
   logoUrl?: string;
+  logoAssetId?: string;
+  logoDarkAssetId?: string;
+  faviconAssetId?: string;
+  primaryColor?: string;
+  secondaryColor?: string;
+  accentColor?: string;
+  fontFamily?: string;
+  emailFromName?: string;
+  emailFromAddress?: string;
+  supportEmail?: string;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -126,23 +153,6 @@ export interface InstitutionProfileProps {
   stateProvince?: string;
   postalCode?: string;
   countryCode?: string;
-  createdAt?: Date;
-  updatedAt?: Date;
-}
-
-export interface TenantBrandingProps {
-  id?: string;
-  tenantId: string;
-  logoAssetId?: string;
-  logoDarkAssetId?: string;
-  faviconAssetId?: string;
-  primaryColor?: string;
-  secondaryColor?: string;
-  accentColor?: string;
-  fontFamily?: string;
-  emailFromName?: string;
-  emailFromAddress?: string;
-  supportEmail?: string;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -197,12 +207,5 @@ export interface IInstitutionProfileRepository {
   findByTenantId(tenantId: string): Promise<InstitutionProfileProps | null>;
   create(props: InstitutionProfileProps): Promise<InstitutionProfileProps>;
   update(tenantId: string, props: Partial<InstitutionProfileProps>): Promise<InstitutionProfileProps>;
-  delete(tenantId: string): Promise<void>;
-}
-
-export interface ITenantBrandingRepository {
-  findByTenantId(tenantId: string): Promise<TenantBrandingProps | null>;
-  create(props: TenantBrandingProps): Promise<TenantBrandingProps>;
-  update(tenantId: string, props: Partial<TenantBrandingProps>): Promise<TenantBrandingProps>;
   delete(tenantId: string): Promise<void>;
 }

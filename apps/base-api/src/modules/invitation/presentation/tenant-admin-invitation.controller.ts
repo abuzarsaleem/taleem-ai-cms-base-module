@@ -13,7 +13,6 @@ import {
 import {
   ApiBearerAuth,
   ApiCreatedResponse,
-  ApiNoContentResponse,
   ApiOkResponse,
   ApiOperation,
   ApiTags,
@@ -21,9 +20,9 @@ import {
 import {
   CurrentUser,
   PaginationQueryDto,
-  PlatformPermission,
+  RequireTenantPermissions,
+  TenantPermission,
   Public,
-  RequirePermissions,
   type AuthenticatedUser,
 } from '@app/common';
 import { AuthTokenResponseDto } from '../../auth/application/dto/auth.dto.js';
@@ -38,14 +37,15 @@ import {
   TenantAdminInvitationResponseDto,
 } from '../application/dto/response/invitation.response.dto.js';
 
+/** Prefer this path for tenant admin invites */
 @ApiTags('Tenant Admin Invitations')
 @ApiBearerAuth()
-@Controller('tenants/:tenantId/admin-invitations')
+@Controller('tenant/:tenantId/admin-invitation')
 export class TenantAdminInvitationController {
   constructor(private readonly service: TenantAdminInvitationService) {}
 
   @Get()
-  @RequirePermissions(PlatformPermission.TENANT_READ)
+  @RequireTenantPermissions(TenantPermission.INVITE_READ)
   @ApiOperation({ summary: 'List tenant admin invitations' })
   @ApiOkResponse({ type: TenantAdminInvitationListResponseDto })
   list(@Param('tenantId', ParseUUIDPipe) tenantId: string, @Query() q: PaginationQueryDto) {
@@ -53,7 +53,7 @@ export class TenantAdminInvitationController {
   }
 
   @Post()
-  @RequirePermissions(PlatformPermission.TENANT_UPDATE)
+  @RequireTenantPermissions(TenantPermission.INVITE_MANAGE)
   @ApiOperation({ summary: 'Invite a tenant administrator' })
   @ApiCreatedResponse({ type: CreateTenantAdminInvitationResponseDto })
   create(
@@ -65,7 +65,7 @@ export class TenantAdminInvitationController {
   }
 
   @Post(':id/resend')
-  @RequirePermissions(PlatformPermission.TENANT_UPDATE)
+  @RequireTenantPermissions(TenantPermission.INVITE_MANAGE)
   @ApiOperation({ summary: 'Resend a pending invitation with a new token' })
   @ApiOkResponse({ type: CreateTenantAdminInvitationResponseDto })
   resend(@Param('tenantId', ParseUUIDPipe) tenantId: string, @Param('id', ParseUUIDPipe) id: string) {
@@ -73,7 +73,7 @@ export class TenantAdminInvitationController {
   }
 
   @Delete(':id')
-  @RequirePermissions(PlatformPermission.TENANT_UPDATE)
+  @RequireTenantPermissions(TenantPermission.INVITE_MANAGE)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Cancel a pending invitation' })
   @ApiOkResponse({ type: TenantAdminInvitationResponseDto })
@@ -89,7 +89,9 @@ export class InvitationAcceptController {
 
   @Public()
   @Post('accept-invitation')
-  @ApiOperation({ summary: 'Accept tenant admin invitation and receive JWT' })
+  @ApiOperation({
+    summary: 'Accept invitation (admin or member) via the single email link token',
+  })
   @ApiCreatedResponse({ type: AuthTokenResponseDto })
   accept(@Body() dto: AcceptInvitationDto) {
     return this.service.accept(dto);
