@@ -35,6 +35,40 @@ function notFound(resource: string, id: string): never {
 export class TypeOrmTenantContactRepository implements ITenantContactRepository {
   constructor(@InjectRepository(TenantContactEntity) private readonly repo: Repository<TenantContactEntity>) {}
 
+  findAll(
+    page: number,
+    limit: number,
+    filters?: {
+      tenantId?: string;
+      contactType?: string;
+      email?: string;
+      search?: string;
+      isActive?: boolean;
+      isPrimary?: boolean;
+    },
+  ) {
+    const qb = this.repo.createQueryBuilder('c').orderBy('c.created_at', 'DESC');
+    if (filters?.tenantId) qb.andWhere('c.tenant_id = :tenantId', { tenantId: filters.tenantId });
+    if (filters?.contactType) qb.andWhere('c.contact_type = :contactType', { contactType: filters.contactType });
+    if (filters?.email) {
+      qb.andWhere('LOWER(c.email) LIKE :email', { email: `%${filters.email.toLowerCase()}%` });
+    }
+    if (filters?.search) {
+      qb.andWhere(
+        `(LOWER(c.first_name) LIKE :search OR LOWER(COALESCE(c.middle_name, '')) LIKE :search OR LOWER(c.last_name) LIKE :search)`,
+        { search: `%${filters.search.toLowerCase()}%` },
+      );
+    }
+    if (filters?.isActive !== undefined) qb.andWhere('c.is_active = :isActive', { isActive: filters.isActive });
+    if (filters?.isPrimary !== undefined) qb.andWhere('c.is_primary = :isPrimary', { isPrimary: filters.isPrimary });
+
+    return qb
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount()
+      .then(([rows, total]) => ({ data: rows.map((row) => this.map(row)), total }));
+  }
+
   findByTenant(tenantId: string, page: number, limit: number) {
     return this.repo.findAndCount({
       where: { tenantId },
@@ -80,6 +114,35 @@ export class TypeOrmTenantContactRepository implements ITenantContactRepository 
 export class TypeOrmTenantAddressRepository implements ITenantAddressRepository {
   constructor(@InjectRepository(TenantAddressEntity) private readonly repo: Repository<TenantAddressEntity>) {}
 
+  findAll(
+    page: number,
+    limit: number,
+    filters?: {
+      tenantId?: string;
+      addressType?: string;
+      city?: string;
+      countryCode?: string;
+      isActive?: boolean;
+    },
+  ) {
+    const qb = this.repo.createQueryBuilder('a').orderBy('a.created_at', 'DESC');
+    if (filters?.tenantId) qb.andWhere('a.tenant_id = :tenantId', { tenantId: filters.tenantId });
+    if (filters?.addressType) qb.andWhere('a.address_type = :addressType', { addressType: filters.addressType });
+    if (filters?.city) {
+      qb.andWhere('LOWER(a.city) LIKE :city', { city: `%${filters.city.toLowerCase()}%` });
+    }
+    if (filters?.countryCode) {
+      qb.andWhere('UPPER(a.country_code) = :countryCode', { countryCode: filters.countryCode.toUpperCase() });
+    }
+    if (filters?.isActive !== undefined) qb.andWhere('a.is_active = :isActive', { isActive: filters.isActive });
+
+    return qb
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount()
+      .then(([rows, total]) => ({ data: rows.map((row) => this.map(row)), total }));
+  }
+
   findByTenant(tenantId: string, page: number, limit: number) {
     return this.repo.findAndCount({
       where: { tenantId }, skip: (page - 1) * limit, take: limit, order: { createdAt: 'DESC' },
@@ -119,6 +182,39 @@ export class TypeOrmTenantAddressRepository implements ITenantAddressRepository 
 export class TypeOrmTenantIdentifierRepository implements ITenantIdentifierRepository {
   constructor(@InjectRepository(TenantIdentifierEntity) private readonly repo: Repository<TenantIdentifierEntity>) {}
 
+  findAll(
+    page: number,
+    limit: number,
+    filters?: {
+      tenantId?: string;
+      identifierType?: string;
+      identifierValue?: string;
+      isVerified?: boolean;
+    },
+  ) {
+    const qb = this.repo.createQueryBuilder('i').orderBy('i.created_at', 'DESC');
+    if (filters?.tenantId) qb.andWhere('i.tenant_id = :tenantId', { tenantId: filters.tenantId });
+    if (filters?.identifierType) {
+      qb.andWhere('UPPER(i.identifier_type) = :identifierType', {
+        identifierType: filters.identifierType.toUpperCase(),
+      });
+    }
+    if (filters?.identifierValue) {
+      qb.andWhere('LOWER(i.identifier_value) LIKE :identifierValue', {
+        identifierValue: `%${filters.identifierValue.toLowerCase()}%`,
+      });
+    }
+    if (filters?.isVerified !== undefined) {
+      qb.andWhere('i.is_verified = :isVerified', { isVerified: filters.isVerified });
+    }
+
+    return qb
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount()
+      .then(([rows, total]) => ({ data: rows.map((row) => this.map(row)), total }));
+  }
+
   findByTenant(tenantId: string, page: number, limit: number) {
     return this.repo.findAndCount({
       where: { tenantId }, skip: (page - 1) * limit, take: limit, order: { createdAt: 'DESC' },
@@ -157,6 +253,33 @@ export class TypeOrmTenantIdentifierRepository implements ITenantIdentifierRepos
 @Injectable()
 export class TypeOrmTenantConfigurationRepository implements ITenantConfigurationRepository {
   constructor(@InjectRepository(TenantConfigurationEntity) private readonly repo: Repository<TenantConfigurationEntity>) {}
+
+  findAll(
+    page: number,
+    limit: number,
+    filters?: {
+      tenantId?: string;
+      timezone?: string;
+      locale?: string;
+      currencyCode?: string;
+    },
+  ) {
+    const qb = this.repo.createQueryBuilder('cfg').orderBy('cfg.created_at', 'DESC');
+    if (filters?.tenantId) qb.andWhere('cfg.tenant_id = :tenantId', { tenantId: filters.tenantId });
+    if (filters?.timezone) qb.andWhere('cfg.timezone = :timezone', { timezone: filters.timezone });
+    if (filters?.locale) qb.andWhere('cfg.locale = :locale', { locale: filters.locale });
+    if (filters?.currencyCode) {
+      qb.andWhere('UPPER(cfg.currency_code) = :currencyCode', {
+        currencyCode: filters.currencyCode.toUpperCase(),
+      });
+    }
+
+    return qb
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount()
+      .then(([rows, total]) => ({ data: rows.map((row) => this.map(row)), total }));
+  }
 
   async findByTenantId(tenantId: string) {
     const row = await this.repo.findOne({ where: { tenantId } });
@@ -206,6 +329,29 @@ export class TypeOrmTenantConfigurationRepository implements ITenantConfiguratio
 export class TypeOrmTenantSmtpRepository implements ITenantSmtpRepository {
   constructor(@InjectRepository(TenantSmtpConfigurationEntity) private readonly repo: Repository<TenantSmtpConfigurationEntity>) {}
 
+  findAll(
+    page: number,
+    limit: number,
+    filters?: {
+      tenantId?: string;
+      host?: string;
+      isActive?: boolean;
+    },
+  ) {
+    const qb = this.repo.createQueryBuilder('s').orderBy('s.created_at', 'DESC');
+    if (filters?.tenantId) qb.andWhere('s.tenant_id = :tenantId', { tenantId: filters.tenantId });
+    if (filters?.host) {
+      qb.andWhere('LOWER(s.host) LIKE :host', { host: `%${filters.host.toLowerCase()}%` });
+    }
+    if (filters?.isActive !== undefined) qb.andWhere('s.is_active = :isActive', { isActive: filters.isActive });
+
+    return qb
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount()
+      .then(([rows, total]) => ({ data: rows.map((row) => this.map(row)), total }));
+  }
+
   async findByTenantId(tenantId: string) {
     const row = await this.repo.findOne({ where: { tenantId } });
     return row ? this.map(row) : null;
@@ -237,6 +383,25 @@ export class TypeOrmTenantSmtpRepository implements ITenantSmtpRepository {
 @Injectable()
 export class TypeOrmTenantAssetRepository implements ITenantAssetRepository {
   constructor(@InjectRepository(TenantAssetEntity) private readonly repo: Repository<TenantAssetEntity>) {}
+
+  findAll(
+    page: number,
+    limit: number,
+    filters?: {
+      tenantId?: string;
+      assetType?: string;
+    },
+  ) {
+    const qb = this.repo.createQueryBuilder('asset').orderBy('asset.created_at', 'DESC');
+    if (filters?.tenantId) qb.andWhere('asset.tenant_id = :tenantId', { tenantId: filters.tenantId });
+    if (filters?.assetType) qb.andWhere('asset.asset_type = :assetType', { assetType: filters.assetType });
+
+    return qb
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount()
+      .then(([rows, total]) => ({ data: rows.map((row) => this.map(row)), total }));
+  }
 
   findByTenant(tenantId: string, page: number, limit: number) {
     return this.repo.findAndCount({

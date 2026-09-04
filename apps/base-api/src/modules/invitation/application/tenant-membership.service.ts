@@ -23,6 +23,21 @@ export class TenantMembershipService {
     return paginatedResponse(data.map(toMembershipResponse), total, page, limit);
   }
 
+  async listAll(
+    page: number,
+    limit: number,
+    filters?: {
+      tenantId?: string;
+      userId?: string;
+      status?: string;
+      role?: string;
+      email?: string;
+    },
+  ) {
+    const { data, total } = await this.membershipRepo.findAll(page, limit, filters);
+    return paginatedResponse(data.map(toMembershipResponse), total, page, limit);
+  }
+
   async getForTenant(tenantId: string, id: string) {
     await this.tenantContext.ensureTenantExists(tenantId);
     const row = await this.membershipRepo.findById(tenantId, id);

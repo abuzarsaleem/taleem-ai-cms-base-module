@@ -43,6 +43,21 @@ export class TenantSubscriptionService {
     return paginatedResponse(data.map(toSubscriptionResponse), total, page, limit);
   }
 
+  async listAll(
+    page: number,
+    limit: number,
+    filters?: {
+      tenantId?: string;
+      status?: string;
+      planType?: string;
+      billingCycle?: string;
+      subscriptionCode?: string;
+    },
+  ) {
+    const { data, total } = await this.subscriptions.findAll(page, limit, filters);
+    return paginatedResponse(data.map(toSubscriptionResponse), total, page, limit);
+  }
+
   async get(tenantId: string, id: string) {
     return toSubscriptionResponse(await this.require(tenantId, id));
   }

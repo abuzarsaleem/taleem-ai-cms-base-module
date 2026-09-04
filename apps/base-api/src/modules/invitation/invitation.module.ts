@@ -30,6 +30,11 @@ import {
   TenantMembershipController,
   UserMembershipController,
 } from './presentation/tenant-membership.controller.js';
+import {
+  PlatformAdminInvitationController,
+  PlatformMemberInvitationController,
+  PlatformMembershipController,
+} from './presentation/platform-invitation.controllers.js';
 
 const entities = [TenantMembershipEntity, UserIdentityEntity, UserEntity];
 
@@ -58,6 +63,9 @@ const repositories = [
     InvitationAcceptController,
     TenantMembershipController,
     UserMembershipController,
+    PlatformAdminInvitationController,
+    PlatformMemberInvitationController,
+    PlatformMembershipController,
   ],
   providers: [
     InvitationAcceptService,

@@ -44,6 +44,26 @@ export class TenantEntitlementService {
     );
   }
 
+  async listAll(
+    page: number,
+    limit: number,
+    filters?: {
+      tenantId?: string;
+      applicationId?: string;
+      subscriptionId?: string;
+      status?: string;
+    },
+  ) {
+    const { data, total } = await this.entitlements.findAll(page, limit, filters);
+    const apps = await this.applicationMap(data.map((row) => row.applicationId));
+    return paginatedResponse(
+      data.map((row) => toEntitlementResponse(row, apps.get(row.applicationId))),
+      total,
+      page,
+      limit,
+    );
+  }
+
   async get(tenantId: string, id: string) {
     const { entitlement, application } = await this.require(tenantId, id);
     return toEntitlementResponse(entitlement, application);

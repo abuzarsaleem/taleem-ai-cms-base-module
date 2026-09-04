@@ -65,6 +65,14 @@ import {
   TenantIdentifierController,
   TenantSmtpController,
 } from './presentation/tenant-sub-resource.controllers.js';
+import {
+  PlatformAddressController,
+  PlatformAssetController,
+  PlatformConfigurationController,
+  PlatformContactController,
+  PlatformIdentifierController,
+  PlatformSmtpController,
+} from './presentation/platform-sub-resource.controllers.js';
 
 const entities = [
   TenantEntity,
@@ -106,6 +114,12 @@ const repositories = [
     TenantSmtpController,
     TenantAssetController,
     InstitutionProfileController,
+    PlatformContactController,
+    PlatformAddressController,
+    PlatformIdentifierController,
+    PlatformConfigurationController,
+    PlatformSmtpController,
+    PlatformAssetController,
   ],
   providers: [
     TenantService,

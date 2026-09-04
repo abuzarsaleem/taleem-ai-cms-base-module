@@ -73,6 +73,18 @@ export class TenantContactService {
     return paginatedResponse(data.map(toContactResponse), total, page, limit);
   }
 
+  async listAll(page: number, limit: number, filters?: {
+    tenantId?: string;
+    contactType?: string;
+    email?: string;
+    search?: string;
+    isActive?: boolean;
+    isPrimary?: boolean;
+  }) {
+    const { data, total } = await this.repo.findAll(page, limit, filters);
+    return paginatedResponse(data.map(toContactResponse), total, page, limit);
+  }
+
   async get(tenantId: string, id: string) {
     await this.tenantContext.ensureTenantExists(tenantId);
     const row = await this.repo.findById(tenantId, id);
@@ -104,6 +116,17 @@ export class TenantAddressService {
   async list(tenantId: string, page: number, limit: number) {
     await this.tenantContext.ensureTenantExists(tenantId);
     const { data, total } = await this.repo.findByTenant(tenantId, page, limit);
+    return paginatedResponse(data.map(toAddressResponse), total, page, limit);
+  }
+
+  async listAll(page: number, limit: number, filters?: {
+    tenantId?: string;
+    addressType?: string;
+    city?: string;
+    countryCode?: string;
+    isActive?: boolean;
+  }) {
+    const { data, total } = await this.repo.findAll(page, limit, filters);
     return paginatedResponse(data.map(toAddressResponse), total, page, limit);
   }
 
@@ -139,6 +162,16 @@ export class TenantIdentifierService {
   async list(tenantId: string, page: number, limit: number) {
     await this.tenantContext.ensureTenantExists(tenantId);
     const { data, total } = await this.repo.findByTenant(tenantId, page, limit);
+    return paginatedResponse(data.map(toIdentifierResponse), total, page, limit);
+  }
+
+  async listAll(page: number, limit: number, filters?: {
+    tenantId?: string;
+    identifierType?: string;
+    identifierValue?: string;
+    isVerified?: boolean;
+  }) {
+    const { data, total } = await this.repo.findAll(page, limit, filters);
     return paginatedResponse(data.map(toIdentifierResponse), total, page, limit);
   }
 
@@ -205,6 +238,16 @@ export class TenantConfigurationService {
     return toConfigurationResponse(row);
   }
 
+  async listAll(page: number, limit: number, filters?: {
+    tenantId?: string;
+    timezone?: string;
+    locale?: string;
+    currencyCode?: string;
+  }) {
+    const { data, total } = await this.repo.findAll(page, limit, filters);
+    return paginatedResponse(data.map(toConfigurationResponse), total, page, limit);
+  }
+
   async create(tenantId: string, dto: CreateTenantConfigurationDto) {
     await this.tenantContext.ensureTenantExists(tenantId);
     if (await this.repo.findByTenantId(tenantId)) {
@@ -249,6 +292,15 @@ export class TenantSmtpService {
     return toSmtpResponse(row);
   }
 
+  async listAll(page: number, limit: number, filters?: {
+    tenantId?: string;
+    host?: string;
+    isActive?: boolean;
+  }) {
+    const { data, total } = await this.repo.findAll(page, limit, filters);
+    return paginatedResponse(data.map(toSmtpResponse), total, page, limit);
+  }
+
   async create(tenantId: string, dto: CreateTenantSmtpDto) {
     await this.tenantContext.ensureTenantExists(tenantId);
     if (await this.repo.findByTenantId(tenantId)) {
@@ -279,6 +331,15 @@ export class TenantAssetService {
   async list(tenantId: string, page: number, limit: number) {
     await this.tenantContext.ensureTenantExists(tenantId);
     const { data, total } = await this.repo.findByTenant(tenantId, page, limit);
+    const resolved = await Promise.all(data.map((row) => this.toResolvedAssetResponse(row)));
+    return paginatedResponse(resolved, total, page, limit);
+  }
+
+  async listAll(page: number, limit: number, filters?: {
+    tenantId?: string;
+    assetType?: string;
+  }) {
+    const { data, total } = await this.repo.findAll(page, limit, filters);
     const resolved = await Promise.all(data.map((row) => this.toResolvedAssetResponse(row)));
     return paginatedResponse(resolved, total, page, limit);
   }

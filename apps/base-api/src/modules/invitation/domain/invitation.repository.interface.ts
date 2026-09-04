@@ -32,6 +32,17 @@ export interface UserTenantMembershipProps {
 }
 
 export interface ITenantMembershipRepository {
+  findAll(
+    page: number,
+    limit: number,
+    filters?: {
+      tenantId?: string;
+      userId?: string;
+      status?: string;
+      role?: string;
+      email?: string;
+    },
+  ): Promise<{ data: TenantMembershipDetailProps[]; total: number }>;
   findByTenant(
     tenantId: string,
     page: number,

@@ -121,6 +121,37 @@ export class TypeOrmSubscriptionRepository implements ISubscriptionRepository {
     private readonly repo: Repository<SubscriptionEntity>,
   ) {}
 
+  async findAll(
+    page: number,
+    limit: number,
+    filters?: {
+      tenantId?: string;
+      status?: string;
+      planType?: string;
+      billingCycle?: string;
+      subscriptionCode?: string;
+    },
+  ) {
+    const qb = this.repo.createQueryBuilder('s').orderBy('s.created_at', 'DESC');
+    if (filters?.tenantId) qb.andWhere('s.tenant_id = :tenantId', { tenantId: filters.tenantId });
+    if (filters?.status) qb.andWhere('s.status = :status', { status: filters.status });
+    if (filters?.planType) qb.andWhere('s.plan_type = :planType', { planType: filters.planType });
+    if (filters?.billingCycle) {
+      qb.andWhere('s.billing_cycle = :billingCycle', { billingCycle: filters.billingCycle });
+    }
+    if (filters?.subscriptionCode) {
+      qb.andWhere('LOWER(s.subscription_code) LIKE :subscriptionCode', {
+        subscriptionCode: `%${filters.subscriptionCode.toLowerCase()}%`,
+      });
+    }
+
+    const [rows, total] = await qb
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+    return { data: rows.map((row) => this.map(row)), total };
+  }
+
   async findByTenant(tenantId: string, page: number, limit: number) {
     const [rows, total] = await this.repo.findAndCount({
       where: { tenantId },
@@ -199,6 +230,33 @@ export class TypeOrmTenantEntitlementRepository implements ITenantEntitlementRep
     @InjectRepository(TenantEntitlementEntity)
     private readonly repo: Repository<TenantEntitlementEntity>,
   ) {}
+
+  async findAll(
+    page: number,
+    limit: number,
+    filters?: {
+      tenantId?: string;
+      applicationId?: string;
+      subscriptionId?: string;
+      status?: string;
+    },
+  ) {
+    const qb = this.repo.createQueryBuilder('e').orderBy('e.created_at', 'DESC');
+    if (filters?.tenantId) qb.andWhere('e.tenant_id = :tenantId', { tenantId: filters.tenantId });
+    if (filters?.applicationId) {
+      qb.andWhere('e.application_id = :applicationId', { applicationId: filters.applicationId });
+    }
+    if (filters?.subscriptionId) {
+      qb.andWhere('e.subscription_id = :subscriptionId', { subscriptionId: filters.subscriptionId });
+    }
+    if (filters?.status) qb.andWhere('e.status = :status', { status: filters.status });
+
+    const [rows, total] = await qb
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+    return { data: rows.map((row) => this.map(row)), total };
+  }
 
   async findByTenant(tenantId: string, page: number, limit: number) {
     const [rows, total] = await this.repo.findAndCount({

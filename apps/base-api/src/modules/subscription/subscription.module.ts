@@ -32,6 +32,10 @@ import {
 } from './presentation/application-catalog.controller.js';
 import { TenantEntitlementController } from './presentation/tenant-entitlement.controller.js';
 import { TenantSubscriptionController } from './presentation/tenant-subscription.controller.js';
+import {
+  PlatformEntitlementController,
+  PlatformSubscriptionController,
+} from './presentation/platform-subscription.controllers.js';
 import { AuditEventController } from './presentation/audit-event.controller.js';
 
 const entities = [
@@ -55,6 +59,8 @@ const repositories = [
     TenantAvailabilityController,
     TenantSubscriptionController,
     TenantEntitlementController,
+    PlatformSubscriptionController,
+    PlatformEntitlementController,
     AuditEventController,
   ],
   providers: [

@@ -59,6 +59,30 @@ export class TenantInvitationService {
     );
   }
 
+  async listAll(
+    page: number,
+    limit: number,
+    role?: MembershipRole,
+    filters?: {
+      tenantId?: string;
+      email?: string;
+      status?: string;
+    },
+  ) {
+    const { data, total } = await this.tokenRepository.findAllInvitations(
+      page,
+      limit,
+      role,
+      filters,
+    );
+    return paginatedResponse(
+      data.map((row) => toInvitationResponse(row)),
+      total,
+      page,
+      limit,
+    );
+  }
+
   async create(tenantId: string, dto: CreateTenantInvitationDto, invitedBy: string) {
     await this.tenantContext.ensureTenantExists(tenantId);
     const email = dto.email.toLowerCase();

@@ -167,6 +167,35 @@ export class TypeOrmUserTokenRepository implements IUserTokenRepository {
     return { data: rows.map((row) => this.map(row)), total };
   }
 
+  async findAllInvitations(
+    page: number,
+    limit: number,
+    membershipRole?: string,
+    filters?: {
+      tenantId?: string;
+      email?: string;
+      status?: string;
+    },
+  ) {
+    const qb = this.repo
+      .createQueryBuilder('t')
+      .where('t.token_type = :tokenType', { tokenType: UserTokenType.TENANT_INVITATION })
+      .orderBy('t.created_at', 'DESC');
+
+    if (membershipRole) qb.andWhere('t.membership_role = :membershipRole', { membershipRole });
+    if (filters?.tenantId) qb.andWhere('t.tenant_id = :tenantId', { tenantId: filters.tenantId });
+    if (filters?.status) qb.andWhere('t.status = :status', { status: filters.status });
+    if (filters?.email) {
+      qb.andWhere('LOWER(t.email) LIKE :email', { email: `%${filters.email.toLowerCase()}%` });
+    }
+
+    const [rows, total] = await qb
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+    return { data: rows.map((row) => this.map(row)), total };
+  }
+
   async findInvitationById(tenantId: string, id: string) {
     const row = await this.repo.findOne({
       where: { id, tenantId, tokenType: UserTokenType.TENANT_INVITATION },

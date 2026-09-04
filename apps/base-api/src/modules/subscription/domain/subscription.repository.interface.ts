@@ -22,6 +22,17 @@ export interface IApplicationRepository {
 }
 
 export interface ISubscriptionRepository {
+  findAll(
+    page: number,
+    limit: number,
+    filters?: {
+      tenantId?: string;
+      status?: string;
+      planType?: string;
+      billingCycle?: string;
+      subscriptionCode?: string;
+    },
+  ): Promise<{ data: SubscriptionProps[]; total: number }>;
   findByTenant(
     tenantId: string,
     page: number,
@@ -35,6 +46,16 @@ export interface ISubscriptionRepository {
 }
 
 export interface ITenantEntitlementRepository {
+  findAll(
+    page: number,
+    limit: number,
+    filters?: {
+      tenantId?: string;
+      applicationId?: string;
+      subscriptionId?: string;
+      status?: string;
+    },
+  ): Promise<{ data: TenantEntitlementProps[]; total: number }>;
   findByTenant(
     tenantId: string,
     page: number,

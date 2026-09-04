@@ -68,6 +68,83 @@ export class TypeOrmTenantMembershipRepository implements ITenantMembershipRepos
     };
   }
 
+  async findAll(
+    page: number,
+    limit: number,
+    filters?: {
+      tenantId?: string;
+      userId?: string;
+      status?: string;
+      role?: string;
+      email?: string;
+    },
+  ) {
+    const params: unknown[] = [];
+    const where: string[] = [];
+
+    if (filters?.tenantId) {
+      params.push(filters.tenantId);
+      where.push(`m.tenant_id = $${params.length}`);
+    }
+    if (filters?.userId) {
+      params.push(filters.userId);
+      where.push(`m.user_id = $${params.length}`);
+    }
+    if (filters?.status) {
+      params.push(filters.status);
+      where.push(`m.status = $${params.length}`);
+    }
+    if (filters?.role) {
+      params.push(filters.role);
+      where.push(`m.role = $${params.length}`);
+    }
+    if (filters?.email) {
+      params.push(`%${filters.email.toLowerCase()}%`);
+      where.push(`LOWER(u.email) LIKE $${params.length}`);
+    }
+
+    const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
+    params.push(limit, (page - 1) * limit);
+
+    const rows = await this.repo.manager.query(
+      `
+      SELECT
+        m.id,
+        m.tenant_id,
+        m.user_id,
+        m.status,
+        m.role,
+        m.joined_at,
+        m.created_at,
+        m.updated_at,
+        u.email AS user_email,
+        u.full_name AS user_full_name
+      FROM "${DATABASE_SCHEMA}".tenant_memberships m
+      INNER JOIN "${DATABASE_SCHEMA}".users u ON u.id = m.user_id
+      ${whereSql}
+      ORDER BY m.joined_at DESC
+      LIMIT $${params.length - 1} OFFSET $${params.length}
+      `,
+      params,
+    );
+
+    const countParams = params.slice(0, -2);
+    const [{ count }] = await this.repo.manager.query(
+      `
+      SELECT COUNT(*)::int AS count
+      FROM "${DATABASE_SCHEMA}".tenant_memberships m
+      INNER JOIN "${DATABASE_SCHEMA}".users u ON u.id = m.user_id
+      ${whereSql}
+      `,
+      countParams,
+    );
+
+    return {
+      data: rows.map((row: Record<string, unknown>) => this.mapDetailRow(row)),
+      total: Number(count),
+    };
+  }
+
   async findById(tenantId: string, id: string) {
     const rows = await this.repo.manager.query(
       `

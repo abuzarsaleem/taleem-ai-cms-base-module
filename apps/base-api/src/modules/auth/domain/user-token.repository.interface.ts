@@ -28,6 +28,16 @@ export interface IUserTokenRepository {
     limit: number,
     membershipRole?: string,
   ): Promise<{ data: UserTokenProps[]; total: number }>;
+  findAllInvitations(
+    page: number,
+    limit: number,
+    membershipRole?: string,
+    filters?: {
+      tenantId?: string;
+      email?: string;
+      status?: string;
+    },
+  ): Promise<{ data: UserTokenProps[]; total: number }>;
   findInvitationById(tenantId: string, id: string): Promise<UserTokenProps | null>;
   findPendingInvitationByEmail(
     tenantId: string,

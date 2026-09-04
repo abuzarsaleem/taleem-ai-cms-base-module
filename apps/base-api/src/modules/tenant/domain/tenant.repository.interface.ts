@@ -158,6 +158,18 @@ export interface InstitutionProfileProps {
 }
 
 export interface ITenantContactRepository {
+  findAll(
+    page: number,
+    limit: number,
+    filters?: {
+      tenantId?: string;
+      contactType?: string;
+      email?: string;
+      search?: string;
+      isActive?: boolean;
+      isPrimary?: boolean;
+    },
+  ): Promise<{ data: TenantContactProps[]; total: number }>;
   findByTenant(tenantId: string, page: number, limit: number): Promise<{ data: TenantContactProps[]; total: number }>;
   findById(tenantId: string, id: string): Promise<TenantContactProps | null>;
   create(props: TenantContactProps): Promise<TenantContactProps>;
@@ -166,6 +178,17 @@ export interface ITenantContactRepository {
 }
 
 export interface ITenantAddressRepository {
+  findAll(
+    page: number,
+    limit: number,
+    filters?: {
+      tenantId?: string;
+      addressType?: string;
+      city?: string;
+      countryCode?: string;
+      isActive?: boolean;
+    },
+  ): Promise<{ data: TenantAddressProps[]; total: number }>;
   findByTenant(tenantId: string, page: number, limit: number): Promise<{ data: TenantAddressProps[]; total: number }>;
   findById(tenantId: string, id: string): Promise<TenantAddressProps | null>;
   create(props: TenantAddressProps): Promise<TenantAddressProps>;
@@ -174,6 +197,16 @@ export interface ITenantAddressRepository {
 }
 
 export interface ITenantIdentifierRepository {
+  findAll(
+    page: number,
+    limit: number,
+    filters?: {
+      tenantId?: string;
+      identifierType?: string;
+      identifierValue?: string;
+      isVerified?: boolean;
+    },
+  ): Promise<{ data: TenantIdentifierProps[]; total: number }>;
   findByTenant(tenantId: string, page: number, limit: number): Promise<{ data: TenantIdentifierProps[]; total: number }>;
   findById(tenantId: string, id: string): Promise<TenantIdentifierProps | null>;
   create(props: TenantIdentifierProps): Promise<TenantIdentifierProps>;
@@ -182,6 +215,16 @@ export interface ITenantIdentifierRepository {
 }
 
 export interface ITenantConfigurationRepository {
+  findAll(
+    page: number,
+    limit: number,
+    filters?: {
+      tenantId?: string;
+      timezone?: string;
+      locale?: string;
+      currencyCode?: string;
+    },
+  ): Promise<{ data: TenantConfigurationProps[]; total: number }>;
   findByTenantId(tenantId: string): Promise<TenantConfigurationProps | null>;
   create(props: TenantConfigurationProps): Promise<TenantConfigurationProps>;
   update(tenantId: string, props: Partial<TenantConfigurationProps>): Promise<TenantConfigurationProps>;
@@ -189,6 +232,15 @@ export interface ITenantConfigurationRepository {
 }
 
 export interface ITenantSmtpRepository {
+  findAll(
+    page: number,
+    limit: number,
+    filters?: {
+      tenantId?: string;
+      host?: string;
+      isActive?: boolean;
+    },
+  ): Promise<{ data: TenantSmtpConfigurationProps[]; total: number }>;
   findByTenantId(tenantId: string): Promise<TenantSmtpConfigurationProps | null>;
   create(props: TenantSmtpConfigurationProps): Promise<TenantSmtpConfigurationProps>;
   update(tenantId: string, props: Partial<TenantSmtpConfigurationProps>): Promise<TenantSmtpConfigurationProps>;
@@ -196,6 +248,14 @@ export interface ITenantSmtpRepository {
 }
 
 export interface ITenantAssetRepository {
+  findAll(
+    page: number,
+    limit: number,
+    filters?: {
+      tenantId?: string;
+      assetType?: string;
+    },
+  ): Promise<{ data: TenantAssetProps[]; total: number }>;
   findByTenant(tenantId: string, page: number, limit: number): Promise<{ data: TenantAssetProps[]; total: number }>;
   findById(tenantId: string, id: string): Promise<TenantAssetProps | null>;
   create(props: TenantAssetProps): Promise<TenantAssetProps>;

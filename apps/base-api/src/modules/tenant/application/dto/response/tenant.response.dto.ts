@@ -123,6 +123,11 @@ export class TenantConfigurationResponseDto {
   @ApiProperty() updatedAt!: Date;
 }
 
+export class TenantConfigurationListResponseDto {
+  @ApiProperty({ type: [TenantConfigurationResponseDto] }) data!: TenantConfigurationResponseDto[];
+  @ApiProperty({ type: PaginationMetaDto }) meta!: PaginationMetaDto;
+}
+
 export class TenantSmtpResponseDto {
   @ApiProperty({ format: 'uuid' }) id!: string;
   @ApiProperty({ format: 'uuid' }) tenantId!: string;
@@ -137,6 +142,11 @@ export class TenantSmtpResponseDto {
   @ApiProperty() isActive!: boolean;
   @ApiProperty() createdAt!: Date;
   @ApiProperty() updatedAt!: Date;
+}
+
+export class TenantSmtpListResponseDto {
+  @ApiProperty({ type: [TenantSmtpResponseDto] }) data!: TenantSmtpResponseDto[];
+  @ApiProperty({ type: PaginationMetaDto }) meta!: PaginationMetaDto;
 }
 
 export class TenantAssetResponseDto {
