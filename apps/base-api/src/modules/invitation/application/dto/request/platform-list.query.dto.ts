@@ -1,13 +1,16 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEnum, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
+import { IsEnum, IsOptional, IsString, Matches, MaxLength } from 'class-validator';
 import { PaginationQueryDto } from '@app/common';
 import { InvitationStatus } from '../../../domain/invitation.types.js';
 import { MembershipRole, MembershipStatus } from '../../../domain/membership.types.js';
 
+const UUID_LIKE =
+  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+
 export class PlatformInvitationQueryDto extends PaginationQueryDto {
   @ApiPropertyOptional({ format: 'uuid' })
   @IsOptional()
-  @IsUUID()
+  @Matches(UUID_LIKE, { message: 'tenantId must be a UUID' })
   tenantId?: string;
 
   @ApiPropertyOptional({ example: 'user@university.edu' })
@@ -25,12 +28,12 @@ export class PlatformInvitationQueryDto extends PaginationQueryDto {
 export class PlatformMembershipQueryDto extends PaginationQueryDto {
   @ApiPropertyOptional({ format: 'uuid' })
   @IsOptional()
-  @IsUUID()
+  @Matches(UUID_LIKE, { message: 'tenantId must be a UUID' })
   tenantId?: string;
 
   @ApiPropertyOptional({ format: 'uuid' })
   @IsOptional()
-  @IsUUID()
+  @Matches(UUID_LIKE, { message: 'userId must be a UUID' })
   userId?: string;
 
   @ApiPropertyOptional({ enum: MembershipStatus })

@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEnum, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
+import { IsEnum, IsOptional, IsString, Matches, MaxLength } from 'class-validator';
 import { PaginationQueryDto } from '@app/common';
 import {
   BillingCycle,
@@ -8,10 +8,13 @@ import {
   SubscriptionStatus,
 } from '../../../domain/subscription.types.js';
 
+const UUID_LIKE =
+  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+
 export class PlatformSubscriptionQueryDto extends PaginationQueryDto {
   @ApiPropertyOptional({ format: 'uuid' })
   @IsOptional()
-  @IsUUID()
+  @Matches(UUID_LIKE, { message: 'tenantId must be a UUID' })
   tenantId?: string;
 
   @ApiPropertyOptional({ enum: SubscriptionStatus })
@@ -39,17 +42,17 @@ export class PlatformSubscriptionQueryDto extends PaginationQueryDto {
 export class PlatformEntitlementQueryDto extends PaginationQueryDto {
   @ApiPropertyOptional({ format: 'uuid' })
   @IsOptional()
-  @IsUUID()
+  @Matches(UUID_LIKE, { message: 'tenantId must be a UUID' })
   tenantId?: string;
 
   @ApiPropertyOptional({ format: 'uuid' })
   @IsOptional()
-  @IsUUID()
+  @Matches(UUID_LIKE, { message: 'applicationId must be a UUID' })
   applicationId?: string;
 
   @ApiPropertyOptional({ format: 'uuid' })
   @IsOptional()
-  @IsUUID()
+  @Matches(UUID_LIKE, { message: 'subscriptionId must be a UUID' })
   subscriptionId?: string;
 
   @ApiPropertyOptional({ enum: EntitlementStatus })

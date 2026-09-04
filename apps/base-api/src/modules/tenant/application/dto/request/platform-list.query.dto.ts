@@ -5,7 +5,7 @@ import {
   IsEnum,
   IsOptional,
   IsString,
-  IsUUID,
+  Matches,
   MaxLength,
 } from 'class-validator';
 import { PaginationQueryDto } from '@app/common';
@@ -16,6 +16,9 @@ import {
   DeploymentModel,
   TenantStatus,
 } from '../../../domain/tenant.types.js';
+
+const UUID_LIKE =
+  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
 
 function toOptionalBoolean({ value }: { value: unknown }): boolean | undefined {
   if (value === undefined || value === null || value === '') return undefined;
@@ -69,7 +72,7 @@ export class PlatformTenantQueryDto extends PaginationQueryDto {
 export class PlatformContactQueryDto extends PaginationQueryDto {
   @ApiPropertyOptional({ format: 'uuid' })
   @IsOptional()
-  @IsUUID()
+  @Matches(UUID_LIKE, { message: 'tenantId must be a UUID' })
   tenantId?: string;
 
   @ApiPropertyOptional({ enum: ContactType })
@@ -105,7 +108,7 @@ export class PlatformContactQueryDto extends PaginationQueryDto {
 export class PlatformAddressQueryDto extends PaginationQueryDto {
   @ApiPropertyOptional({ format: 'uuid' })
   @IsOptional()
-  @IsUUID()
+  @Matches(UUID_LIKE, { message: 'tenantId must be a UUID' })
   tenantId?: string;
 
   @ApiPropertyOptional({ enum: AddressType })
@@ -135,7 +138,7 @@ export class PlatformAddressQueryDto extends PaginationQueryDto {
 export class PlatformIdentifierQueryDto extends PaginationQueryDto {
   @ApiPropertyOptional({ format: 'uuid' })
   @IsOptional()
-  @IsUUID()
+  @Matches(UUID_LIKE, { message: 'tenantId must be a UUID' })
   tenantId?: string;
 
   @ApiPropertyOptional({ example: 'REGISTRATION' })
@@ -160,7 +163,7 @@ export class PlatformIdentifierQueryDto extends PaginationQueryDto {
 export class PlatformConfigurationQueryDto extends PaginationQueryDto {
   @ApiPropertyOptional({ format: 'uuid' })
   @IsOptional()
-  @IsUUID()
+  @Matches(UUID_LIKE, { message: 'tenantId must be a UUID' })
   tenantId?: string;
 
   @ApiPropertyOptional({ example: 'Asia/Karachi' })
@@ -185,7 +188,7 @@ export class PlatformConfigurationQueryDto extends PaginationQueryDto {
 export class PlatformSmtpQueryDto extends PaginationQueryDto {
   @ApiPropertyOptional({ format: 'uuid' })
   @IsOptional()
-  @IsUUID()
+  @Matches(UUID_LIKE, { message: 'tenantId must be a UUID' })
   tenantId?: string;
 
   @ApiPropertyOptional()
@@ -204,7 +207,7 @@ export class PlatformSmtpQueryDto extends PaginationQueryDto {
 export class PlatformAssetQueryDto extends PaginationQueryDto {
   @ApiPropertyOptional({ format: 'uuid' })
   @IsOptional()
-  @IsUUID()
+  @Matches(UUID_LIKE, { message: 'tenantId must be a UUID' })
   tenantId?: string;
 
   @ApiPropertyOptional({ enum: AssetType })
