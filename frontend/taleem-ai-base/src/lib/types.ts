@@ -125,9 +125,23 @@ export type AuthUser = {
   permissions: string[]
 }
 
+export type UserTenantMembership = {
+  membershipId: string
+  tenantId: string
+  tenantCode: string
+  tenantDisplayName: string
+  tenantStatus: string
+  membershipStatus: string
+  role: string
+  joinedAt: string
+  isTenantAdmin: boolean
+}
+
 export type Session = {
   accessToken: string
   user: AuthUser
+  memberships?: UserTenantMembership[]
+  tenantId?: string
 }
 
 export type PaginationMeta = {
@@ -155,7 +169,10 @@ export type Tenant = {
   provinceCode?: string
   city?: string
   activatedAt?: string
+  suspendedAt?: string
+  retiredAt?: string
   createdAt: string
+  updatedAt: string
 }
 
 export type InstitutionProfile = {
@@ -191,6 +208,8 @@ export type TenantContact = {
   whatsappNumber?: string
   isPrimary: boolean
   isActive: boolean
+  createdAt?: string
+  updatedAt?: string
 }
 
 export type TenantAddress = {
@@ -198,38 +217,80 @@ export type TenantAddress = {
   tenantId: string
   addressType: AddressType
   addressLine1: string
+  addressLine2?: string
+  area?: string
   city: string
+  district?: string
   provinceCode?: string
   postalCode?: string
   countryCode: string
   isPrimary: boolean
+  isActive: boolean
+  createdAt?: string
+  updatedAt?: string
 }
 
 export type TenantIdentifier = {
   id: string
   tenantId: string
-  identifierType: IdentifierType
+  identifierType: string
   identifierValue: string
   issuingAuthority?: string
+  issueDate?: string
+  expiryDate?: string
+  isVerified: boolean
+  verifiedAt?: string
+  verifiedBy?: string
+  createdAt?: string
+  updatedAt?: string
 }
 
 export type TenantConfiguration = {
+  id: string
   tenantId: string
   timezone: string
   locale: string
-  dateFormat: string
+  dateFormat?: string
   currencyCode: string
+  brandingName?: string
+  logoAssetId?: string
+  logoDarkAssetId?: string
+  faviconAssetId?: string
+  primaryColor?: string
+  secondaryColor?: string
+  accentColor?: string
+  fontFamily?: string
+  emailFromName?: string
+  emailFromAddress?: string
+  supportEmail?: string
+  createdAt: string
+  updatedAt: string
 }
 
 export type TenantSmtp = {
+  id: string
   tenantId: string
   host: string
   port: number
   username?: string
+  passwordSecretRef?: string
   encryption: SmtpEncryption
   fromName?: string
   fromEmail?: string
+  replyToEmail?: string
   isActive: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export type TenantAsset = {
+  id: string
+  tenantId: string
+  assetType: AssetType
+  fileUrl: string
+  fileName?: string
+  contentType?: string
+  createdAt: string
 }
 
 export type TenantBranding = {
@@ -261,6 +322,8 @@ export type Subscription = {
   applicationCodes: string[]
   startDate: string
   endDate: string
+  createdAt?: string
+  updatedAt?: string
 }
 
 export type Entitlement = {
@@ -273,15 +336,48 @@ export type Entitlement = {
   status: EntitlementStatus
   effectiveFrom: string
   effectiveUntil?: string
+  createdAt?: string
+  updatedAt?: string
+}
+
+export const MembershipRole = {
+  TENANT_ADMIN: 'TENANT_ADMIN',
+  TENANT_MEMBER: 'TENANT_MEMBER',
+} as const
+export type MembershipRole = (typeof MembershipRole)[keyof typeof MembershipRole]
+
+export const MembershipStatus = {
+  ACTIVE: 'ACTIVE',
+  INACTIVE: 'INACTIVE',
+  SUSPENDED: 'SUSPENDED',
+} as const
+export type MembershipStatus = (typeof MembershipStatus)[keyof typeof MembershipStatus]
+
+export type TenantMembership = {
+  id: string
+  tenantId: string
+  userId: string
+  status: MembershipStatus
+  role: MembershipRole
+  joinedAt: string
+  createdAt: string
+  updatedAt: string
+  userEmail: string
+  userFullName: string
+  isTenantAdmin: boolean
 }
 
 export type AdminInvitation = {
   id: string
   tenantId: string
   email: string
+  role: MembershipRole
   status: InvitationStatus
   expiresAt: string
+  acceptedAt?: string
   invitedBy: string
+  createdAt: string
+  invitationToken?: string
 }
 
 export type TenantUser = {

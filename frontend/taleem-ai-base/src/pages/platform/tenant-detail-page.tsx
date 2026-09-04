@@ -1,47 +1,30 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Building2, Globe2, Mail, MapPin, PackageCheck, UsersRound } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { EmptyState, PageHeader } from '@/components/page-header'
 import { StatusBadge } from '@/components/status-badge'
-import { Field, FieldGrid } from '@/components/field'
-import { SubscriptionFields } from '@/components/subscription-fields'
-import { emptySubscriptionDraft } from '@/lib/subscription'
-import { ContactFields } from '@/components/contact-fields'
+import { TenantFields } from '@/components/tenant-fields'
+import { SectionTitle } from '@/components/section-title'
 import { errorMessage } from '@/lib/auth'
 import { ApiError } from '@/lib/api'
-import { contactPayload, emptyContactDraft, validateContact } from '@/lib/contact'
+import { emptyTenantDraft, lifecycleFor, tenantDraftFrom, updateTenantPayload, validateTenantDraft } from '@/lib/tenant'
 import { cn } from '@/lib/utils'
 import {
-  AddressType,
-  ApplicationStatus,
-  EntitlementStatus,
-  IdentifierType,
-  SubscriptionStatus,
   type AdminInvitation,
   type AvailableApplication,
   type CatalogApplication,
   type Entitlement,
-  type InstitutionProfile,
   type Subscription,
   type Tenant,
   type TenantAddress,
+  type TenantAsset,
+  type TenantConfiguration,
   type TenantContact,
   type TenantIdentifier,
+  type TenantSmtp,
 } from '@/lib/types'
 import {
   applicationService,
@@ -49,15 +32,27 @@ import {
   invitationService,
   subscriptionService,
   tenantAddressService,
+  tenantAssetService,
+  tenantConfigurationService,
   tenantContactService,
   tenantIdentifierService,
-  tenantProfileService,
   tenantService,
+  tenantSmtpService,
 } from '@/services/platform'
+import { TenantContactsPanel } from '@/pages/platform/tenant-contacts-panel'
+import { TenantAddressesPanel } from '@/pages/platform/tenant-addresses-panel'
+import { TenantIdentifiersPanel } from '@/pages/platform/tenant-identifiers-panel'
+import { TenantConfigurationPanel } from '@/pages/platform/tenant-configuration-panel'
+import { TenantSmtpPanel } from '@/pages/platform/tenant-smtp-panel'
+import { TenantAssetsPanel } from '@/pages/platform/tenant-assets-panel'
+import { TenantInvitationsPanel } from '@/pages/platform/tenant-invitations-panel'
+import { TenantSubscriptionsPanel } from '@/pages/platform/tenant-subscriptions-panel'
+import { TenantEntitlementsPanel } from '@/pages/platform/tenant-entitlements-panel'
 
 const tabs = [
   ['overview', 'Overview'],
   ['institution', 'Institution'],
+  ['settings', 'Settings'],
   ['subscriptions', 'Subscriptions'],
   ['entitlements', 'Entitlements'],
   ['invitations', 'Invitations'],
@@ -68,10 +63,12 @@ type Tab = (typeof tabs)[number][0]
 export function TenantDetailPage() {
   const { tenantId = '' } = useParams()
   const [tenant, setTenant] = useState<Tenant | null>(null)
-  const [profile, setProfile] = useState<InstitutionProfile | null>(null)
   const [contacts, setContacts] = useState<TenantContact[]>([])
   const [addresses, setAddresses] = useState<TenantAddress[]>([])
   const [identifiers, setIdentifiers] = useState<TenantIdentifier[]>([])
+  const [configuration, setConfiguration] = useState<TenantConfiguration | null>(null)
+  const [smtp, setSmtp] = useState<TenantSmtp | null>(null)
+  const [assets, setAssets] = useState<TenantAsset[]>([])
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([])
   const [entitlements, setEntitlements] = useState<Entitlement[]>([])
   const [available, setAvailable] = useState<AvailableApplication[]>([])
@@ -80,52 +77,47 @@ export function TenantDetailPage() {
   const [missing, setMissing] = useState(false)
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState<Tab>('overview')
-  const [inviteEmail, setInviteEmail] = useState('')
-  const [inviteToken, setInviteToken] = useState('')
-  const [subOpen, setSubOpen] = useState(false)
-  const [contactOpen, setContactOpen] = useState(false)
-  const [addressOpen, setAddressOpen] = useState(false)
-  const [identifierOpen, setIdentifierOpen] = useState(false)
-  const [inviteOpen, setInviteOpen] = useState(false)
-  const [draft, setDraft] = useState(emptySubscriptionDraft())
-  const [contact, setContact] = useState(emptyContactDraft())
-  const [address, setAddress] = useState({
-    addressLine1: '',
-    city: '',
-    countryCode: 'PK',
-    addressType: AddressType.HEAD_OFFICE as AddressType,
-  })
-  const [identifier, setIdentifier] = useState({
-    identifierValue: '',
-    issuingAuthority: '',
-    identifierType: IdentifierType.REGISTRATION as IdentifierType,
-  })
+  const [identity, setIdentity] = useState(emptyTenantDraft())
+  const [savingIdentity, setSavingIdentity] = useState(false)
 
   const reload = useCallback(async () => {
-    const [nextTenant, apps] = await Promise.all([tenantService.get(tenantId), applicationService.list(1, 100)])
+    const nextTenant = await tenantService.get(tenantId)
     setTenant(nextTenant)
-    setApplications(apps.data)
-    const [contactPage, addressPage, identifierPage, subPage, entPage, invites, availability] = await Promise.all([
-      tenantContactService.list(tenantId),
-      tenantAddressService.list(tenantId),
-      tenantIdentifierService.list(tenantId),
-      subscriptionService.list(tenantId),
-      entitlementService.list(tenantId),
-      invitationService.list(tenantId),
-      tenantService.availableApplications(tenantId).catch(() => ({ applications: [] as AvailableApplication[] })),
-    ])
-    setContacts(contactPage.data)
-    setAddresses(addressPage.data)
-    setIdentifiers(identifierPage.data)
-    setSubscriptions(subPage.data)
-    setEntitlements(entPage.data)
-    setInvitations(invites.data)
-    setAvailable(availability.applications)
+    setIdentity(tenantDraftFrom(nextTenant))
+
+    const [apps, contactPage, addressPage, identifierPage, assetPage, subPage, entPage, invites, availability] =
+      await Promise.allSettled([
+        applicationService.list(1, 100),
+        tenantContactService.list(tenantId),
+        tenantAddressService.list(tenantId),
+        tenantIdentifierService.list(tenantId),
+        tenantAssetService.list(tenantId),
+        subscriptionService.list(tenantId),
+        entitlementService.list(tenantId),
+        invitationService.list(tenantId),
+        tenantService.availableApplications(tenantId),
+      ])
+    if (apps.status === 'fulfilled') setApplications(apps.value.data)
+    if (contactPage.status === 'fulfilled') setContacts(contactPage.value.data)
+    if (addressPage.status === 'fulfilled') setAddresses(addressPage.value.data)
+    if (identifierPage.status === 'fulfilled') setIdentifiers(identifierPage.value.data)
+    if (assetPage.status === 'fulfilled') setAssets(assetPage.value.data)
+    if (subPage.status === 'fulfilled') setSubscriptions(subPage.value.data)
+    if (entPage.status === 'fulfilled') setEntitlements(entPage.value.data)
+    if (invites.status === 'fulfilled') setInvitations(invites.value.data)
+    if (availability.status === 'fulfilled') setAvailable(availability.value.applications)
+    const missingOk = (error: unknown) => error instanceof ApiError && error.status === 404
     try {
-      setProfile(await tenantProfileService.get(tenantId))
+      setConfiguration(await tenantConfigurationService.get(tenantId))
     } catch (error) {
-      if (!(error instanceof ApiError) || error.status !== 404) throw error
-      setProfile(null)
+      if (!missingOk(error)) throw error
+      setConfiguration(null)
+    }
+    try {
+      setSmtp(await tenantSmtpService.get(tenantId))
+    } catch (error) {
+      if (!missingOk(error)) throw error
+      setSmtp(null)
     }
   }, [tenantId])
 
@@ -185,15 +177,21 @@ export function TenantDetailPage() {
                 Back to tenants
               </Link>
             </Button>
-            <Button variant="outline" onClick={() => void run(() => tenantService.activate(tenant.id), 'Tenant activated')}>
-              Activate
-            </Button>
-            <Button variant="outline" onClick={() => void run(() => tenantService.suspend(tenant.id), 'Tenant suspended')}>
-              Suspend
-            </Button>
-            <Button variant="destructive" onClick={() => void run(() => tenantService.retire(tenant.id), 'Tenant retired')}>
-              Retire
-            </Button>
+            {lifecycleFor(tenant.status).canActivate ? (
+              <Button variant="outline" onClick={() => void run(() => tenantService.activate(tenant.id), 'Tenant activated')}>
+                Activate
+              </Button>
+            ) : null}
+            {lifecycleFor(tenant.status).canSuspend ? (
+              <Button variant="outline" onClick={() => void run(() => tenantService.suspend(tenant.id), 'Tenant suspended')}>
+                Suspend
+              </Button>
+            ) : null}
+            {lifecycleFor(tenant.status).canRetire ? (
+              <Button variant="destructive" onClick={() => void run(() => tenantService.retire(tenant.id), 'Tenant retired')}>
+                Retire
+              </Button>
+            ) : null}
           </>
         }
       />
@@ -220,511 +218,172 @@ export function TenantDetailPage() {
 
         <div className="p-5 sm:p-6">
           {tab === 'overview' ? (
-            <div className="space-y-6">
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                <Stat label="Contacts" value={contacts.length} />
-                <Stat label="Subscriptions" value={subscriptions.length} />
-                <Stat label="Entitlements" value={entitlements.filter((row) => row.status === EntitlementStatus.ACTIVE).length} />
-                <Stat label="Invitations" value={invitations.length} />
-              </div>
-              <div className="grid gap-6 lg:grid-cols-2">
-                <section>
-                  <SectionTitle title="Available applications" description="Derived from active entitlements in period." />
+            <div className="space-y-5">
+              <OverviewSection
+                eyebrow="At a glance"
+                title="Tenant summary"
+                description="A quick view of the institution setup and access."
+              >
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                  <Stat icon={UsersRound} label="Contacts" value={contacts.length} />
+                  <Stat icon={MapPin} label="Addresses" value={addresses.length} />
+                  <Stat icon={Mail} label="Invitations" value={invitations.length} />
+                  <Stat icon={PackageCheck} label="Subscriptions" value={subscriptions.length} />
+                </div>
+              </OverviewSection>
+
+              <OverviewSection
+                eyebrow="Institution"
+                title="Institution details"
+                description="Update the institution's public identity and location."
+              >
+                <div className="grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(18rem,0.55fr)]">
+                  <div className="space-y-4">
+                    <TenantFields mode="update" value={identity} onChange={setIdentity} />
+                    <div className="flex justify-end">
+                      <Button
+                        disabled={savingIdentity}
+                        onClick={() => {
+                          const identityError = validateTenantDraft(identity, 'update')
+                          if (identityError) {
+                            toast.error(identityError)
+                            return
+                          }
+                          setSavingIdentity(true)
+                          void run(
+                            () => tenantService.update(tenant.id, updateTenantPayload(identity)),
+                            'Tenant updated',
+                          ).finally(() => setSavingIdentity(false))
+                        }}
+                      >
+                        {savingIdentity ? 'Saving…' : 'Save changes'}
+                      </Button>
+                    </div>
+                  </div>
+                  <dl className="grid content-start gap-0 rounded-2xl border border-border bg-muted/25 px-4">
+                    <DetailRow label="Tenant code" value={tenant.tenantCode} />
+                    <DetailRow label="Institution type" value={tenant.institutionType.replaceAll('_', ' ')} />
+                    <DetailRow label="Deployment" value={tenant.deploymentModel.replaceAll('_', ' ')} />
+                    <DetailRow label="Country" value={tenant.countryCode} />
+                    <DetailRow label="Activated" value={formatDate(tenant.activatedAt)} />
+                  </dl>
+                </div>
+              </OverviewSection>
+
+              <div className="grid gap-5 xl:grid-cols-2">
+                <OverviewSection
+                  eyebrow="People"
+                  title="Key contacts"
+                  description="Contact records linked to this institution."
+                  action={
+                    <Button size="sm" variant="outline" onClick={() => setTab('institution')}>
+                      Manage contacts
+                    </Button>
+                  }
+                >
+                  {contacts.length ? (
+                    <div className="divide-y divide-border">
+                      {contacts.slice(0, 4).map((contact) => (
+                        <div key={contact.id} className="flex items-center justify-between gap-4 py-3 first:pt-0 last:pb-0">
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-medium">
+                              {[contact.firstName, contact.middleName, contact.lastName].filter(Boolean).join(' ')}
+                            </p>
+                            <p className="truncate text-xs text-muted-foreground">
+                              {contact.email || contact.mobilePhone || contact.contactType.replaceAll('_', ' ')}
+                            </p>
+                          </div>
+                          {contact.isPrimary ? <StatusBadge value="ACTIVE" /> : null}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <EmptyNote text="No contacts have been added yet." />
+                  )}
+                </OverviewSection>
+
+                <OverviewSection
+                  eyebrow="Access"
+                  title="Available applications"
+                  description="Applications currently available to this tenant."
+                  action={
+                    <Button size="sm" variant="outline" onClick={() => setTab('subscriptions')}>
+                      Manage access
+                    </Button>
+                  }
+                >
                   {available.length ? (
-                    <ul className="space-y-2">
-                      {available.map((app) => (
-                        <li
-                          key={app.entitlementId}
-                          className="flex items-center justify-between rounded-xl border border-border bg-background/70 px-4 py-3"
-                        >
-                          <div>
-                            <p className="font-medium">{app.name}</p>
+                    <div className="divide-y divide-border">
+                      {available.slice(0, 4).map((app) => (
+                        <div key={app.entitlementId} className="flex items-center justify-between gap-4 py-3 first:pt-0 last:pb-0">
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-medium">{app.name}</p>
                             <p className="font-mono text-[11px] text-muted-foreground">{app.applicationCode}</p>
                           </div>
                           <StatusBadge value="ACTIVE" />
-                        </li>
+                        </div>
                       ))}
-                    </ul>
+                    </div>
                   ) : (
-                    <EmptyNote text="No applications are currently available. Create a subscription or grant an entitlement." />
+                    <EmptyNote text="No applications are available yet." />
                   )}
-                </section>
-                <section>
-                  <SectionTitle title="Institution identity" description="SMTP, branding, and assets are managed by the tenant administrator." />
-                  <dl className="rounded-xl border border-border bg-background/70 px-4">
-                    <DetailRow label="Legal name" value={tenant.legalName} />
-                    <DetailRow label="Website" value={tenant.websiteUrl} />
-                    <DetailRow label="Country" value={tenant.countryCode} />
-                    <DetailRow label="City" value={tenant.city} />
-                  </dl>
-                </section>
+                </OverviewSection>
               </div>
             </div>
           ) : null}
 
           {tab === 'institution' ? (
             <div className="divide-y divide-border">
-              <section className="pb-8">
-                <SectionTitle title="Profile" description="Legal and campus details for this institution." />
-                <dl className="rounded-xl border border-border bg-background/70 px-4">
-                  <DetailRow label="Display name" value={profile?.displayName ?? tenant.displayName} />
-                  <DetailRow label="Registration" value={profile?.registrationNumber} />
-                  <DetailRow label="Address" value={profile?.addressLine1} />
-                  <DetailRow label="City" value={profile?.city ?? tenant.city} />
-                  <DetailRow label="Website" value={profile?.website ?? tenant.websiteUrl} />
-                </dl>
-              </section>
+              <TenantContactsPanel tenantId={tenant.id} contacts={contacts} onReload={reload} />
+              <TenantAddressesPanel tenantId={tenant.id} addresses={addresses} onReload={reload} />
+              <TenantIdentifiersPanel tenantId={tenant.id} identifiers={identifiers} onReload={reload} />
+            </div>
+          ) : null}
 
-              <section className="py-8">
-                <SectionTitle
-                  title="Contacts"
-                  description="People who represent this institution."
-                  action={
-                    <Dialog
-                      open={contactOpen}
-                      onOpenChange={(open) => {
-                        setContactOpen(open)
-                        if (open) setContact(emptyContactDraft())
-                      }}
-                    >
-                      <DialogTrigger asChild>
-                        <Button>Add contact</Button>
-                      </DialogTrigger>
-                      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-xl">
-                        <DialogHeader>
-                          <DialogTitle>Add contact</DialogTitle>
-                          <DialogDescription>
-                            POST /tenant/:id/contact — first name and contact type are required. Primary is a checkbox.
-                          </DialogDescription>
-                        </DialogHeader>
-                        <ContactFields value={contact} onChange={setContact} />
-                        <DialogFooter>
-                          <Button
-                            disabled={!contact.firstName.trim()}
-                            onClick={() => {
-                              const contactError = validateContact(contact)
-                              if (contactError) {
-                                toast.error(contactError)
-                                return
-                              }
-                              void run(async () => {
-                                await tenantContactService.create(tenant.id, contactPayload(contact))
-                                setContactOpen(false)
-                                setContact(emptyContactDraft())
-                              }, 'Contact added')
-                            }}
-                          >
-                            Save contact
-                          </Button>
-                        </DialogFooter>
-                      </DialogContent>
-                    </Dialog>
-                  }
-                />
-                <DataTable
-                  columns={['Name', 'Email', 'Type', 'Primary', '']}
-                  empty="No contacts yet."
-                  rows={contacts.map((row) => [
-                    `${row.firstName} ${row.middleName ?? ''} ${row.lastName ?? ''}`.replace(/\s+/g, ' ').trim(),
-                    row.email ?? '—',
-                    labelize(row.contactType),
-                    row.isPrimary ? 'Yes' : 'No',
-                    <Button
-                      key={row.id}
-                      size="sm"
-                      variant="outline"
-                      onClick={() => void run(() => tenantContactService.delete(tenant.id, row.id), 'Contact removed')}
-                    >
-                      Remove
-                    </Button>,
-                  ])}
-                />
-              </section>
-
-              <section className="py-8">
-                <SectionTitle
-                  title="Addresses"
-                  description="Head office and campus locations."
-                  action={
-                    <Dialog open={addressOpen} onOpenChange={setAddressOpen}>
-                      <DialogTrigger asChild>
-                        <Button>Add address</Button>
-                      </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Add address</DialogTitle>
-                      </DialogHeader>
-                      <FieldGrid>
-                        <Field label="Line 1">
-                          <Input
-                            value={address.addressLine1}
-                            onChange={(e) => setAddress({ ...address, addressLine1: e.target.value })}
-                          />
-                        </Field>
-                        <Field label="City">
-                          <Input value={address.city} onChange={(e) => setAddress({ ...address, city: e.target.value })} />
-                        </Field>
-                        <Field label="Type">
-                          <Select
-                            value={address.addressType}
-                            onValueChange={(value) => setAddress({ ...address, addressType: value as AddressType })}
-                          >
-                            <SelectTrigger className="w-full">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {Object.values(AddressType).map((type) => (
-                                <SelectItem key={type} value={type}>
-                                  {labelize(type)}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </Field>
-                      </FieldGrid>
-                      <DialogFooter>
-                        <Button
-                          disabled={!address.addressLine1 || !address.city}
-                          onClick={() =>
-                            void run(async () => {
-                              await tenantAddressService.create(tenant.id, {
-                                addressType: address.addressType,
-                                addressLine1: address.addressLine1,
-                                city: address.city,
-                                countryCode: address.countryCode,
-                                isPrimary: addresses.length === 0,
-                              })
-                              setAddressOpen(false)
-                              setAddress({
-                                addressLine1: '',
-                                city: '',
-                                countryCode: 'PK',
-                                addressType: AddressType.HEAD_OFFICE,
-                              })
-                            }, 'Address added')
-                          }
-                        >
-                          Save address
-                        </Button>
-                      </DialogFooter>
-                      </DialogContent>
-                    </Dialog>
-                  }
-                />
-                <DataTable
-                  columns={['Address', 'City', 'Type']}
-                  empty="No addresses yet."
-                  rows={addresses.map((row) => [row.addressLine1, row.city, labelize(row.addressType)])}
-                />
-              </section>
-
-              <section className="pt-8">
-                <SectionTitle
-                  title="Identifiers"
-                  description="Registration, tax, and accreditation numbers."
-                  action={
-                    <Dialog open={identifierOpen} onOpenChange={setIdentifierOpen}>
-                      <DialogTrigger asChild>
-                        <Button>Add identifier</Button>
-                      </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Add identifier</DialogTitle>
-                      </DialogHeader>
-                      <FieldGrid>
-                        <Field label="Value">
-                          <Input
-                            value={identifier.identifierValue}
-                            onChange={(e) => setIdentifier({ ...identifier, identifierValue: e.target.value })}
-                          />
-                        </Field>
-                        <Field label="Authority">
-                          <Input
-                            value={identifier.issuingAuthority}
-                            onChange={(e) => setIdentifier({ ...identifier, issuingAuthority: e.target.value })}
-                          />
-                        </Field>
-                        <Field label="Type">
-                          <Select
-                            value={identifier.identifierType}
-                            onValueChange={(value) =>
-                              setIdentifier({ ...identifier, identifierType: value as IdentifierType })
-                            }
-                          >
-                            <SelectTrigger className="w-full">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {Object.values(IdentifierType).map((type) => (
-                                <SelectItem key={type} value={type}>
-                                  {labelize(type)}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </Field>
-                      </FieldGrid>
-                      <DialogFooter>
-                        <Button
-                          disabled={!identifier.identifierValue}
-                          onClick={() =>
-                            void run(async () => {
-                              await tenantIdentifierService.create(tenant.id, {
-                                identifierType: identifier.identifierType,
-                                identifierValue: identifier.identifierValue,
-                                issuingAuthority: identifier.issuingAuthority || undefined,
-                              })
-                              setIdentifierOpen(false)
-                              setIdentifier({
-                                identifierValue: '',
-                                issuingAuthority: '',
-                                identifierType: IdentifierType.REGISTRATION,
-                              })
-                            }, 'Identifier added')
-                          }
-                        >
-                          Save identifier
-                        </Button>
-                      </DialogFooter>
-                      </DialogContent>
-                    </Dialog>
-                  }
-                />
-                <DataTable
-                  columns={['Type', 'Value', 'Authority']}
-                  empty="No identifiers yet."
-                  rows={identifiers.map((row) => [
-                    labelize(row.identifierType),
-                    row.identifierValue,
-                    row.issuingAuthority ?? '—',
-                  ])}
-                />
-              </section>
+          {tab === 'settings' ? (
+            <div className="divide-y divide-border">
+              <TenantConfigurationPanel
+                key={configuration?.updatedAt ?? 'config-new'}
+                tenantId={tenant.id}
+                configuration={configuration}
+                assets={assets}
+                onReload={reload}
+              />
+              <TenantSmtpPanel
+                key={smtp?.updatedAt ?? 'smtp-new'}
+                tenantId={tenant.id}
+                smtp={smtp}
+                onReload={reload}
+              />
+              <TenantAssetsPanel tenantId={tenant.id} assets={assets} onReload={reload} />
             </div>
           ) : null}
 
           {tab === 'subscriptions' ? (
-            <div>
-              <SectionTitle
-                title="Subscriptions"
-                description="Create a period and assign applications. Inactive or ended periods stay inactive — create a new subscription to continue."
-                action={
-                  <Dialog open={subOpen} onOpenChange={setSubOpen}>
-                    <DialogTrigger asChild>
-                      <Button>New subscription</Button>
-                    </DialogTrigger>
-                  <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-xl">
-                    <DialogHeader>
-                      <DialogTitle>Create subscription</DialogTitle>
-                      <DialogDescription>Assigned applications are entitled for this period.</DialogDescription>
-                    </DialogHeader>
-                    <SubscriptionFields value={draft} onChange={setDraft} applications={applications} />
-                    <DialogFooter>
-                      <Button
-                        onClick={() =>
-                          void run(async () => {
-                            await subscriptionService.create(tenant.id, draft)
-                            setSubOpen(false)
-                            setDraft(emptySubscriptionDraft())
-                          }, 'Subscription created')
-                        }
-                      >
-                        Save
-                      </Button>
-                    </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
-                }
-              />
-              <DataTable
-                columns={['Code', 'Plan', 'Period', 'Applications', 'Status', '']}
-                empty="No subscriptions yet."
-                rows={subscriptions.map((row) => [
-                  row.subscriptionCode,
-                  `${labelize(row.planType)}${row.billingCycle ? ` · ${labelize(row.billingCycle)}` : ''}`,
-                  `${row.startDate} → ${row.endDate}`,
-                  row.applicationCodes.length ? row.applicationCodes.join(', ') : '—',
-                  <StatusBadge key={row.id} value={row.status} />,
-                  row.status === SubscriptionStatus.ACTIVE ? (
-                    <Button
-                      key={`${row.id}-off`}
-                      size="sm"
-                      variant="outline"
-                      onClick={() =>
-                        void run(
-                          () => subscriptionService.update(tenant.id, row.id, { status: SubscriptionStatus.INACTIVE }),
-                          'Subscription set inactive',
-                        )
-                      }
-                    >
-                      Inactive
-                    </Button>
-                  ) : periodEnded(row.endDate) ? (
-                    <span key={`${row.id}-ended`} className="text-xs text-muted-foreground">
-                      Ended
-                    </span>
-                  ) : (
-                    <Button
-                      key={`${row.id}-on`}
-                      size="sm"
-                      variant="outline"
-                      onClick={() =>
-                        void run(
-                          () => subscriptionService.update(tenant.id, row.id, { status: SubscriptionStatus.ACTIVE }),
-                          'Subscription activated',
-                        )
-                      }
-                    >
-                      Activate
-                    </Button>
-                  ),
-                ])}
-              />
-            </div>
+            <TenantSubscriptionsPanel
+              tenantId={tenant.id}
+              subscriptions={subscriptions}
+              applications={applications}
+              onReload={reload}
+            />
           ) : null}
 
           {tab === 'entitlements' ? (
-            <div>
-              <SectionTitle
-                title="Application entitlements"
-                description="Every catalogue application can be granted or set inactive for this tenant."
-              />
-              {applications.length ? (
-                <ul className="space-y-2">
-                  {applications.map((app) => {
-                    const entitlement = entitlements.find(
-                      (row) => row.applicationId === app.id || row.applicationCode === app.applicationCode,
-                    )
-                    const active = entitlement?.status === EntitlementStatus.ACTIVE
-                    const catalogueActive = app.status === ApplicationStatus.ACTIVE
-                    return (
-                      <li
-                        key={app.id}
-                        className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-background/70 px-4 py-3.5"
-                      >
-                        <div className="min-w-0">
-                          <p className="font-medium">{app.name}</p>
-                          <p className="font-mono text-[11px] text-muted-foreground">{app.applicationCode}</p>
-                        </div>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <StatusBadge value={entitlement?.status ?? 'NOT_ENTITLED'} />
-                          {active ? (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() =>
-                                void run(
-                                  () =>
-                                    entitlementService.update(tenant.id, entitlement.id, {
-                                      status: EntitlementStatus.INACTIVE,
-                                    }),
-                                  `${app.name} set inactive`,
-                                )
-                              }
-                            >
-                              Inactive
-                            </Button>
-                          ) : (
-                            <Button
-                              size="sm"
-                              disabled={!catalogueActive}
-                              onClick={() =>
-                                void run(
-                                  () => entitlementService.create(tenant.id, { applicationCode: app.applicationCode }),
-                                  `${app.name} entitled`,
-                                )
-                              }
-                            >
-                              Grant
-                            </Button>
-                          )}
-                        </div>
-                      </li>
-                    )
-                  })}
-                </ul>
-              ) : (
-                <EmptyNote text="Register applications in the catalogue first." />
-              )}
-            </div>
+            <TenantEntitlementsPanel
+              tenantId={tenant.id}
+              applications={applications}
+              entitlements={entitlements}
+              subscriptions={subscriptions}
+              onReload={reload}
+            />
           ) : null}
 
           {tab === 'invitations' ? (
-            <div>
-              <SectionTitle
-                title="Administrator invitations"
-                description="The invitation token is shown once so you can share it while email is not connected."
-                action={
-                  <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
-                    <DialogTrigger asChild>
-                      <Button>Send invite</Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Invite tenant administrator</DialogTitle>
-                      </DialogHeader>
-                      <Field label="Email">
-                        <Input value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} />
-                      </Field>
-                      <DialogFooter>
-                        <Button
-                          disabled={!inviteEmail}
-                          onClick={() =>
-                            void run(async () => {
-                              const created = await invitationService.create(tenant.id, inviteEmail)
-                              setInviteToken(created.invitationToken ?? '')
-                              setInviteEmail('')
-                              setInviteOpen(false)
-                            }, 'Invitation created')
-                          }
-                        >
-                          Send invite
-                        </Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
-                }
-              />
-              {inviteToken ? (
-                <p className="mb-4 rounded-xl border border-[#00c2b2]/30 bg-[#00c2b2]/8 p-3 font-mono text-xs break-all">
-                  {inviteToken}
-                </p>
-              ) : null}
-              <DataTable
-                columns={['Email', 'Status', 'Expires', '']}
-                empty="No invitations yet."
-                rows={invitations.map((row) => [
-                  row.email,
-                  <StatusBadge key={row.id} value={row.status} />,
-                  String(row.expiresAt).slice(0, 10),
-                  row.status === 'PENDING' ? (
-                    <div key={`${row.id}-inv`} className="flex justify-end gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() =>
-                          void run(async () => {
-                            const resent = await invitationService.resend(tenant.id, row.id)
-                            setInviteToken(resent.invitationToken ?? '')
-                          }, 'Invitation resent')
-                        }
-                      >
-                        Resend
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => void run(() => invitationService.cancel(tenant.id, row.id), 'Invitation cancelled')}
-                      >
-                        Cancel
-                      </Button>
-                    </div>
-                  ) : (
-                    ''
-                  ),
-                ])}
-              />
-            </div>
+            <TenantInvitationsPanel
+              tenantId={tenant.id}
+              invitations={invitations}
+              onReload={reload}
+            />
           ) : null}
         </div>
       </div>
@@ -732,39 +391,46 @@ export function TenantDetailPage() {
   )
 }
 
-function labelize(value: string) {
-  return value.replaceAll('_', ' ').toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase())
-}
+type OverviewIcon = typeof Building2
 
-function periodEnded(endDate: string) {
-  return Boolean(endDate) && endDate < new Date().toISOString().slice(0, 10)
-}
-
-function SectionTitle({
+function OverviewSection({
+  eyebrow,
   title,
   description,
   action,
+  children,
 }: {
+  eyebrow: string
   title: string
-  description?: string
+  description: string
   action?: ReactNode
+  children: ReactNode
 }) {
   return (
-    <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-      <div className="min-w-0">
-        <h2 className="font-display text-lg font-semibold tracking-tight">{title}</h2>
-        {description ? <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{description}</p> : null}
+    <section className="rounded-2xl border border-border bg-card p-5 sm:p-6">
+      <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-[10px] font-semibold tracking-[0.16em] text-[#0a9489] uppercase">{eyebrow}</p>
+          <h2 className="font-display mt-1 text-xl font-semibold tracking-tight">{title}</h2>
+          <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+        </div>
+        {action}
       </div>
-      {action ? <div className="ml-auto shrink-0">{action}</div> : null}
-    </div>
+      {children}
+    </section>
   )
 }
 
-function Stat({ label, value }: { label: string; value: number }) {
+function Stat({ icon: Icon, label, value }: { icon: OverviewIcon; label: string; value: number }) {
   return (
-    <div className="rounded-xl border border-border bg-background/70 px-4 py-3">
-      <p className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground uppercase">{label}</p>
-      <p className="font-display mt-1 text-2xl font-semibold tabular-nums">{value}</p>
+    <div className="flex items-center gap-3 rounded-xl border border-border bg-muted/25 px-4 py-4">
+      <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#00c2b2]/12 text-[#087d75]">
+        <Icon className="size-5" />
+      </span>
+      <div>
+        <p className="font-display text-2xl leading-none font-semibold tabular-nums">{value}</p>
+        <p className="mt-1 text-xs font-medium text-muted-foreground">{label}</p>
+      </div>
     </div>
   )
 }
@@ -786,44 +452,8 @@ function EmptyNote({ text }: { text: string }) {
   )
 }
 
-function DataTable({
-  columns,
-  rows,
-  empty,
-}: {
-  columns: string[]
-  rows: Array<Array<ReactNode>>
-  empty: string
-}) {
-  return (
-    <div className="overflow-hidden rounded-xl border border-border bg-card">
-      <Table>
-        <TableHeader className="bg-muted/40">
-          <TableRow>
-            {columns.map((column, index) => (
-              <TableHead key={`${column}-${index}`}>{column || null}</TableHead>
-            ))}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {rows.map((row, index) => (
-            <TableRow key={index}>
-              {row.map((cell, cellIndex) => (
-                <TableCell key={cellIndex} className={cellIndex === row.length - 1 ? 'text-right' : undefined}>
-                  {cell}
-                </TableCell>
-              ))}
-            </TableRow>
-          ))}
-          {!rows.length ? (
-            <TableRow>
-              <TableCell colSpan={columns.length} className="py-10 text-center text-muted-foreground">
-                {empty}
-              </TableCell>
-            </TableRow>
-          ) : null}
-        </TableBody>
-      </Table>
-    </div>
-  )
+function formatDate(value?: string) {
+  if (!value) return '—'
+  const date = new Date(value)
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString()
 }

@@ -18,13 +18,10 @@ export function LoginPage() {
     setBusy(true)
     try {
       const session = await login(email.trim(), password)
-      const role = roleFrom(session.user)
+      const role = roleFrom(session)
       if (!role) {
         toast.error('This account has no platform or tenant administrator role')
         return
-      }
-      if (role !== 'PLATFORM_ADMIN') {
-        toast.message('Tenant administrator workspace is next. Platform administration is ready now.')
       }
       navigate(homeFor(role))
     } catch (error) {
@@ -46,7 +43,7 @@ export function LoginPage() {
             business logic into the platform.
           </p>
         </div>
-        <p className="text-sm text-white/60">Sign in with a platform administrator account.</p>
+        <p className="text-sm text-white/60">Sign in as a platform administrator or tenant administrator.</p>
       </section>
 
       <section className="flex items-center justify-center bg-background p-6">
@@ -58,7 +55,7 @@ export function LoginPage() {
           <Card className="portal-card">
             <CardHeader>
               <CardTitle>Sign in</CardTitle>
-              <CardDescription>Use your platform administrator credentials.</CardDescription>
+              <CardDescription>Use your platform or tenant administrator credentials.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <Field label="Email">

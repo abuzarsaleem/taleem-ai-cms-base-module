@@ -1,60 +1,58 @@
-import { ExternalLink } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { Building2, Settings2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { PageHeader } from '@/components/page-header'
-import { StatusBadge } from '@/components/status-badge'
-import { useAuth } from '@/lib/auth'
-import { useStore } from '@/lib/store'
-import { EntitlementStatus } from '@/lib/types'
+import { Skeleton } from '@/components/ui/skeleton'
+import { EmptyState, PageHeader } from '@/components/page-header'
+import { useOwnTenant } from '@/lib/use-own-tenant'
 
 export function TenantLauncherPage() {
-  const { session } = useAuth()
-  const { store } = useStore()
-  const tenant = store.tenants[0]
-  const user = store.users.find((row) => row.email === session?.user.email)
-  const entitled = store.entitlements.filter(
-    (row) => row.tenantId === tenant?.id && row.status === EntitlementStatus.ACTIVE,
-  )
-  const assigned = entitled.filter((row) => user?.assignedApps.includes(row.applicationCode ?? ''))
+  const { tenant, loading, missing } = useOwnTenant()
+
+  if (loading) {
+    return (
+      <div className="flex flex-1 flex-col gap-6">
+        <Skeleton className="h-36 rounded-3xl" />
+        <Skeleton className="h-40 rounded-[var(--radius)]" />
+      </div>
+    )
+  }
+
+  if (missing || !tenant) {
+    return (
+      <EmptyState
+        title="No institution assigned"
+        description="This account is not an active member of a tenant. Ask a platform administrator to invite you."
+      />
+    )
+  }
 
   return (
     <div className="flex flex-1 flex-col gap-6">
       <PageHeader
-        eyebrow="BWF-004"
-        title="Application launcher"
-        description={`${tenant?.displayName ?? 'Your institution'} — only entitled and assigned applications are shown.`}
+        eyebrow={tenant.tenantCode}
+        title={tenant.displayName}
+        description="Manage this institution. Subscriptions and tenant-administrator invitations are assigned by the platform."
       />
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {assigned.map((row) => {
-          const app = store.applications.find((item) => item.applicationCode === row.applicationCode)
-          if (!app) return null
-          return (
-            <Card key={row.id} className="portal-card">
-              <CardHeader>
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <CardTitle>{app.name}</CardTitle>
-                    <CardDescription>{app.description}</CardDescription>
-                  </div>
-                  <StatusBadge value="ACTIVE" />
-                </div>
-              </CardHeader>
-              <CardContent className="flex items-center justify-between">
-                <p className="text-xs text-muted-foreground">{app.applicationCode}</p>
-                <Button asChild>
-                  <a href={app.launchUrl ?? '#'} target="_blank" rel="noreferrer">
-                    Open
-                    <ExternalLink />
-                  </a>
-                </Button>
-              </CardContent>
-            </Card>
-          )
-        })}
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className="portal-card p-5">
+          <Building2 className="mb-3 size-5 text-[#00c2b2]" />
+          <p className="font-medium">Institution</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Contacts, addresses, and registration identifiers.
+          </p>
+          <Button className="mt-4" variant="outline" asChild>
+            <Link to="/tenant/profile">Open profile</Link>
+          </Button>
+        </div>
+        <div className="portal-card p-5">
+          <Settings2 className="mb-3 size-5 text-[#00c2b2]" />
+          <p className="font-medium">Configuration</p>
+          <p className="mt-1 text-sm text-muted-foreground">Locale, branding, SMTP, logos, and documents.</p>
+          <Button className="mt-4" variant="outline" asChild>
+            <Link to="/tenant/configuration">Open settings</Link>
+          </Button>
+        </div>
       </div>
-      {!assigned.length ? (
-        <p className="text-sm text-muted-foreground">No applications are assigned to this user yet.</p>
-      ) : null}
     </div>
   )
 }

@@ -42,6 +42,9 @@ function CatalogOrInput({
               {item.name}
             </SelectItem>
           ))}
+          {value && !items.some((item) => item.name === value) ? (
+            <SelectItem value={value}>{value}</SelectItem>
+          ) : null}
         </SelectContent>
       </Select>
     </Field>
@@ -61,8 +64,8 @@ export function ContactFields({
   useEffect(() => {
     void Promise.all([catalogService.departments(), catalogService.designations()])
       .then(([nextDepartments, nextDesignations]) => {
-        setDepartments(Array.isArray(nextDepartments) ? nextDepartments : [])
-        setDesignations(Array.isArray(nextDesignations) ? nextDesignations : [])
+        setDepartments((Array.isArray(nextDepartments) ? nextDepartments : []).filter((item) => item.isActive !== false))
+        setDesignations((Array.isArray(nextDesignations) ? nextDesignations : []).filter((item) => item.isActive !== false))
       })
       .catch(() => {
         setDepartments([])

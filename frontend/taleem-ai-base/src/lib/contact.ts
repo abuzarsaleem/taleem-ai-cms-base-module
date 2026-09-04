@@ -1,4 +1,5 @@
-import { ContactType } from '@/lib/types'
+import { ContactType, type TenantContact } from '@/lib/types'
+import { EMAIL_PATTERN, optionalText } from '@/lib/utils'
 
 export type ContactDraft = {
   contactType: ContactType
@@ -36,11 +37,10 @@ export function emptyContactDraft(overrides: Partial<ContactDraft> = {}): Contac
 }
 
 function optional(value: string) {
-  const trimmed = value.trim()
-  return trimmed || undefined
+  return optionalText(value)
 }
 
-const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const EMAIL = EMAIL_PATTERN
 
 export function validateContact(draft: ContactDraft): string | null {
   if (!draft.contactType) return 'Contact type is required'
@@ -59,6 +59,24 @@ export function validateContact(draft: ContactDraft): string | null {
   if (draft.landlinePhone.trim().length > 30) return 'Landline must be 30 characters or fewer'
   if (draft.whatsappNumber.trim().length > 30) return 'WhatsApp number must be 30 characters or fewer'
   return null
+}
+
+export function contactDraftFrom(contact: TenantContact): ContactDraft {
+  return {
+    contactType: contact.contactType,
+    firstName: contact.firstName,
+    middleName: contact.middleName ?? '',
+    lastName: contact.lastName ?? '',
+    designation: contact.designation ?? '',
+    department: contact.department ?? '',
+    responsibility: contact.responsibility ?? '',
+    email: contact.email ?? '',
+    mobilePhone: contact.mobilePhone ?? '',
+    landlinePhone: contact.landlinePhone ?? '',
+    whatsappNumber: contact.whatsappNumber ?? '',
+    isPrimary: contact.isPrimary,
+    isActive: contact.isActive,
+  }
 }
 
 export function contactPayload(draft: ContactDraft) {

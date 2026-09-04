@@ -1,174 +1,103 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Switch } from '@/components/ui/switch'
-import { Field, FieldGrid } from '@/components/field'
-import { PageHeader } from '@/components/page-header'
-import { useStore } from '@/lib/store'
-import { SmtpEncryption } from '@/lib/types'
+import { Skeleton } from '@/components/ui/skeleton'
+import { EmptyState, PageHeader } from '@/components/page-header'
+import { errorMessage, useAuth } from '@/lib/auth'
+import { ApiError } from '@/lib/api'
+import type { Tenant, TenantAsset, TenantConfiguration, TenantSmtp } from '@/lib/types'
+import {
+  tenantAssetService,
+  tenantConfigurationService,
+  tenantService,
+  tenantSmtpService,
+} from '@/services/platform'
+import { TenantConfigurationPanel } from '@/pages/platform/tenant-configuration-panel'
+import { TenantSmtpPanel } from '@/pages/platform/tenant-smtp-panel'
+import { TenantAssetsPanel } from '@/pages/platform/tenant-assets-panel'
 
 export function TenantConfigurationPage() {
-  const { store, setStore } = useStore()
-  const tenantId = store.tenants[0]?.id ?? ''
-  const config = store.configurations.find((row) => row.tenantId === tenantId)
-  const smtp = store.smtp.find((row) => row.tenantId === tenantId)
-  const branding = store.branding.find((row) => row.tenantId === tenantId)
-  const [timezone, setTimezone] = useState(config?.timezone ?? 'Asia/Karachi')
-  const [locale, setLocale] = useState(config?.locale ?? 'en-PK')
-  const [dateFormat, setDateFormat] = useState(config?.dateFormat ?? 'DD/MM/YYYY')
-  const [currencyCode, setCurrencyCode] = useState(config?.currencyCode ?? 'PKR')
-  const [host, setHost] = useState(smtp?.host ?? '')
-  const [fromEmail, setFromEmail] = useState(smtp?.fromEmail ?? '')
-  const [smtpActive, setSmtpActive] = useState(smtp?.isActive ?? false)
-  const [primaryColor, setPrimaryColor] = useState(branding?.primaryColor ?? '#081B45')
-  const [accentColor, setAccentColor] = useState(branding?.accentColor ?? '#36BABC')
-  const [supportEmail, setSupportEmail] = useState(branding?.supportEmail ?? '')
+  const { session } = useAuth()
+  const tenantId = session?.tenantId
+  const [tenant, setTenant] = useState<Tenant | null>(null)
+  const [configuration, setConfiguration] = useState<TenantConfiguration | null>(null)
+  const [smtp, setSmtp] = useState<TenantSmtp | null>(null)
+  const [assets, setAssets] = useState<TenantAsset[]>([])
+  const [loading, setLoading] = useState(true)
+  const [missing, setMissing] = useState(!tenantId)
+
+  const reload = useCallback(async () => {
+    if (!tenantId) {
+      setMissing(true)
+      return
+    }
+    const missingOk = (error: unknown) => error instanceof ApiError && error.status === 404
+    const [nextTenant, assetPage] = await Promise.all([
+      tenantService.get(tenantId),
+      tenantAssetService.list(tenantId),
+    ])
+    setTenant(nextTenant)
+    setAssets(assetPage.data)
+    try {
+      setConfiguration(await tenantConfigurationService.get(tenantId))
+    } catch (error) {
+      if (!missingOk(error)) throw error
+      setConfiguration(null)
+    }
+    try {
+      setSmtp(await tenantSmtpService.get(tenantId))
+    } catch (error) {
+      if (!missingOk(error)) throw error
+      setSmtp(null)
+    }
+    setMissing(false)
+  }, [tenantId])
+
+  useEffect(() => {
+    setLoading(true)
+    reload()
+      .catch((error) => {
+        if (error instanceof ApiError && (error.status === 404 || error.status === 403)) setMissing(true)
+        else toast.error(errorMessage(error))
+      })
+      .finally(() => setLoading(false))
+  }, [reload])
+
+  if (loading) {
+    return (
+      <div className="flex flex-1 flex-col gap-6">
+        <Skeleton className="h-36 rounded-3xl" />
+        <Skeleton className="h-96 rounded-[var(--radius)]" />
+      </div>
+    )
+  }
+
+  if (missing || !tenant || !tenantId) {
+    return (
+      <EmptyState
+        title="No institution assigned"
+        description="This account is not an active member of a tenant. Ask a platform administrator to invite you."
+      />
+    )
+  }
 
   return (
     <div className="flex flex-1 flex-col gap-6">
       <PageHeader
-        eyebrow="BWF-006"
-        title="Common configuration"
-        description="Only cross-application settings belong here. Domain application settings stay in those applications."
+        eyebrow={tenant.tenantCode}
+        title="Configuration"
+        description="Locale, branding, outbound email, and assets for this institution."
       />
-      <Card className="portal-card">
-        <CardHeader>
-          <CardTitle>Regional defaults</CardTitle>
-          <CardDescription>Timezone, locale, date format, and currency.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <FieldGrid>
-            <Field label="Timezone">
-              <Input value={timezone} onChange={(e) => setTimezone(e.target.value)} />
-            </Field>
-            <Field label="Locale">
-              <Input value={locale} onChange={(e) => setLocale(e.target.value)} />
-            </Field>
-            <Field label="Date format">
-              <Input value={dateFormat} onChange={(e) => setDateFormat(e.target.value)} />
-            </Field>
-            <Field label="Currency">
-              <Input value={currencyCode} onChange={(e) => setCurrencyCode(e.target.value)} />
-            </Field>
-          </FieldGrid>
-          <Button
-            onClick={() => {
-              setStore((prev) => ({
-                ...prev,
-                configurations: prev.configurations.some((row) => row.tenantId === tenantId)
-                  ? prev.configurations.map((row) =>
-                      row.tenantId === tenantId
-                        ? { ...row, timezone, locale, dateFormat, currencyCode }
-                        : row,
-                    )
-                  : [...prev.configurations, { tenantId, timezone, locale, dateFormat, currencyCode }],
-              }))
-              toast.success('Configuration saved')
-            }}
-          >
-            Save defaults
-          </Button>
-        </CardContent>
-      </Card>
-
-      <Card className="portal-card">
-        <CardHeader>
-          <CardTitle>SMTP</CardTitle>
-          <CardDescription>Used for invitations and common notifications. Passwords are never stored in the UI.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <FieldGrid>
-            <Field label="Host">
-              <Input value={host} onChange={(e) => setHost(e.target.value)} />
-            </Field>
-            <Field label="From email">
-              <Input value={fromEmail} onChange={(e) => setFromEmail(e.target.value)} />
-            </Field>
-          </FieldGrid>
-          <label className="flex items-center gap-2 text-sm">
-            <Switch checked={smtpActive} onCheckedChange={setSmtpActive} />
-            SMTP enabled
-          </label>
-          <Button
-            onClick={() => {
-              setStore((prev) => ({
-                ...prev,
-                smtp: prev.smtp.some((row) => row.tenantId === tenantId)
-                  ? prev.smtp.map((row) =>
-                      row.tenantId === tenantId
-                        ? { ...row, host, fromEmail, isActive: smtpActive }
-                        : row,
-                    )
-                  : [
-                      ...prev.smtp,
-                      {
-                        tenantId,
-                        host,
-                        port: 587,
-                        encryption: SmtpEncryption.TLS,
-                        fromEmail,
-                        isActive: smtpActive,
-                      },
-                    ],
-              }))
-              toast.success('SMTP saved')
-            }}
-          >
-            Save SMTP
-          </Button>
-        </CardContent>
-      </Card>
-
-      <Card className="portal-card">
-        <CardHeader>
-          <CardTitle>Branding</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <FieldGrid>
-            <Field label="Primary colour">
-              <Input value={primaryColor} onChange={(e) => setPrimaryColor(e.target.value)} />
-            </Field>
-            <Field label="Accent colour">
-              <Input value={accentColor} onChange={(e) => setAccentColor(e.target.value)} />
-            </Field>
-            <Field label="Support email">
-              <Input value={supportEmail} onChange={(e) => setSupportEmail(e.target.value)} />
-            </Field>
-          </FieldGrid>
-          <div className="flex gap-3">
-            <span className="size-10 rounded-lg border" style={{ background: primaryColor }} />
-            <span className="size-10 rounded-lg border" style={{ background: accentColor }} />
-          </div>
-          <Button
-            onClick={() => {
-              setStore((prev) => ({
-                ...prev,
-                branding: prev.branding.some((row) => row.tenantId === tenantId)
-                  ? prev.branding.map((row) =>
-                      row.tenantId === tenantId
-                        ? { ...row, primaryColor, accentColor, supportEmail }
-                        : row,
-                    )
-                  : [
-                      ...prev.branding,
-                      {
-                        tenantId,
-                        primaryColor,
-                        secondaryColor: '#FFFFFF',
-                        accentColor,
-                        supportEmail,
-                      },
-                    ],
-              }))
-              toast.success('Branding saved')
-            }}
-          >
-            Save branding
-          </Button>
-        </CardContent>
-      </Card>
+      <div className="portal-card divide-y divide-border p-5 sm:p-6">
+        <TenantConfigurationPanel
+          key={configuration?.updatedAt ?? 'config-new'}
+          tenantId={tenant.id}
+          configuration={configuration}
+          assets={assets}
+          onReload={reload}
+        />
+        <TenantSmtpPanel key={smtp?.updatedAt ?? 'smtp-new'} tenantId={tenant.id} smtp={smtp} onReload={reload} />
+        <TenantAssetsPanel tenantId={tenant.id} assets={assets} onReload={reload} />
+      </div>
     </div>
   )
 }

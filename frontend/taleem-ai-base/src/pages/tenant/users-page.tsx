@@ -1,158 +1,184 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Field } from '@/components/field'
-import { PageHeader } from '@/components/page-header'
+import { Skeleton } from '@/components/ui/skeleton'
+import { DataTable } from '@/components/data-table'
+import { EmptyState, PageHeader } from '@/components/page-header'
 import { StatusBadge } from '@/components/status-badge'
-import { createId } from '@/lib/ids'
-import { useAuth } from '@/lib/auth'
-import { useStore } from '@/lib/store'
-import { EntitlementStatus, TenantUserRole, UserStatus } from '@/lib/types'
+import { errorMessage, useAuth } from '@/lib/auth'
+import { ApiError } from '@/lib/api'
+import { formatInvitationInstant } from '@/lib/invitation'
+import {
+  MembershipRole,
+  MembershipStatus,
+  type Tenant,
+  type TenantMembership,
+} from '@/lib/types'
+import { membershipService, tenantService } from '@/services/platform'
 
 export function TenantUsersPage() {
   const { session } = useAuth()
-  const { store, setStore, addAudit } = useStore()
-  const tenantId = store.tenants[0]?.id ?? ''
-  const entitled = store.entitlements
-    .filter((row) => row.tenantId === tenantId && row.status === EntitlementStatus.ACTIVE)
-    .map((row) => row.applicationCode)
-    .filter((code): code is string => Boolean(code))
-  const users = store.users.filter((row) => row.tenantId === tenantId)
-  const [open, setOpen] = useState(false)
-  const [fullName, setFullName] = useState('')
-  const [email, setEmail] = useState('')
-  const [role, setRole] = useState<(typeof TenantUserRole)[keyof typeof TenantUserRole]>(
-    TenantUserRole.TENANT_USER,
-  )
-  const [apps, setApps] = useState<string[]>([])
+  const tenantId = session?.tenantId
+  const currentUserId = session?.user.id
+  const [tenant, setTenant] = useState<Tenant | null>(null)
+  const [members, setMembers] = useState<TenantMembership[]>([])
+  const [loading, setLoading] = useState(true)
+  const [missing, setMissing] = useState(!tenantId)
+  const [busyId, setBusyId] = useState<string | null>(null)
+
+  const reload = useCallback(async () => {
+    if (!tenantId) {
+      setMissing(true)
+      return
+    }
+    const [nextTenant, page] = await Promise.all([
+      tenantService.get(tenantId),
+      membershipService.list(tenantId),
+    ])
+    setTenant(nextTenant)
+    setMembers(page.data)
+    setMissing(false)
+  }, [tenantId])
+
+  useEffect(() => {
+    setLoading(true)
+    reload()
+      .catch((error) => {
+        if (error instanceof ApiError && (error.status === 404 || error.status === 403)) setMissing(true)
+        else toast.error(errorMessage(error))
+      })
+      .finally(() => setLoading(false))
+  }, [reload])
+
+  const activeAdmins = members.filter(
+    (row) => row.isTenantAdmin && row.status === MembershipStatus.ACTIVE,
+  ).length
+
+  async function run(id: string, action: () => Promise<unknown>, success: string) {
+    setBusyId(id)
+    try {
+      await action()
+      toast.success(success)
+      await reload()
+    } catch (error) {
+      toast.error(errorMessage(error))
+    } finally {
+      setBusyId(null)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex flex-1 flex-col gap-6">
+        <Skeleton className="h-36 rounded-3xl" />
+        <Skeleton className="h-96 rounded-[var(--radius)]" />
+      </div>
+    )
+  }
+
+  if (missing || !tenant || !tenantId) {
+    return (
+      <EmptyState
+        title="No institution assigned"
+        description="This account is not an active member of a tenant. Ask a platform administrator to invite you."
+      />
+    )
+  }
 
   return (
     <div className="flex flex-1 flex-col gap-6">
       <PageHeader
-        eyebrow="BWF-002"
-        title="Tenant users"
-        description="Invite users with a central identity. Application assignment cannot exceed tenant entitlement."
-        actions={
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button>Invite user</Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Invite user</DialogTitle>
-                <DialogDescription>Existing platform identities would be reused when APIs are connected.</DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-3">
-                <Field label="Full name">
-                  <Input value={fullName} onChange={(e) => setFullName(e.target.value)} />
-                </Field>
-                <Field label="Email">
-                  <Input value={email} onChange={(e) => setEmail(e.target.value)} />
-                </Field>
-                <Field label="Role">
-                  <Select value={role} onValueChange={(value) => setRole(value as typeof role)}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={TenantUserRole.TENANT_ADMIN}>Tenant administrator</SelectItem>
-                      <SelectItem value={TenantUserRole.TENANT_USER}>Tenant user</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </Field>
-                <div className="grid gap-2">
-                  <p className="text-sm font-medium">Assigned applications</p>
-                  {entitled.map((code) => (
-                    <label key={code} className="flex items-center gap-2 text-sm">
-                      <Checkbox
-                        checked={apps.includes(code)}
-                        onCheckedChange={() =>
-                          setApps((prev) => (prev.includes(code) ? prev.filter((item) => item !== code) : [...prev, code]))
-                        }
-                      />
-                      {code}
-                    </label>
-                  ))}
-                </div>
-              </div>
-              <DialogFooter>
-                <Button
-                  onClick={() => {
-                    if (!fullName || !email.includes('@')) {
-                      toast.error('Name and email are required')
-                      return
-                    }
-                    const blocked = apps.filter((code) => !entitled.includes(code))
-                    if (blocked.length) {
-                      toast.error('Assignment cannot exceed entitlement')
-                      return
-                    }
-                    setStore((prev) => ({
-                      ...prev,
-                      users: [
-                        ...prev.users,
-                        {
-                          id: createId('usr'),
-                          tenantId,
-                          fullName,
-                          email,
-                          role,
-                          status: UserStatus.INVITED,
-                          assignedApps: apps,
-                        },
-                      ],
-                    }))
-                    addAudit({
-                      tenantName: store.tenants.find((t) => t.id === tenantId)?.displayName,
-                      actor: session?.user.fullName ?? 'Tenant Admin',
-                      action: 'USER_INVITED',
-                      entity: `user / ${email}`,
-                    })
-                    setOpen(false)
-                    setFullName('')
-                    setEmail('')
-                    setApps([])
-                    toast.success('Invitation created')
-                  }}
-                >
-                  Send invite
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        }
+        eyebrow={tenant.tenantCode}
+        title="Members"
+        description="GET/PATCH/DELETE /tenant/:id/membership — roles are tenant administrator or tenant member. Suspend instead of setting inactive."
       />
-      <div className="portal-card overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>User</TableHead>
-              <TableHead>Role</TableHead>
-              <TableHead>Applications</TableHead>
-              <TableHead>Status</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {users.map((user) => (
-              <TableRow key={user.id}>
-                <TableCell>
-                  <p className="font-medium">{user.fullName}</p>
-                  <p className="text-xs text-muted-foreground">{user.email}</p>
-                </TableCell>
-                <TableCell>{user.role.replaceAll('_', ' ')}</TableCell>
-                <TableCell>{user.assignedApps.join(', ') || '—'}</TableCell>
-                <TableCell>
-                  <StatusBadge value={user.status} />
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+      <div className="portal-card p-5 sm:p-6">
+        <DataTable
+          columns={['Member', 'Role', 'Status', 'Joined', '']}
+          empty="No members yet. Invite people from the Invitations page."
+          rows={members.map((row) => {
+            const lastAdmin = row.isTenantAdmin && activeAdmins <= 1
+            const busy = busyId === row.id
+            const self = row.userId === currentUserId
+            return [
+              <div key={`${row.id}-who`}>
+                <p className="font-medium">{row.userFullName || '—'}</p>
+                <p className="text-xs text-muted-foreground">
+                  {row.userEmail}
+                  {self ? ' · you' : ''}
+                </p>
+              </div>,
+              <Select
+                key={`${row.id}-role`}
+                value={row.isTenantAdmin ? MembershipRole.TENANT_ADMIN : MembershipRole.TENANT_MEMBER}
+                disabled={busy || (lastAdmin && row.isTenantAdmin)}
+                onValueChange={(value) => {
+                  const isTenantAdmin = value === MembershipRole.TENANT_ADMIN
+                  if (isTenantAdmin === row.isTenantAdmin) return
+                  void run(
+                    row.id,
+                    () => membershipService.update(tenantId, row.id, { isTenantAdmin }),
+                    isTenantAdmin ? 'Promoted to tenant administrator' : 'Changed to tenant member',
+                  )
+                }}
+              >
+                <SelectTrigger size="sm" className="w-[11.5rem]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={MembershipRole.TENANT_ADMIN}>Tenant administrator</SelectItem>
+                  <SelectItem value={MembershipRole.TENANT_MEMBER}>Tenant member</SelectItem>
+                </SelectContent>
+              </Select>,
+              <StatusBadge key={`${row.id}-status`} value={row.status} />,
+              formatInvitationInstant(row.joinedAt),
+              <div key={`${row.id}-actions`} className="flex justify-end gap-2">
+                {row.status === MembershipStatus.SUSPENDED ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={busy}
+                    onClick={() =>
+                      void run(
+                        row.id,
+                        () => membershipService.update(tenantId, row.id, { status: MembershipStatus.ACTIVE }),
+                        'Membership activated',
+                      )
+                    }
+                  >
+                    Activate
+                  </Button>
+                ) : (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={busy || lastAdmin}
+                    onClick={() =>
+                      void run(
+                        row.id,
+                        () => membershipService.update(tenantId, row.id, { status: MembershipStatus.SUSPENDED }),
+                        'Membership suspended',
+                      )
+                    }
+                  >
+                    Suspend
+                  </Button>
+                )}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={busy || lastAdmin}
+                  onClick={() =>
+                    void run(row.id, () => membershipService.remove(tenantId, row.id), 'Member removed')
+                  }
+                >
+                  Remove
+                </Button>
+              </div>,
+            ]
+          })}
+        />
       </div>
     </div>
   )

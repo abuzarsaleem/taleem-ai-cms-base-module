@@ -55,7 +55,23 @@ export async function apiRequest<T>(
   }
   if (token) headers.Authorization = `Bearer ${token}`
 
-  const response = await fetch(`${API_BASE}${path}`, init)
+  return parseResponse<T>(await fetch(`${API_BASE}${path}`, init))
+}
+
+export async function apiUpload<T>(path: string, formData: FormData): Promise<T> {
+  const token = getStoredToken()
+  const headers: Record<string, string> = {}
+  if (token) headers.Authorization = `Bearer ${token}`
+  return parseResponse<T>(
+    await fetch(`${API_BASE}${path}`, {
+      method: 'POST',
+      headers,
+      body: formData,
+    }),
+  )
+}
+
+async function parseResponse<T>(response: Response): Promise<T> {
   if (response.status === 204) return undefined as T
 
   const text = await response.text()

@@ -41,7 +41,7 @@ export function PlatformDashboardPage() {
       <PageHeader
         eyebrow="Platform"
         title="Platform overview"
-        description="Onboard institutions, manage subscriptions and entitlements, and keep the application catalogue current."
+        description="Create tenants, manage subscriptions and entitlements, and keep the application catalogue current."
       />
       {loading ? (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -84,7 +84,7 @@ export function PlatformDashboardPage() {
               </Link>
             ))}
             {!loading && !tenants.length ? (
-              <p className="text-sm text-muted-foreground">No tenants yet. Onboard the first institution.</p>
+              <p className="text-sm text-muted-foreground">No tenants yet. Add the first institution.</p>
             ) : null}
           </CardContent>
         </Card>

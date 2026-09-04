@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import {
   Building2,
-  ClipboardList,
   Gauge,
   LayoutGrid,
   LogOut,
@@ -45,10 +44,7 @@ const platformNav: NavGroup[] = [
   },
   {
     label: 'Institutions',
-    items: [
-      { to: '/platform/tenants', label: 'Tenants', icon: Building2 },
-      { to: '/platform/tenants/onboard', label: 'Onboard institution', icon: ClipboardList, end: true },
-    ],
+    items: [{ to: '/platform/tenants', label: 'Tenants', icon: Building2 }],
   },
   {
     label: 'Catalogue',
@@ -64,7 +60,7 @@ const tenantNav: NavGroup[] = [
   {
     label: 'People',
     items: [
-      { to: '/tenant/users', label: 'Users', icon: Users },
+      { to: '/tenant/users', label: 'Members', icon: Users },
       { to: '/tenant/invitations', label: 'Invitations', icon: Mail },
     ],
   },
@@ -92,10 +88,10 @@ function crumbsFor(pathname: string) {
   const map: Record<string, string> = {
     '/platform': 'Dashboard',
     '/platform/tenants': 'Tenants',
-    '/platform/tenants/onboard': 'Onboard institution',
+    '/platform/tenants/new': 'Add tenant',
     '/platform/applications': 'Applications',
     '/tenant': 'Launcher',
-    '/tenant/users': 'Users',
+    '/tenant/users': 'Members',
     '/tenant/profile': 'Institution',
     '/tenant/configuration': 'Configuration',
     '/tenant/invitations': 'Invitations',
@@ -213,7 +209,7 @@ export function AppShell() {
   const [mobileOpen, setMobileOpen] = useState(false)
   if (!session) return null
 
-  const role = roleFrom(session.user)
+  const role = roleFrom(session)
   const groups = role === 'PLATFORM_ADMIN' ? platformNav : tenantNav
   const roleLabel = role === 'PLATFORM_ADMIN' ? 'Platform administrator' : 'Tenant administrator'
   const initials = session.user.fullName

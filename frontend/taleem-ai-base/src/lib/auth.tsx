@@ -1,14 +1,18 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { SESSION_KEY } from '@/lib/api'
 import { ApiError, apiRequest } from '@/lib/api'
-import type { AuthUser, Role, Session } from '@/lib/types'
+import { pickCurrentTenant } from '@/lib/membership'
+import type { AuthUser, Role, Session, UserTenantMembership } from '@/lib/types'
+import { membershipService } from '@/services/platform'
 
 type AuthContextValue = {
   session: Session | null
+  ready: boolean
   token: string | null
   signIn: (session: Session) => void
   signOut: () => void
   login: (email: string, password: string) => Promise<Session>
+  completeAuth: (accessToken: string, user: AuthUser) => Promise<Session>
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -30,14 +34,36 @@ function persist(session: Session | null) {
   else localStorage.setItem(SESSION_KEY, JSON.stringify(session))
 }
 
-export function roleFrom(user: AuthUser): Role | null {
-  if (user.roles.includes('PLATFORM_ADMIN')) return 'PLATFORM_ADMIN'
-  if (user.roles.includes('TENANT_ADMIN')) return 'TENANT_ADMIN'
+export async function attachMemberships(accessToken: string, user: AuthUser): Promise<Session> {
+  try {
+    const page = await membershipService.listMine(1, 50, accessToken)
+    const memberships = page.data
+    return {
+      accessToken,
+      user,
+      memberships,
+      tenantId: pickCurrentTenant(memberships)?.tenantId,
+    }
+  } catch {
+    return { accessToken, user, memberships: [] }
+  }
+}
+
+export function roleFrom(session: Session | null | undefined): Role | null {
+  const account = session?.user
+  if (!account) return null
+  if (account.roles.includes('PLATFORM_ADMIN')) return 'PLATFORM_ADMIN'
+  if (account.roles.includes('TENANT_ADMIN')) return 'TENANT_ADMIN'
+  const memberships = session?.memberships ?? []
+  if (memberships.some((row: UserTenantMembership) => row.isTenantAdmin && row.membershipStatus === 'ACTIVE')) {
+    return 'TENANT_ADMIN'
+  }
   return null
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(() => readSession())
+  const [ready, setReady] = useState(false)
 
   useEffect(() => {
     const onUnauthorized = () => {
@@ -48,9 +74,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener('taleem:unauthorized', onUnauthorized)
   }, [])
 
+  useEffect(() => {
+    const current = readSession()
+    if (!current) {
+      setReady(true)
+      return
+    }
+    if (current.memberships !== undefined) {
+      setReady(true)
+      return
+    }
+    attachMemberships(current.accessToken, current.user)
+      .then((next) => {
+        persist(next)
+        setSession(next)
+      })
+      .finally(() => setReady(true))
+  }, [])
+
   const value = useMemo<AuthContextValue>(
     () => ({
       session,
+      ready,
       token: session?.accessToken ?? null,
       signIn: (next) => {
         persist(next)
@@ -59,6 +104,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signOut: () => {
         persist(null)
         setSession(null)
+      },
+      completeAuth: async (accessToken, user) => {
+        const next = await attachMemberships(accessToken, user)
+        persist(next)
+        setSession(next)
+        return next
       },
       login: async (email, password) => {
         const result = await apiRequest<{
@@ -71,16 +122,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           body: { email, password },
           token: null,
         })
-        const next: Session = {
-          accessToken: result.accessToken,
-          user: result.user,
-        }
+        const next = await attachMemberships(result.accessToken, result.user)
         persist(next)
         setSession(next)
         return next
       },
     }),
-    [session],
+    [session, ready],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

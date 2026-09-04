@@ -7,6 +7,7 @@ import {
   EntitlementStatus,
   IdentifierType,
   InvitationStatus,
+  MembershipRole,
   BillingCycle,
   PlanType,
   SmtpEncryption,
@@ -75,6 +76,7 @@ export const tenants: Tenant[] = [
     city: 'Lahore',
     activatedAt: '2026-03-12',
     createdAt: '2026-03-10',
+    updatedAt: '2026-03-12',
   },
   {
     id: 'tnt_lums',
@@ -89,6 +91,7 @@ export const tenants: Tenant[] = [
     provinceCode: 'PB',
     city: 'Lahore',
     createdAt: '2026-08-28',
+    updatedAt: '2026-08-28',
   },
   {
     id: 'tnt_aku',
@@ -104,6 +107,7 @@ export const tenants: Tenant[] = [
     city: 'Karachi',
     activatedAt: '2025-11-02',
     createdAt: '2025-10-20',
+    updatedAt: '2026-01-15',
   },
 ]
 
@@ -180,6 +184,7 @@ export const addresses: TenantAddress[] = [
     postalCode: '54000',
     countryCode: 'PK',
     isPrimary: true,
+    isActive: true,
   },
 ]
 
@@ -190,6 +195,7 @@ export const identifiers: TenantIdentifier[] = [
     identifierType: IdentifierType.REGISTRATION,
     identifierValue: 'REG-12345-2020',
     issuingAuthority: 'SECP',
+    isVerified: true,
   },
   {
     id: 'idn_uol_2',
@@ -197,28 +203,36 @@ export const identifiers: TenantIdentifier[] = [
     identifierType: IdentifierType.ACCREDITATION,
     identifierValue: 'HEC-UNI-014',
     issuingAuthority: 'HEC',
+    isVerified: false,
   },
 ]
 
 export const configurations: TenantConfiguration[] = [
   {
+    id: 'cfg_uol',
     tenantId: 'tnt_uol',
     timezone: 'Asia/Karachi',
     locale: 'en-PK',
     dateFormat: 'DD/MM/YYYY',
     currencyCode: 'PKR',
+    createdAt: '2026-03-12',
+    updatedAt: '2026-03-12',
   },
   {
+    id: 'cfg_lums',
     tenantId: 'tnt_lums',
     timezone: 'Asia/Karachi',
     locale: 'en-PK',
     dateFormat: 'DD/MM/YYYY',
     currencyCode: 'PKR',
+    createdAt: '2026-08-28',
+    updatedAt: '2026-08-28',
   },
 ]
 
 export const smtp: TenantSmtp[] = [
   {
+    id: 'smtp_uol',
     tenantId: 'tnt_uol',
     host: 'smtp.uol.edu.pk',
     port: 587,
@@ -227,6 +241,8 @@ export const smtp: TenantSmtp[] = [
     fromName: 'University of Lahore',
     fromEmail: 'noreply@uol.edu.pk',
     isActive: true,
+    createdAt: '2026-03-12',
+    updatedAt: '2026-03-12',
   },
 ]
 
@@ -301,17 +317,22 @@ export const invitations: AdminInvitation[] = [
     id: 'inv_uol_1',
     tenantId: 'tnt_uol',
     email: 'farah.malik@uol.edu.pk',
+    role: MembershipRole.TENANT_ADMIN,
     status: InvitationStatus.ACCEPTED,
-    expiresAt: '2026-03-17',
-    invitedBy: 'Platform Admin',
+    expiresAt: '2026-03-17T00:00:00.000Z',
+    acceptedAt: '2026-03-16T00:00:00.000Z',
+    invitedBy: 'usr_platform',
+    createdAt: '2026-03-10T00:00:00.000Z',
   },
   {
     id: 'inv_lums_1',
     tenantId: 'tnt_lums',
     email: 'imran.qureshi@lums.edu.pk',
+    role: MembershipRole.TENANT_ADMIN,
     status: InvitationStatus.PENDING,
-    expiresAt: '2026-09-10',
-    invitedBy: 'Platform Admin',
+    expiresAt: '2026-09-10T00:00:00.000Z',
+    invitedBy: 'usr_platform',
+    createdAt: '2026-08-28T00:00:00.000Z',
   },
 ]
 

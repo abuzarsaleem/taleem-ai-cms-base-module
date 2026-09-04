@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
+import { Plus } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -8,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { PageHeader } from '@/components/page-header'
 import { StatusBadge } from '@/components/status-badge'
 import { TablePagination } from '@/components/table-pagination'
+import { TenantLifecycleMenu } from '@/components/tenant-lifecycle-menu'
 import { errorMessage } from '@/lib/auth'
 import type { Tenant } from '@/lib/types'
 import { tenantService } from '@/services/platform'
@@ -21,38 +23,42 @@ export function TenantsPage() {
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    let cancelled = false
-    setLoading(true)
+  const load = useCallback((silent = false) => {
+    if (!silent) setLoading(true)
     tenantService
       .list(page, pageSize)
       .then((result) => {
-        if (cancelled) return
         setRows(result.data)
         setTotal(result.meta.total)
       })
       .catch((error) => toast.error(errorMessage(error)))
       .finally(() => {
-        if (!cancelled) setLoading(false)
+        if (!silent) setLoading(false)
       })
-    return () => {
-      cancelled = true
-    }
   }, [page, pageSize])
 
+  useEffect(() => {
+    load()
+  }, [load])
+
   const visible = rows.filter((tenant) =>
-    `${tenant.displayName} ${tenant.tenantCode} ${tenant.city ?? ''}`.toLowerCase().includes(query.toLowerCase()),
+    `${tenant.displayName} ${tenant.legalName} ${tenant.tenantCode} ${tenant.city ?? ''} ${tenant.institutionType}`
+      .toLowerCase()
+      .includes(query.toLowerCase()),
   )
 
   return (
     <div className="flex flex-1 flex-col gap-6">
       <PageHeader
         eyebrow="Tenants"
-        title="Institutions"
-        description="Create, activate, suspend, and retire tenant institutions."
+        title="Tenants"
+        description="Create an institution, then activate, suspend, or retire it from this list."
         actions={
           <Button asChild>
-            <Link to="/platform/tenants/onboard">Onboard institution</Link>
+            <Link to="/platform/tenants/new">
+              <Plus />
+              Add tenant
+            </Link>
           </Button>
         }
       />
@@ -69,9 +75,11 @@ export function TenantsPage() {
                 <TableRow>
                   <TableHead>Institution</TableHead>
                   <TableHead>Code</TableHead>
+                  <TableHead>Type</TableHead>
                   <TableHead>City</TableHead>
                   <TableHead>Model</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead className="w-12 text-right"> </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -84,17 +92,21 @@ export function TenantsPage() {
                       <p className="text-xs text-muted-foreground">{tenant.legalName}</p>
                     </TableCell>
                     <TableCell className="font-mono text-xs">{tenant.tenantCode}</TableCell>
+                    <TableCell>{tenant.institutionType.replaceAll('_', ' ')}</TableCell>
                     <TableCell>{tenant.city ?? '—'}</TableCell>
                     <TableCell>{tenant.deploymentModel.replaceAll('_', ' ')}</TableCell>
                     <TableCell>
                       <StatusBadge value={tenant.status} />
                     </TableCell>
+                    <TableCell className="text-right">
+                      <TenantLifecycleMenu tenant={tenant} onChanged={() => load(true)} />
+                    </TableCell>
                   </TableRow>
                 ))}
                 {!visible.length ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="py-10 text-center text-muted-foreground">
-                      No institutions match this view.
+                    <TableCell colSpan={7} className="py-10 text-center text-muted-foreground">
+                      No tenants yet. Add the first institution.
                     </TableCell>
                   </TableRow>
                 ) : null}

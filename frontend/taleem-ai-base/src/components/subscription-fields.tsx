@@ -20,7 +20,7 @@ export function SubscriptionFields({
   return (
     <div className="space-y-5">
       <FieldGrid>
-        <Field label="Plan type">
+        <Field label="Plan type" required>
           <Select
             value={value.planType}
             onValueChange={(planType) => {
@@ -44,7 +44,7 @@ export function SubscriptionFields({
             </SelectContent>
           </Select>
         </Field>
-        <Field label="Billing cycle">
+        <Field label="Billing cycle" required={value.planType === PlanType.PAID}>
           <Select
             value={value.billingCycle ?? 'NONE'}
             onValueChange={(cycle) => {
@@ -65,7 +65,7 @@ export function SubscriptionFields({
             </SelectContent>
           </Select>
         </Field>
-        <Field label="Start date">
+        <Field label="Start date" required>
           <Input
             type="date"
             value={value.startDate}
@@ -77,14 +77,16 @@ export function SubscriptionFields({
             }
           />
         </Field>
-        <Field label="End date">
+        <Field label="End date" required>
           <Input type="date" value={value.endDate} onChange={(e) => patch({ endDate: e.target.value })} />
         </Field>
       </FieldGrid>
       <div className="grid gap-2">
-        <p className="text-sm font-medium">Assign applications</p>
+        <p className="text-sm font-medium">
+          Assign applications <span className="text-destructive">*</span>
+        </p>
         <p className="text-xs text-muted-foreground">
-          Selected applications are entitled for this subscription period.
+          Required. Selected applications are entitled for this subscription period.
         </p>
         {active.length ? (
           <div className="grid gap-2 sm:grid-cols-2">
