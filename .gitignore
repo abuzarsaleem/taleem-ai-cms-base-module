@@ -35,8 +35,6 @@ lerna-debug.log*
 !.vscode/extensions.json
 
 # env
-.env
-.env.local
 .env.*.local
 
 # temp
@@ -44,3 +42,4 @@ schema_export.csv
 
 # local file storage fallback
 /data/files
+config.bat
