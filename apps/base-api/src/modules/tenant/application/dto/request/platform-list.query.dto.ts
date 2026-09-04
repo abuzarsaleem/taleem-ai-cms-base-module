@@ -9,13 +9,61 @@ import {
   MaxLength,
 } from 'class-validator';
 import { PaginationQueryDto } from '@app/common';
-import { AddressType, AssetType, ContactType } from '../../../domain/tenant.types.js';
+import {
+  AddressType,
+  AssetType,
+  ContactType,
+  DeploymentModel,
+  TenantStatus,
+} from '../../../domain/tenant.types.js';
 
 function toOptionalBoolean({ value }: { value: unknown }): boolean | undefined {
   if (value === undefined || value === null || value === '') return undefined;
   if (value === true || value === 'true' || value === '1') return true;
   if (value === false || value === 'false' || value === '0') return false;
   return undefined;
+}
+
+export class PlatformTenantQueryDto extends PaginationQueryDto {
+  @ApiPropertyOptional({ enum: TenantStatus })
+  @IsOptional()
+  @IsEnum(TenantStatus)
+  status?: TenantStatus;
+
+  @ApiPropertyOptional({ enum: DeploymentModel })
+  @IsOptional()
+  @IsEnum(DeploymentModel)
+  deploymentModel?: DeploymentModel;
+
+  @ApiPropertyOptional({ example: 'uol-lahore' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  tenantCode?: string;
+
+  @ApiPropertyOptional({ description: 'Search legal/display name or tenant code' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  search?: string;
+
+  @ApiPropertyOptional({ example: 'UNIVERSITY' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  institutionType?: string;
+
+  @ApiPropertyOptional({ example: 'PK' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(2)
+  countryCode?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  city?: string;
 }
 
 export class PlatformContactQueryDto extends PaginationQueryDto {
@@ -165,6 +213,7 @@ export class PlatformAssetQueryDto extends PaginationQueryDto {
   assetType?: AssetType;
 }
 
+export type PlatformTenantFilters = Omit<PlatformTenantQueryDto, 'page' | 'limit'>;
 export type PlatformContactFilters = Omit<PlatformContactQueryDto, 'page' | 'limit'>;
 export type PlatformAddressFilters = Omit<PlatformAddressQueryDto, 'page' | 'limit'>;
 export type PlatformIdentifierFilters = Omit<PlatformIdentifierQueryDto, 'page' | 'limit'>;

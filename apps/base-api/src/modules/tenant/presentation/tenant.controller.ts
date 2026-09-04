@@ -16,7 +16,6 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import {
-  PaginationQueryDto,
   PlatformPermission,
   RequirePermissions,
   RequireTenantPermissions,
@@ -24,6 +23,7 @@ import {
 } from '@app/common';
 import { TenantService } from '../application/tenant.service.js';
 import { CreateTenantDto, UpdateTenantDto } from '../application/dto/request/tenant.request.dto.js';
+import { PlatformTenantQueryDto } from '../application/dto/request/platform-list.query.dto.js';
 import {
   TenantListResponseDto,
   TenantResponseDto,
@@ -45,10 +45,11 @@ export class TenantController {
 
   @Get()
   @RequirePermissions(PlatformPermission.TENANT_READ)
-  @ApiOperation({ summary: 'List tenants' })
+  @ApiOperation({ summary: 'List all tenants (platform admin)' })
   @ApiOkResponse({ type: TenantListResponseDto })
-  findAll(@Query() query: PaginationQueryDto) {
-    return this.tenantService.findAll(query.page, query.limit);
+  findAll(@Query() query: PlatformTenantQueryDto) {
+    const { page, limit, ...filters } = query;
+    return this.tenantService.findAll(page ?? 1, limit ?? 20, filters);
   }
 
   @Get(':tenantId')

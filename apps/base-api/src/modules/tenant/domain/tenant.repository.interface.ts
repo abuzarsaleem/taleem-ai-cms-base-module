@@ -5,7 +5,19 @@ export const TENANT_REPOSITORY = Symbol('TENANT_REPOSITORY');
 export interface ITenantRepository {
   findById(id: string): Promise<TenantProps | null>;
   findByCode(tenantCode: string): Promise<TenantProps | null>;
-  findAll(page: number, limit: number): Promise<{ data: TenantProps[]; total: number }>;
+  findAll(
+    page: number,
+    limit: number,
+    filters?: {
+      status?: string;
+      deploymentModel?: string;
+      tenantCode?: string;
+      search?: string;
+      institutionType?: string;
+      countryCode?: string;
+      city?: string;
+    },
+  ): Promise<{ data: TenantProps[]; total: number }>;
   create(props: TenantProps): Promise<TenantProps>;
   update(id: string, props: Partial<TenantProps>): Promise<TenantProps>;
   delete(id: string): Promise<void>;

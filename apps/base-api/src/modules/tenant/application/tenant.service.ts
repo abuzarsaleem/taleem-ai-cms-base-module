@@ -33,8 +33,20 @@ export class TenantService {
     return toTenantResponse(tenant);
   }
 
-  async findAll(page = 1, limit = 20): Promise<TenantListResponseDto> {
-    const { data, total } = await this.tenantRepository.findAll(page, limit);
+  async findAll(
+    page = 1,
+    limit = 20,
+    filters?: {
+      status?: string;
+      deploymentModel?: string;
+      tenantCode?: string;
+      search?: string;
+      institutionType?: string;
+      countryCode?: string;
+      city?: string;
+    },
+  ): Promise<TenantListResponseDto> {
+    const { data, total } = await this.tenantRepository.findAll(page, limit, filters);
     return paginatedResponse(data.map(toTenantResponse), total, page, limit);
   }
 

@@ -22,12 +22,55 @@ export class TypeOrmTenantRepository implements ITenantRepository {
     return entity ? this.toDomain(entity) : null;
   }
 
-  async findAll(page: number, limit: number) {
-    const [entities, total] = await this.repository.findAndCount({
-      skip: (page - 1) * limit,
-      take: limit,
-      order: { createdAt: 'DESC' },
-    });
+  async findAll(
+    page: number,
+    limit: number,
+    filters?: {
+      status?: string;
+      deploymentModel?: string;
+      tenantCode?: string;
+      search?: string;
+      institutionType?: string;
+      countryCode?: string;
+      city?: string;
+    },
+  ) {
+    const qb = this.repository.createQueryBuilder('t').orderBy('t.created_at', 'DESC');
+    if (filters?.status) qb.andWhere('t.status = :status', { status: filters.status });
+    if (filters?.deploymentModel) {
+      qb.andWhere('t.deployment_model = :deploymentModel', {
+        deploymentModel: filters.deploymentModel,
+      });
+    }
+    if (filters?.tenantCode) {
+      qb.andWhere('LOWER(t.tenant_code) LIKE :tenantCode', {
+        tenantCode: `%${filters.tenantCode.toLowerCase()}%`,
+      });
+    }
+    if (filters?.search) {
+      qb.andWhere(
+        `(LOWER(t.tenant_code) LIKE :search OR LOWER(t.legal_name) LIKE :search OR LOWER(t.display_name) LIKE :search)`,
+        { search: `%${filters.search.toLowerCase()}%` },
+      );
+    }
+    if (filters?.institutionType) {
+      qb.andWhere('UPPER(t.institution_type) = :institutionType', {
+        institutionType: filters.institutionType.toUpperCase(),
+      });
+    }
+    if (filters?.countryCode) {
+      qb.andWhere('UPPER(t.country_code) = :countryCode', {
+        countryCode: filters.countryCode.toUpperCase(),
+      });
+    }
+    if (filters?.city) {
+      qb.andWhere('LOWER(t.city) LIKE :city', { city: `%${filters.city.toLowerCase()}%` });
+    }
+
+    const [entities, total] = await qb
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
     return { data: entities.map((e) => this.toDomain(e)), total };
   }
 
