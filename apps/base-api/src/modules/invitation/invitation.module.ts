@@ -23,7 +23,8 @@ import { TenantMembershipService } from './application/tenant-membership.service
 import { InvitationEmailService } from './application/invitation-email.service.js';
 import {
   InvitationAcceptController,
-  TenantInvitationController,
+  TenantAdminInvitationController,
+  TenantMemberInvitationController,
 } from './presentation/tenant-invitation.controller.js';
 import {
   TenantMembershipController,
@@ -52,7 +53,8 @@ const repositories = [
     forwardRef(() => AuthModule),
   ],
   controllers: [
-    TenantInvitationController,
+    TenantAdminInvitationController,
+    TenantMemberInvitationController,
     InvitationAcceptController,
     TenantMembershipController,
     UserMembershipController,

@@ -91,16 +91,16 @@ export class TenantInvitationService {
     return toCreateInvitationResponse(invitation, raw);
   }
 
-  async cancel(tenantId: string, id: string) {
-    const invitation = await this.getPendingInvitation(tenantId, id);
+  async cancel(tenantId: string, id: string, role?: MembershipRole) {
+    const invitation = await this.getPendingInvitation(tenantId, id, role);
     const updated = await this.tokenRepository.update(invitation.id!, {
       status: UserTokenStatus.CANCELLED,
     });
     return toInvitationResponse(updated);
   }
 
-  async resend(tenantId: string, id: string) {
-    const invitation = await this.getPendingInvitation(tenantId, id);
+  async resend(tenantId: string, id: string, role?: MembershipRole) {
+    const invitation = await this.getPendingInvitation(tenantId, id, role);
     const { raw, hash } = generateToken();
     const expiresAt = this.buildExpiryDate();
 
@@ -111,8 +111,8 @@ export class TenantInvitationService {
     });
 
     const tenant = await this.tenantRepository.findById(tenantId);
-    const role = invitation.membershipRole as MembershipRole;
-    await this.sendInvitationEmail(role, {
+    const membershipRole = (invitation.membershipRole as MembershipRole) ?? role!;
+    await this.sendInvitationEmail(membershipRole, {
       to: invitation.email!,
       tenantName: tenant?.displayName ?? tenant?.legalName ?? 'your institution',
       invitationToken: raw,
@@ -142,10 +142,13 @@ export class TenantInvitationService {
     }
   }
 
-  private async getPendingInvitation(tenantId: string, id: string) {
+  private async getPendingInvitation(tenantId: string, id: string, role?: MembershipRole) {
     await this.tenantContext.ensureTenantExists(tenantId);
     const invitation = await this.tokenRepository.findInvitationById(tenantId, id);
     if (!invitation) {
+      throw new NotFoundException(`Invitation '${id}' not found`);
+    }
+    if (role && invitation.membershipRole !== role) {
       throw new NotFoundException(`Invitation '${id}' not found`);
     }
     if (invitation.status !== UserTokenStatus.PENDING) {
