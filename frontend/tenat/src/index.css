@@ -1,0 +1,183 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --radius: 1.125rem;
+
+  /* Core — Taleem navy / paper */
+  --background: #f4f7fb;
+  --foreground: #081b45;
+
+  --card: #ffffff;
+  --card-foreground: #081b45;
+
+  --popover: #ffffff;
+  --popover-foreground: #081b45;
+
+  --primary: #081b45;
+  --primary-foreground: #f4fbfb;
+
+  --secondary: #e8eef8;
+  --secondary-foreground: #081b45;
+
+  --muted: #eef2f8;
+  --muted-foreground: #5b6b86;
+
+  --accent: #00c2b2;
+  --accent-foreground: #042a2a;
+
+  --destructive: #d14343;
+
+  --border: #d7e0ee;
+  --input: #d7e0ee;
+  --ring: #00c2b2;
+
+  --success: #159570;
+  --warning: #d58a12;
+
+  --chart-1: #081b45;
+  --chart-2: #00c2b2;
+  --chart-3: #47bfff;
+  --chart-4: #7e14ff;
+  --chart-5: #f4b942;
+
+  --sidebar: #081b45;
+  --sidebar-foreground: #cfdaed;
+  --sidebar-primary: #00c2b2;
+  --sidebar-primary-foreground: #042a2a;
+  --sidebar-accent: rgba(255, 255, 255, 0.11);
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-ring: #00c2b2;
+
+  --portal-shadow: 0 12px 35px rgba(8, 27, 69, 0.08);
+  --portal-hero: linear-gradient(120deg, #081b45 0%, #173b79 62%, #1e8f97 140%);
+}
+
+.dark {
+  --background: #061433;
+  --foreground: #eef4ff;
+
+  --card: #0b204c;
+  --card-foreground: #eef4ff;
+
+  --popover: #0b204c;
+  --popover-foreground: #eef4ff;
+
+  --primary: #00c2b2;
+  --primary-foreground: #042a2a;
+
+  --secondary: #12305f;
+  --secondary-foreground: #e8eef8;
+
+  --muted: #10284f;
+  --muted-foreground: #9aabc8;
+
+  --accent: #47bfff;
+  --accent-foreground: #041828;
+
+  --destructive: #f07171;
+
+  --border: rgb(255 255 255 / 10%);
+  --input: rgb(255 255 255 / 12%);
+  --ring: #00c2b2;
+
+  --chart-1: #00c2b2;
+  --chart-2: #47bfff;
+  --chart-3: #7e14ff;
+  --chart-4: #f4b942;
+  --chart-5: #e8eef8;
+
+  --sidebar: #05122c;
+  --sidebar-foreground: #cfdaed;
+  --sidebar-primary: #00c2b2;
+  --sidebar-primary-foreground: #042a2a;
+  --sidebar-accent: rgba(255, 255, 255, 0.08);
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: rgba(255, 255, 255, 0.06);
+  --sidebar-ring: #00c2b2;
+
+  --portal-hero: linear-gradient(120deg, #05122c 0%, #0b204c 62%, #0e6b72 140%);
+  --portal-shadow: 0 12px 35px rgba(0, 0, 0, 0.28);
+}
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 6px);
+  --radius-md: calc(var(--radius) - 4px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: "Source Sans 3", ui-sans-serif, system-ui, sans-serif;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  h1,
+  h2,
+  .font-display,
+  .font-serif {
+    font-family: "Fraunces", "Source Sans 3", ui-serif, Georgia, serif;
+    font-optical-sizing: auto;
+  }
+}
+
+@layer utilities {
+  .portal-card {
+    @apply rounded-[var(--radius)] shadow-[var(--portal-shadow)];
+  }
+
+  .portal-hero {
+    background: var(--portal-hero);
+  }
+
+  .portal-sidebar {
+    background: linear-gradient(
+      180deg,
+      var(--sidebar) 0%,
+      color-mix(in oklab, var(--sidebar) 88%, black) 100%
+    );
+  }
+}
