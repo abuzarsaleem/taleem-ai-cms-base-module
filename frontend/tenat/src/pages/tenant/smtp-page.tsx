@@ -71,14 +71,14 @@ function TenantSmtpForm({ tenantId }: { tenantId: string }) {
         eyebrow="Institution"
         title="SMTP"
         description="Host is required. Store a secret reference, not a password."
-      />
-      <div className="portal-card space-y-5 p-5 sm:p-6">
-        <SmtpFields value={draft} onChange={setDraft} />
-        <div className="flex justify-end">
+        actions={
           <Button disabled={busy} onClick={() => void submit()}>
             {busy ? 'Saving…' : exists ? 'Save SMTP' : 'Add SMTP'}
           </Button>
-        </div>
+        }
+      />
+      <div className="portal-card space-y-5 p-5 sm:p-6">
+        <SmtpFields value={draft} onChange={setDraft} />
       </div>
     </div>
   )

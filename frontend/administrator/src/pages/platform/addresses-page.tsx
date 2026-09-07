@@ -86,8 +86,9 @@ export function PlatformAddressesPage() {
           <RowActions
             key={`${row.id}-actions`}
             editTo={`/platform/addresses/${row.tenantId}/${row.id}`}
-            onDelete={() => {
-              if (!window.confirm('Remove this address?')) return
+            deleteTitle="Remove this address?"
+            deleteDescription="This address will be removed from the institution."
+            onDelete={() =>
               tenantAddressService
                 .delete(row.tenantId, row.id)
                 .then(() => {
@@ -95,7 +96,7 @@ export function PlatformAddressesPage() {
                   load()
                 })
                 .catch((error) => toast.error(errorMessage(error)))
-            }}
+            }
           />,
         ])}
       />

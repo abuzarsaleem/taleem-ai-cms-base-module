@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
+import { ConfirmDialog } from '@/components/confirm-dialog'
 import { SectionTitle } from '@/components/section-title'
 import { SmtpFields } from '@/components/smtp-fields'
 import { errorMessage } from '@/lib/auth'
@@ -19,6 +20,7 @@ export function TenantSmtpPanel({
 }) {
   const [draft, setDraft] = useState(() => (smtp ? smtpDraftFrom(smtp) : emptySmtpDraft()))
   const [busy, setBusy] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
 
   async function save() {
     const error = validateSmtp(draft)
@@ -44,35 +46,42 @@ export function TenantSmtpPanel({
     <section className="py-8">
       <SectionTitle
         title="SMTP"
-        description="POST/PATCH /tenant/:id/smtp — host is required. Store a secret reference, never a password."
+        description="Host is required. Store a secret reference, never a password."
         action={
-          smtp ? (
-            <Button
-              variant="outline"
-              onClick={() =>
-                void tenantSmtpService
-                  .delete(tenantId)
-                  .then(() => {
-                    toast.success('SMTP removed')
-                    setDraft(emptySmtpDraft())
-                    return onReload()
-                  })
-                  .catch((error) => toast.error(errorMessage(error)))
-              }
-            >
-              Delete SMTP
+          <div className="flex flex-wrap justify-end gap-2">
+            {smtp ? (
+              <Button variant="outline" onClick={() => setConfirmDelete(true)}>
+                Delete SMTP
+              </Button>
+            ) : null}
+            <Button disabled={busy} onClick={() => void save()}>
+              {busy ? 'Saving…' : smtp ? 'Update SMTP' : 'Add SMTP'}
             </Button>
-          ) : null
+          </div>
         }
       />
-      <div className="space-y-4">
-        <SmtpFields value={draft} onChange={setDraft} />
-        <div className="flex justify-end">
-          <Button disabled={busy} onClick={() => void save()}>
-            {busy ? 'Saving…' : smtp ? 'Update SMTP' : 'Create SMTP'}
-          </Button>
-        </div>
-      </div>
+      <SmtpFields value={draft} onChange={setDraft} />
+      <ConfirmDialog
+        open={confirmDelete}
+        title="Remove this SMTP configuration?"
+        description="Outbound email settings for this institution will be removed."
+        pending={busy}
+        onOpenChange={setConfirmDelete}
+        onConfirm={async () => {
+          setBusy(true)
+          try {
+            await tenantSmtpService.delete(tenantId)
+            toast.success('SMTP removed')
+            setDraft(emptySmtpDraft())
+            setConfirmDelete(false)
+            await onReload()
+          } catch (error) {
+            toast.error(errorMessage(error))
+          } finally {
+            setBusy(false)
+          }
+        }}
+      />
     </section>
   )
 }

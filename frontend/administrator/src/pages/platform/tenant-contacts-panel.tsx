@@ -106,8 +106,10 @@ export function TenantContactsPanel({
           <RowActions
             key={row.id}
             onEdit={() => void openEdit(row.id)}
+            deleteTitle="Remove this contact?"
+            deleteDescription="This contact will be removed from the institution."
             onDelete={() =>
-              void tenantContactService
+              tenantContactService
                 .delete(tenantId, row.id)
                 .then(() => {
                   toast.success('Contact removed')

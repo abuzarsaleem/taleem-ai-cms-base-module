@@ -93,6 +93,11 @@ function TenantConfigurationForm({ tenantId }: { tenantId: string }) {
         eyebrow="Institution"
         title="Configuration"
         description="Locale, timezone, currency, and branding for this institution."
+        actions={
+          <Button disabled={busy} onClick={() => void submit()}>
+            {busy ? 'Saving…' : exists ? 'Save configuration' : 'Add configuration'}
+          </Button>
+        }
       />
       <div className="portal-card space-y-5 p-5 sm:p-6">
         <ConfigurationFields
@@ -104,11 +109,6 @@ function TenantConfigurationForm({ tenantId }: { tenantId: string }) {
             setAssets((current) => [asset, ...current.filter((row) => row.id !== asset.id)])
           }
         />
-        <div className="flex justify-end">
-          <Button disabled={busy} onClick={() => void submit()}>
-            {busy ? 'Saving…' : exists ? 'Save configuration' : 'Add configuration'}
-          </Button>
-        </div>
       </div>
     </div>
   )

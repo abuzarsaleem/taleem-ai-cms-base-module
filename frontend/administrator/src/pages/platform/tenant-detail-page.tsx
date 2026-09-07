@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { ArrowLeft, Building2, Mail, MapPin, PackageCheck, UsersRound } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
+import { ConfirmDialog } from '@/components/confirm-dialog'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ApplicationIcon } from '@/components/application-icon'
 import { EmptyState, PageHeader } from '@/components/page-header'
@@ -79,6 +80,14 @@ export function TenantDetailPage() {
   const [tab, setTab] = useState<Tab>('overview')
   const [identity, setIdentity] = useState(emptyTenantDraft())
   const [savingIdentity, setSavingIdentity] = useState(false)
+  const [confirmAction, setConfirmAction] = useState<{
+    title: string
+    description: string
+    confirmLabel: string
+    success: string
+    run: () => Promise<unknown>
+  } | null>(null)
+  const [confirming, setConfirming] = useState(false)
 
   const reload = useCallback(async () => {
     const nextTenant = await tenantService.get(tenantId)
@@ -183,12 +192,34 @@ export function TenantDetailPage() {
               </Button>
             ) : null}
             {lifecycleFor(tenant.status).canSuspend ? (
-              <Button variant="outline" onClick={() => void run(() => tenantService.suspend(tenant.id), 'Tenant suspended')}>
+              <Button
+                variant="outline"
+                onClick={() =>
+                  setConfirmAction({
+                    title: `Suspend ${tenant.displayName}?`,
+                    description: 'The institution will be unavailable until it is activated again.',
+                    confirmLabel: 'Suspend',
+                    success: 'Tenant suspended',
+                    run: () => tenantService.suspend(tenant.id),
+                  })
+                }
+              >
                 Suspend
               </Button>
             ) : null}
             {lifecycleFor(tenant.status).canRetire ? (
-              <Button variant="destructive" onClick={() => void run(() => tenantService.retire(tenant.id), 'Tenant retired')}>
+              <Button
+                variant="destructive"
+                onClick={() =>
+                  setConfirmAction({
+                    title: `Retire ${tenant.displayName}?`,
+                    description: 'The institution will be retired and no longer active on the platform.',
+                    confirmLabel: 'Retire',
+                    success: 'Tenant retired',
+                    run: () => tenantService.retire(tenant.id),
+                  })
+                }
+              >
                 Retire
               </Button>
             ) : null}
@@ -390,6 +421,30 @@ export function TenantDetailPage() {
           ) : null}
         </div>
       </div>
+      <ConfirmDialog
+        open={Boolean(confirmAction)}
+        title={confirmAction?.title ?? ''}
+        description={confirmAction?.description ?? ''}
+        confirmLabel={confirmAction?.confirmLabel}
+        pending={confirming}
+        onOpenChange={(open) => {
+          if (!open) setConfirmAction(null)
+        }}
+        onConfirm={async () => {
+          if (!confirmAction) return
+          setConfirming(true)
+          try {
+            await confirmAction.run()
+            await reload()
+            toast.success(confirmAction.success)
+            setConfirmAction(null)
+          } catch (error) {
+            toast.error(errorMessage(error))
+          } finally {
+            setConfirming(false)
+          }
+        }}
+      />
     </div>
   )
 }

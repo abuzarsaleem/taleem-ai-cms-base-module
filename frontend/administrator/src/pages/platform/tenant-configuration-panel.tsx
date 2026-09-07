@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
+import { ConfirmDialog } from '@/components/confirm-dialog'
 import { ConfigurationFields } from '@/components/configuration-fields'
 import { SectionTitle } from '@/components/section-title'
 import { errorMessage } from '@/lib/auth'
@@ -28,6 +29,7 @@ export function TenantConfigurationPanel({
     configuration ? configurationDraftFrom(configuration) : emptyConfigurationDraft(),
   )
   const [busy, setBusy] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
   const [uploadedAssets, setUploadedAssets] = useState<TenantAsset[]>([])
 
   async function save() {
@@ -56,41 +58,48 @@ export function TenantConfigurationPanel({
         title="Configuration"
         description="Locale, timezone, currency, and branding. Upload a logo or favicon to attach it automatically."
         action={
-          configuration ? (
-            <Button
-              variant="outline"
-              onClick={() =>
-                void tenantConfigurationService
-                  .delete(tenantId)
-                  .then(() => {
-                    toast.success('Configuration removed')
-                    setDraft(emptyConfigurationDraft())
-                    return onReload()
-                  })
-                  .catch((error) => toast.error(errorMessage(error)))
-              }
-            >
-              Delete configuration
+          <div className="flex flex-wrap justify-end gap-2">
+            {configuration ? (
+              <Button variant="outline" onClick={() => setConfirmDelete(true)}>
+                Delete configuration
+              </Button>
+            ) : null}
+            <Button disabled={busy} onClick={() => void save()}>
+              {busy ? 'Saving…' : configuration ? 'Update configuration' : 'Add configuration'}
             </Button>
-          ) : null
+          </div>
         }
       />
-      <div className="space-y-4">
-        <ConfigurationFields
-          value={draft}
-          onChange={setDraft}
-          assets={[...uploadedAssets, ...assets]}
-          tenantId={tenantId}
-          onAssetUploaded={(asset) =>
-            setUploadedAssets((current) => [asset, ...current.filter((row) => row.id !== asset.id)])
+      <ConfigurationFields
+        value={draft}
+        onChange={setDraft}
+        assets={[...uploadedAssets, ...assets]}
+        tenantId={tenantId}
+        onAssetUploaded={(asset) =>
+          setUploadedAssets((current) => [asset, ...current.filter((row) => row.id !== asset.id)])
+        }
+      />
+      <ConfirmDialog
+        open={confirmDelete}
+        title="Remove this configuration?"
+        description="Locale, timezone, and branding settings for this institution will be removed."
+        pending={busy}
+        onOpenChange={setConfirmDelete}
+        onConfirm={async () => {
+          setBusy(true)
+          try {
+            await tenantConfigurationService.delete(tenantId)
+            toast.success('Configuration removed')
+            setDraft(emptyConfigurationDraft())
+            setConfirmDelete(false)
+            await onReload()
+          } catch (error) {
+            toast.error(errorMessage(error))
+          } finally {
+            setBusy(false)
           }
-        />
-        <div className="flex justify-end">
-          <Button disabled={busy} onClick={() => void save()}>
-            {busy ? 'Saving…' : configuration ? 'Update configuration' : 'Create configuration'}
-          </Button>
-        </div>
-      </div>
+        }}
+      />
     </section>
   )
 }

@@ -92,8 +92,9 @@ export function PlatformIdentifiersPage() {
           <RowActions
             key={`${row.id}-actions`}
             editTo={`/platform/identifiers/${row.tenantId}/${row.id}`}
-            onDelete={() => {
-              if (!window.confirm('Remove this identifier?')) return
+            deleteTitle="Remove this identifier?"
+            deleteDescription="This identifier will be removed from the institution."
+            onDelete={() =>
               tenantIdentifierService
                 .delete(row.tenantId, row.id)
                 .then(() => {
@@ -101,7 +102,7 @@ export function PlatformIdentifiersPage() {
                   load()
                 })
                 .catch((error) => toast.error(errorMessage(error)))
-            }}
+            }
           />,
         ])}
       />

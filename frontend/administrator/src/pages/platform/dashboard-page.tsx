@@ -45,78 +45,103 @@ export function PlatformDashboardPage() {
         description="Create tenants, manage subscriptions and entitlements, and keep the application catalogue current."
       />
       {loading ? (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, index) => (
-            <Skeleton key={index} className="h-32 rounded-2xl" />
-          ))}
-        </div>
+        <DashboardSkeleton />
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <Stat title="Tenants" value={String(tenants.length)} icon={Building2} tone="navy" to="/platform/tenants" />
-          <Stat title="Active" value={String(active)} icon={Shield} tone="cyan" to="/platform/tenants" />
-          <Stat title="Onboarding" value={String(onboarding)} icon={Users} tone="amber" to="/platform/tenants" />
-          <Stat
-            title="Applications"
-            value={String(applications.length)}
-            icon={LayoutGrid}
-            tone="navy"
-            to="/platform/applications"
-          />
-        </div>
-      )}
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Card className="portal-card">
-          <CardHeader>
-            <CardTitle>Recent institutions</CardTitle>
-            <CardDescription>Latest tenants from the platform registry.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {tenants.slice(0, 6).map((tenant) => (
-              <Link
-                key={tenant.id}
-                to={`/platform/tenants/${tenant.id}`}
-                className="flex items-center justify-between rounded-xl border border-border/80 bg-background/60 px-3 py-2.5 transition-colors hover:border-[#00c2b2]/40 hover:bg-[#00c2b2]/5"
-              >
-                <div>
-                  <p className="font-medium">{tenant.displayName}</p>
-                  <p className="text-xs text-muted-foreground">{tenant.tenantCode}</p>
-                </div>
-                <StatusBadge value={tenant.status} />
-              </Link>
-            ))}
-            {!loading && !tenants.length ? (
-              <p className="text-sm text-muted-foreground">No tenants yet. Add the first institution.</p>
-            ) : null}
-          </CardContent>
-        </Card>
-        <Card className="portal-card">
-          <CardHeader>
-            <CardTitle>Application catalogue</CardTitle>
-            <CardDescription>Independently deployable applications registered on the platform.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {applications.slice(0, 6).map((app) => (
-              <div
-                key={app.id}
-                className="flex items-center justify-between gap-3 rounded-xl border border-border/80 bg-background/60 px-3 py-2.5"
-              >
-                <div className="flex min-w-0 items-center gap-3">
-                  <ApplicationIcon code={app.applicationCode} size="sm" />
-                  <div className="min-w-0">
-                    <p className="truncate font-medium">{app.name}</p>
-                    <p className="truncate text-xs text-muted-foreground">{app.applicationCode}</p>
+        <>
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <Stat title="Tenants" value={String(tenants.length)} icon={Building2} tone="navy" to="/platform/tenants" />
+            <Stat title="Active" value={String(active)} icon={Shield} tone="cyan" to="/platform/tenants" />
+            <Stat title="Onboarding" value={String(onboarding)} icon={Users} tone="amber" to="/platform/tenants" />
+            <Stat
+              title="Applications"
+              value={String(applications.length)}
+              icon={LayoutGrid}
+              tone="navy"
+              to="/platform/applications"
+            />
+          </div>
+          <div className="grid gap-4 lg:grid-cols-2">
+            <Card className="portal-card">
+              <CardHeader>
+                <CardTitle>Recent institutions</CardTitle>
+                <CardDescription>Latest tenants from the platform registry.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {tenants.slice(0, 6).map((tenant) => (
+                  <Link
+                    key={tenant.id}
+                    to={`/platform/tenants/${tenant.id}`}
+                    className="flex items-center justify-between rounded-xl border border-border/80 bg-background/60 px-3 py-2.5 transition-colors hover:border-[#00c2b2]/40 hover:bg-[#00c2b2]/5"
+                  >
+                    <div>
+                      <p className="font-medium">{tenant.displayName}</p>
+                      <p className="text-xs text-muted-foreground">{tenant.tenantCode}</p>
+                    </div>
+                    <StatusBadge value={tenant.status} />
+                  </Link>
+                ))}
+                {!tenants.length ? (
+                  <p className="text-sm text-muted-foreground">No tenants yet. Add the first institution.</p>
+                ) : null}
+              </CardContent>
+            </Card>
+            <Card className="portal-card">
+              <CardHeader>
+                <CardTitle>Application catalogue</CardTitle>
+                <CardDescription>Independently deployable applications registered on the platform.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {applications.slice(0, 6).map((app) => (
+                  <div
+                    key={app.id}
+                    className="flex items-center justify-between gap-3 rounded-xl border border-border/80 bg-background/60 px-3 py-2.5"
+                  >
+                    <div className="flex min-w-0 items-center gap-3">
+                      <ApplicationIcon code={app.applicationCode} size="sm" />
+                      <div className="min-w-0">
+                        <p className="truncate font-medium">{app.name}</p>
+                        <p className="truncate text-xs text-muted-foreground">{app.applicationCode}</p>
+                      </div>
+                    </div>
+                    <StatusBadge value={app.status} />
                   </div>
-                </div>
-                <StatusBadge value={app.status} />
-              </div>
-            ))}
-            {!loading && !applications.length ? (
-              <p className="text-sm text-muted-foreground">Register an application to entitle tenants.</p>
-            ) : null}
-          </CardContent>
-        </Card>
-      </div>
+                ))}
+                {!applications.length ? (
+                  <p className="text-sm text-muted-foreground">Register an application to entitle tenants.</p>
+                ) : null}
+              </CardContent>
+            </Card>
+          </div>
+        </>
+      )}
     </div>
+  )
+}
+
+function DashboardSkeleton() {
+  return (
+    <>
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <Skeleton key={index} className="h-32 rounded-2xl" />
+        ))}
+      </div>
+      <div className="grid gap-4 lg:grid-cols-2">
+        {Array.from({ length: 2 }).map((_, card) => (
+          <Card key={card} className="portal-card">
+            <CardHeader>
+              <Skeleton className="h-5 w-44" />
+              <Skeleton className="h-4 w-64" />
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {Array.from({ length: 6 }).map((_, index) => (
+                <Skeleton key={index} className="h-14 rounded-xl" />
+              ))}
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </>
   )
 }
 

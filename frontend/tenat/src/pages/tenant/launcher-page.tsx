@@ -64,7 +64,16 @@ export function TenantLauncherPage() {
     return (
       <div className="flex flex-1 flex-col gap-6">
         <Skeleton className="h-36 rounded-3xl" />
-        <Skeleton className="h-40 rounded-[var(--radius)]" />
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <div key={index} className="portal-card space-y-3 p-5">
+              <Skeleton className="size-5 rounded-md" />
+              <Skeleton className="h-5 w-28" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-9 w-32" />
+            </div>
+          ))}
+        </div>
       </div>
     )
   }

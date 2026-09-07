@@ -86,8 +86,9 @@ export function PlatformSmtpPage() {
           <RowActions
             key={`${row.id}-actions`}
             editTo={`/platform/smtp/${row.tenantId}`}
-            onDelete={() => {
-              if (!window.confirm('Remove this SMTP configuration?')) return
+            deleteTitle="Remove this SMTP configuration?"
+            deleteDescription="Outbound email settings for this institution will be removed."
+            onDelete={() =>
               tenantSmtpService
                 .delete(row.tenantId)
                 .then(() => {
@@ -95,7 +96,7 @@ export function PlatformSmtpPage() {
                   load()
                 })
                 .catch((error) => toast.error(errorMessage(error)))
-            }}
+            }
           />,
         ])}
       />

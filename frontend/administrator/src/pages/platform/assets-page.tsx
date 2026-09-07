@@ -86,8 +86,9 @@ export function PlatformAssetsPage() {
           <RowActions
             key={`${row.id}-actions`}
             editTo={`/platform/assets/${row.tenantId}/${row.id}`}
-            onDelete={() => {
-              if (!window.confirm('Remove this asset?')) return
+            deleteTitle="Remove this asset?"
+            deleteDescription="This file will be removed from the institution."
+            onDelete={() =>
               tenantAssetService
                 .delete(row.tenantId, row.id)
                 .then(() => {
@@ -95,7 +96,7 @@ export function PlatformAssetsPage() {
                   load()
                 })
                 .catch((error) => toast.error(errorMessage(error)))
-            }}
+            }
           />,
         ])}
       />

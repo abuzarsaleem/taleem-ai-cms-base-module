@@ -103,8 +103,10 @@ export function TenantIdentifiersPanel({
           <RowActions
             key={row.id}
             onEdit={() => void openEdit(row.id)}
+            deleteTitle="Remove this identifier?"
+            deleteDescription="This identifier will be removed from the institution."
             onDelete={() =>
-              void tenantIdentifierService
+              tenantIdentifierService
                 .delete(tenantId, row.id)
                 .then(() => {
                   toast.success('Identifier removed')

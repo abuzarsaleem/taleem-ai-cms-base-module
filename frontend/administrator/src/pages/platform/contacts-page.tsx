@@ -78,8 +78,9 @@ export function PlatformContactsPage() {
           <RowActions
             key={`${row.id}-actions`}
             editTo={`/platform/contacts/${row.tenantId}/${row.id}`}
-            onDelete={() => {
-              if (!window.confirm('Remove this contact?')) return
+            deleteTitle="Remove this contact?"
+            deleteDescription="This contact will be removed from the institution."
+            onDelete={() =>
               tenantContactService
                 .delete(row.tenantId, row.id)
                 .then(() => {
@@ -87,7 +88,7 @@ export function PlatformContactsPage() {
                   load()
                 })
                 .catch((error) => toast.error(errorMessage(error)))
-            }}
+            }
           />,
         ])}
       />

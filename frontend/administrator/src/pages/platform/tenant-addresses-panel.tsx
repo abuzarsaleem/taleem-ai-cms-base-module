@@ -105,8 +105,10 @@ export function TenantAddressesPanel({
           <RowActions
             key={row.id}
             onEdit={() => void openEdit(row.id)}
+            deleteTitle="Remove this address?"
+            deleteDescription="This address will be removed from the institution."
             onDelete={() =>
-              void tenantAddressService
+              tenantAddressService
                 .delete(tenantId, row.id)
                 .then(() => {
                   toast.success('Address removed')

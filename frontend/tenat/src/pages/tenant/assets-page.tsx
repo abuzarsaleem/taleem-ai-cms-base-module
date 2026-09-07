@@ -78,8 +78,9 @@ function TenantAssetsList({ tenantId }: { tenantId: string }) {
           <RowActions
             key={`${row.id}-actions`}
             editTo={`/tenant/assets/${row.id}`}
-            onDelete={() => {
-              if (!window.confirm('Remove this asset?')) return
+            deleteTitle="Remove this asset?"
+            deleteDescription="This file will be removed from the institution."
+            onDelete={() =>
               tenantAssetService
                 .delete(tenantId, row.id)
                 .then(() => {
@@ -87,7 +88,7 @@ function TenantAssetsList({ tenantId }: { tenantId: string }) {
                   load()
                 })
                 .catch((error) => toast.error(errorMessage(error)))
-            }}
+            }
           />,
         ])}
       />

@@ -164,8 +164,10 @@ export function TenantAssetsPanel({
           <RowActions
             key={`${row.id}-actions`}
             onEdit={() => void openEdit(row.id)}
+            deleteTitle="Remove this asset?"
+            deleteDescription="This file will be removed from the institution."
             onDelete={() =>
-              void tenantAssetService
+              tenantAssetService
                 .delete(tenantId, row.id)
                 .then(() => {
                   toast.success('Asset removed')

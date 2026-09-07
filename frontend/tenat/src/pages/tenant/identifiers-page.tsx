@@ -81,8 +81,9 @@ function TenantIdentifiersList({ tenantId }: { tenantId: string }) {
           <RowActions
             key={`${row.id}-actions`}
             editTo={`/tenant/identifiers/${row.id}`}
-            onDelete={() => {
-              if (!window.confirm('Remove this identifier?')) return
+            deleteTitle="Remove this identifier?"
+            deleteDescription="This identifier will be removed from the institution."
+            onDelete={() =>
               tenantIdentifierService
                 .delete(tenantId, row.id)
                 .then(() => {
@@ -90,7 +91,7 @@ function TenantIdentifiersList({ tenantId }: { tenantId: string }) {
                   load()
                 })
                 .catch((error) => toast.error(errorMessage(error)))
-            }}
+            }
           />,
         ])}
       />

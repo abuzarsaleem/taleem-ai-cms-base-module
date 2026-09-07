@@ -11,6 +11,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
+import { ConfirmDialog } from '@/components/confirm-dialog'
 import { DataTable } from '@/components/data-table'
 import { Field } from '@/components/field'
 import { SectionTitle } from '@/components/section-title'
@@ -61,6 +62,8 @@ export function TenantInvitationsPanel({
   const [email, setEmail] = useState('')
   const [busy, setBusy] = useState(false)
   const [issued, setIssued] = useState<{ email: string; token: string; expiresAt: string } | null>(null)
+  const [cancelId, setCancelId] = useState<string | null>(null)
+  const [cancelling, setCancelling] = useState(false)
 
   async function copy(label: string, value: string) {
     try {
@@ -200,7 +203,7 @@ export function TenantInvitationsPanel({
                 <Button size="sm" variant="outline" onClick={() => void resend(row.id)}>
                   Resend
                 </Button>
-                <Button size="sm" variant="outline" onClick={() => void cancel(row.id)}>
+                <Button size="sm" variant="outline" onClick={() => setCancelId(row.id)}>
                   Cancel
                 </Button>
               </div>
@@ -209,6 +212,26 @@ export function TenantInvitationsPanel({
             ),
           ]
         })}
+      />
+      <ConfirmDialog
+        open={Boolean(cancelId)}
+        title="Cancel this invitation?"
+        description="The recipient will no longer be able to accept this invite."
+        confirmLabel="Cancel invite"
+        pending={cancelling}
+        onOpenChange={(open) => {
+          if (!open) setCancelId(null)
+        }}
+        onConfirm={async () => {
+          if (!cancelId) return
+          setCancelling(true)
+          try {
+            await cancel(cancelId)
+            setCancelId(null)
+          } finally {
+            setCancelling(false)
+          }
+        }}
       />
     </div>
   )

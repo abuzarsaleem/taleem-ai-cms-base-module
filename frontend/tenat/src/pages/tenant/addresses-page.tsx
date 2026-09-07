@@ -78,8 +78,9 @@ function TenantAddressesList({ tenantId }: { tenantId: string }) {
           <RowActions
             key={`${row.id}-actions`}
             editTo={`/tenant/addresses/${row.id}`}
-            onDelete={() => {
-              if (!window.confirm('Remove this address?')) return
+            deleteTitle="Remove this address?"
+            deleteDescription="This address will be removed from the institution."
+            onDelete={() =>
               tenantAddressService
                 .delete(tenantId, row.id)
                 .then(() => {
@@ -87,7 +88,7 @@ function TenantAddressesList({ tenantId }: { tenantId: string }) {
                   load()
                 })
                 .catch((error) => toast.error(errorMessage(error)))
-            }}
+            }
           />,
         ])}
       />

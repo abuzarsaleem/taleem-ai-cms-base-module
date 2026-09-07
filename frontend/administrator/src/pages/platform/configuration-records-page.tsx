@@ -84,8 +84,9 @@ export function PlatformConfigurationPage() {
           <RowActions
             key={`${row.id}-actions`}
             editTo={`/platform/configuration/${row.tenantId}`}
-            onDelete={() => {
-              if (!window.confirm('Remove this configuration?')) return
+            deleteTitle="Remove this configuration?"
+            deleteDescription="Locale, timezone, and branding settings for this institution will be removed."
+            onDelete={() =>
               tenantConfigurationService
                 .delete(row.tenantId)
                 .then(() => {
@@ -93,7 +94,7 @@ export function PlatformConfigurationPage() {
                   load()
                 })
                 .catch((error) => toast.error(errorMessage(error)))
-            }}
+            }
           />,
         ])}
       />
