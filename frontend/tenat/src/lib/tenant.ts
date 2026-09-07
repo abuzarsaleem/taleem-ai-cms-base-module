@@ -80,10 +80,6 @@ export function validateTenantDraft(draft: TenantDraft, mode: 'create' | 'update
   if (mode === 'create') {
     if (!draft.institutionType.trim()) return 'Institution type is required'
     if (draft.institutionType.trim().length > 50) return 'Institution type must be 50 characters or fewer'
-    if (draft.tenantCode.trim() && draft.tenantCode.trim().length < 2) {
-      return 'Tenant code must be at least 2 characters'
-    }
-    if (draft.tenantCode.trim().length > 50) return 'Tenant code must be 50 characters or fewer'
     if (draft.countryCode.trim() && draft.countryCode.trim().length > 2) {
       return 'Country code must be 2 characters (for example PK)'
     }
@@ -96,7 +92,6 @@ export function validateTenantDraft(draft: TenantDraft, mode: 'create' | 'update
 
 export function createTenantPayload(draft: TenantDraft): CreateTenantBody {
   return {
-    tenantCode: optional(draft.tenantCode),
     legalName: draft.legalName.trim(),
     displayName: draft.displayName.trim(),
     institutionType: draft.institutionType.trim(),

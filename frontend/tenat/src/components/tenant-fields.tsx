@@ -44,19 +44,11 @@ export function TenantFields({
           <Input value={value.institutionType} disabled />
         </Field>
       )}
-      {mode === 'create' ? (
-        <Field label="Tenant code" hint="Optional. Generated from the display name if omitted.">
-          <Input
-            value={value.tenantCode}
-            maxLength={50}
-            onChange={(e) => patch({ tenantCode: e.target.value })}
-          />
-        </Field>
-      ) : (
-        <Field label="Tenant code" hint="Set at create time and cannot be patched.">
+      {mode === 'update' ? (
+        <Field label="Tenant code" hint="Generated when the tenant is created.">
           <Input value={value.tenantCode} disabled />
         </Field>
-      )}
+      ) : null}
       <Field label="Website">
         <Input
           value={value.websiteUrl}

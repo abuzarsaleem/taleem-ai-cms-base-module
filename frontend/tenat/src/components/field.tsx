@@ -16,17 +16,21 @@ export function Field({
   required?: boolean
 }) {
   return (
-    <div className={cn('grid gap-1.5', className)}>
+    <div className={cn('relative grid gap-1', className)}>
       <Label>
         {label}
         {required ? <span className="text-destructive"> *</span> : null}
       </Label>
       {children}
-      {hint ? <p className="text-xs text-muted-foreground">{hint}</p> : null}
+      {hint ? (
+        <p className="absolute top-full left-0 mt-1 line-clamp-1 text-xs leading-4 text-muted-foreground" title={hint}>
+          {hint}
+        </p>
+      ) : null}
     </div>
   )
 }
 
 export function FieldGrid({ children }: { children: ReactNode }) {
-  return <div className="grid gap-4 sm:grid-cols-2">{children}</div>
+  return <div className="grid grid-cols-1 gap-x-4 gap-y-7 sm:grid-cols-2">{children}</div>
 }
