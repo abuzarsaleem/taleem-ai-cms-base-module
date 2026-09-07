@@ -17,7 +17,7 @@ import {
 } from '@/pages/platform/resource-workspace'
 
 export function PlatformAssetsPage() {
-  const { tenants } = usePlatformTenants()
+  const { tenants, loading: tenantsLoading } = usePlatformTenants()
   const list = usePlatformListQuery()
   const [rows, setRows] = useState<TenantAsset[]>([])
   const [total, setTotal] = useState(0)
@@ -64,7 +64,7 @@ export function PlatformAssetsPage() {
       tenantId={list.tenantId}
       onTenantId={list.onTenantId}
       tenants={tenants}
-      loading={loading}
+      loading={loading || tenantsLoading}
       page={list.page}
       total={total}
       pageSize={list.pageSize}
@@ -76,7 +76,7 @@ export function PlatformAssetsPage() {
         empty="No assets match this filter."
         rows={visible.map((row) => [
           <Link key={`${row.id}-tenant`} to={`/platform/tenants/${row.tenantId}`} className="font-medium hover:underline">
-            {tenantLabel(tenants, row.tenantId)}
+            {tenantLabel(tenants, row.tenantId) || '—'}
           </Link>,
           labelize(row.assetType),
           row.fileName ?? '—',

@@ -121,7 +121,7 @@ function SidebarNav({
   const items = groups.flatMap((group) => group.items)
 
   return (
-    <nav className="flex flex-1 flex-col gap-1">
+    <nav className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto">
       {groups.map((group) => (
         <div key={group.label} className="pt-2">
           <p className="px-3 pt-2 pb-2 text-[11px] font-semibold tracking-[0.14em] text-sidebar-foreground/55 uppercase">
@@ -177,11 +177,11 @@ function SidebarBody({
   onSignOut: () => void
 }) {
   return (
-    <div className="flex size-full flex-col px-3.5 py-5">
+    <div className="flex h-full min-h-0 flex-col px-3.5 py-5">
       <NavLink
         to={groups[0]?.items[0]?.to ?? '/'}
         end
-        className="mb-4 flex items-center justify-center outline-none"
+        className="mb-4 flex shrink-0 items-center justify-center outline-none"
         onClick={onNavigate}
       >
         <span className="inline-flex rounded-lg bg-white px-3 py-2 shadow-sm">
@@ -189,7 +189,7 @@ function SidebarBody({
         </span>
       </NavLink>
       <SidebarNav groups={groups} pathname={pathname} onNavigate={onNavigate} />
-      <div className="mt-auto border-t border-sidebar-border pt-4">
+      <div className="mt-auto shrink-0 border-t border-sidebar-border pt-4">
         <div className="flex items-center gap-2.5 rounded-[14px] bg-white/8 p-2.5">
           <NavLink
             to={accountPath}
@@ -256,11 +256,13 @@ export function AppShell() {
   )
 
   return (
-    <div className="flex min-h-svh bg-background">
-      <aside className="portal-sidebar hidden w-[248px] shrink-0 text-sidebar-foreground md:flex">{sidebar}</aside>
+    <div className="flex h-svh overflow-hidden bg-background">
+      <aside className="portal-sidebar hidden h-full w-[248px] shrink-0 text-sidebar-foreground md:flex">
+        {sidebar}
+      </aside>
 
-      <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-20 flex h-[72px] shrink-0 items-center gap-3 border-b border-border bg-background/92 px-4 backdrop-blur-xl sm:px-8">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+        <header className="z-20 flex h-[72px] shrink-0 items-center gap-3 border-b border-border bg-background/92 px-4 backdrop-blur-xl sm:px-8">
           <Button
             variant="ghost"
             size="icon"
@@ -315,9 +317,11 @@ export function AppShell() {
           </div>
         </header>
 
-        <main className="mx-auto flex w-full min-w-0 max-w-[1500px] flex-1 flex-col overflow-x-hidden px-4 pt-8 pb-10 sm:px-8 sm:pt-10">
-          <Outlet />
-        </main>
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <main className="mx-auto flex w-full min-w-0 max-w-[1500px] flex-col px-4 pt-8 pb-10 sm:px-8 sm:pt-10">
+            <Outlet />
+          </main>
+        </div>
       </div>
 
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>

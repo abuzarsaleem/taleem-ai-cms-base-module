@@ -69,7 +69,9 @@ export function ResourceWorkspace({
             {showTenantFilter && tenantId && onTenantId && tenants ? (
               <Select value={tenantId} onValueChange={onTenantId}>
                 <SelectTrigger className="w-full sm:w-64">
-                  <SelectValue placeholder="All tenants" />
+                  <SelectValue placeholder="All tenants">
+                    {tenantId === 'all' ? 'All tenants' : tenantLabel(tenants, tenantId) || 'All tenants'}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All tenants</SelectItem>
@@ -154,7 +156,7 @@ export function TenantPicker({
     <Field label="Tenant" required>
       <Select value={value || undefined} onValueChange={onChange} disabled={disabled}>
         <SelectTrigger className="w-full">
-          <SelectValue placeholder="Select tenant" />
+          <SelectValue placeholder="Select tenant">{tenantLabel(tenants, value) || undefined}</SelectValue>
         </SelectTrigger>
         <SelectContent>
           {tenants.map((tenant) => (
@@ -169,7 +171,8 @@ export function TenantPicker({
 }
 
 export function tenantLabel(tenants: Tenant[], tenantId: string) {
-  return tenants.find((row) => row.id === tenantId)?.displayName ?? tenantId
+  const tenant = tenants.find((row) => row.id === tenantId)
+  return tenant?.displayName || tenant?.legalName || tenant?.tenantCode || ''
 }
 
 export function matchesFilter(query: string, ...parts: Array<string | undefined | null>) {

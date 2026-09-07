@@ -1,3 +1,4 @@
+import { ApplicationIcon } from '@/components/application-icon'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Field, FieldGrid } from '@/components/field'
@@ -104,14 +105,19 @@ export function SubscriptionFields({
                     })
                   }
                   className={cn(
-                    'rounded-xl border px-3 py-3 text-left transition-colors',
+                    'flex items-center gap-3 rounded-xl border px-3 py-3 text-left transition-colors',
                     checked
                       ? 'border-[#00c2b2] bg-[#00c2b2]/10'
                       : 'border-border hover:border-[#00c2b2]/40 hover:bg-[#00c2b2]/5',
                   )}
                 >
-                  <span className="block text-sm font-medium">{app.name}</span>
-                  <span className="mt-0.5 block font-mono text-[11px] text-muted-foreground">{app.applicationCode}</span>
+                  <ApplicationIcon code={app.applicationCode} size="sm" />
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm font-medium">{app.name}</span>
+                    <span className="mt-0.5 block truncate font-mono text-[11px] text-muted-foreground">
+                      {app.applicationCode}
+                    </span>
+                  </span>
                 </button>
               )
             })}

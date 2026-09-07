@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Building2, LayoutGrid, Shield, Users, type LucideIcon } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { ApplicationIcon } from '@/components/application-icon'
 import { PageHeader } from '@/components/page-header'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StatusBadge } from '@/components/status-badge'
@@ -97,11 +98,14 @@ export function PlatformDashboardPage() {
             {applications.slice(0, 6).map((app) => (
               <div
                 key={app.id}
-                className="flex items-center justify-between rounded-xl border border-border/80 bg-background/60 px-3 py-2.5"
+                className="flex items-center justify-between gap-3 rounded-xl border border-border/80 bg-background/60 px-3 py-2.5"
               >
-                <div>
-                  <p className="font-medium">{app.name}</p>
-                  <p className="text-xs text-muted-foreground">{app.applicationCode}</p>
+                <div className="flex min-w-0 items-center gap-3">
+                  <ApplicationIcon code={app.applicationCode} size="sm" />
+                  <div className="min-w-0">
+                    <p className="truncate font-medium">{app.name}</p>
+                    <p className="truncate text-xs text-muted-foreground">{app.applicationCode}</p>
+                  </div>
                 </div>
                 <StatusBadge value={app.status} />
               </div>

@@ -1,4 +1,5 @@
 import { toast } from 'sonner'
+import { ApplicationIcon } from '@/components/application-icon'
 import { Button } from '@/components/ui/button'
 import { SectionTitle } from '@/components/section-title'
 import { StatusBadge } from '@/components/status-badge'
@@ -80,9 +81,12 @@ export function TenantEntitlementsPanel({
                 key={app.id}
                 className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-background/70 px-4 py-3.5"
               >
-                <div className="min-w-0">
-                  <p className="font-medium">{app.name}</p>
-                  <p className="font-mono text-[11px] text-muted-foreground">{app.applicationCode}</p>
+                <div className="flex min-w-0 items-center gap-3">
+                  <ApplicationIcon code={app.applicationCode} size="sm" />
+                  <div className="min-w-0">
+                    <p className="truncate font-medium">{app.name}</p>
+                    <p className="truncate font-mono text-[11px] text-muted-foreground">{app.applicationCode}</p>
+                  </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <StatusBadge value={entitlement?.status ?? 'NOT_ENTITLED'} />

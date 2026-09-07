@@ -17,7 +17,7 @@ import {
 } from '@/pages/platform/resource-workspace'
 
 export function PlatformContactsPage() {
-  const { tenants } = usePlatformTenants()
+  const { tenants, loading: tenantsLoading } = usePlatformTenants()
   const list = usePlatformListQuery()
   const [rows, setRows] = useState<TenantContact[]>([])
   const [total, setTotal] = useState(0)
@@ -57,7 +57,7 @@ export function PlatformContactsPage() {
       tenantId={list.tenantId}
       onTenantId={list.onTenantId}
       tenants={tenants}
-      loading={loading}
+      loading={loading || tenantsLoading}
       page={list.page}
       total={total}
       pageSize={list.pageSize}
@@ -69,7 +69,7 @@ export function PlatformContactsPage() {
         empty="No contacts match this filter."
         rows={rows.map((row) => [
           <Link key={`${row.id}-tenant`} to={`/platform/tenants/${row.tenantId}`} className="font-medium hover:underline">
-            {tenantLabel(tenants, row.tenantId)}
+            {tenantLabel(tenants, row.tenantId) || '—'}
           </Link>,
           `${row.firstName} ${row.lastName ?? ''}`.trim(),
           row.email ?? '—',

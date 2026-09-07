@@ -13,6 +13,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { ApplicationIcon } from '@/components/application-icon'
 import { Field } from '@/components/field'
 import { PageHeader } from '@/components/page-header'
 import { StatusBadge } from '@/components/status-badge'
@@ -121,8 +122,13 @@ export function ApplicationsPage() {
               {rows.map((app) => (
                 <TableRow key={app.id}>
                   <TableCell>
-                    <p className="font-medium">{app.name}</p>
-                    <p className="text-xs text-muted-foreground">{app.description}</p>
+                    <div className="flex items-center gap-3">
+                      <ApplicationIcon code={app.applicationCode} size="sm" />
+                      <div className="min-w-0">
+                        <p className="font-medium">{app.name}</p>
+                        <p className="text-xs text-muted-foreground">{app.description}</p>
+                      </div>
+                    </div>
                   </TableCell>
                   <TableCell className="font-mono text-xs">{app.applicationCode}</TableCell>
                   <TableCell>{app.version ?? '—'}</TableCell>

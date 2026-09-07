@@ -18,7 +18,7 @@ import {
 } from '@/pages/platform/resource-workspace'
 
 export function PlatformAddressesPage() {
-  const { tenants } = usePlatformTenants()
+  const { tenants, loading: tenantsLoading } = usePlatformTenants()
   const list = usePlatformListQuery()
   const [rows, setRows] = useState<TenantAddress[]>([])
   const [total, setTotal] = useState(0)
@@ -65,7 +65,7 @@ export function PlatformAddressesPage() {
       tenantId={list.tenantId}
       onTenantId={list.onTenantId}
       tenants={tenants}
-      loading={loading}
+      loading={loading || tenantsLoading}
       page={list.page}
       total={total}
       pageSize={list.pageSize}
@@ -77,7 +77,7 @@ export function PlatformAddressesPage() {
         empty="No addresses match this filter."
         rows={visible.map((row) => [
           <Link key={`${row.id}-tenant`} to={`/platform/tenants/${row.tenantId}`} className="font-medium hover:underline">
-            {tenantLabel(tenants, row.tenantId)}
+            {tenantLabel(tenants, row.tenantId) || '—'}
           </Link>,
           labelize(row.addressType),
           row.addressLine1,
