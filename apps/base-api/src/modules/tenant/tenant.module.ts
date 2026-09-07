@@ -1,6 +1,7 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { StorageModule } from '../storage/storage.module.js';
+import { SubscriptionModule } from '../subscription/subscription.module.js';
 import {
   DEPARTMENT_REPOSITORY,
   DESIGNATION_REPOSITORY,
@@ -103,7 +104,11 @@ const repositories = [
 ];
 
 @Module({
-  imports: [TypeOrmModule.forFeature(entities), StorageModule],
+  imports: [
+    TypeOrmModule.forFeature(entities),
+    StorageModule,
+    forwardRef(() => SubscriptionModule),
+  ],
   controllers: [
     TenantController,
     TenantCatalogController,

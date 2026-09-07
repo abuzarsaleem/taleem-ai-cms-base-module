@@ -9,6 +9,7 @@ import {
   SmtpEncryption,
   TenantStatus,
 } from '../../../domain/tenant.types.js';
+import { AvailableApplicationResponseDto } from '../../../../subscription/application/dto/response/subscription.response.dto.js';
 
 export class TenantResponseDto {
   @ApiProperty({ format: 'uuid' }) id!: string;
@@ -27,6 +28,8 @@ export class TenantResponseDto {
   @ApiPropertyOptional() retiredAt?: Date;
   @ApiProperty() createdAt!: Date;
   @ApiProperty() updatedAt!: Date;
+  @ApiPropertyOptional({ type: [AvailableApplicationResponseDto] })
+  applications?: AvailableApplicationResponseDto[];
 }
 
 export class TenantListResponseDto {

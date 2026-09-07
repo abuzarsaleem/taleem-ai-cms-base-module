@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { TenantModule } from '../tenant/tenant.module.js';
 import {
@@ -53,7 +53,7 @@ const repositories = [
 ];
 
 @Module({
-  imports: [TypeOrmModule.forFeature(entities), TenantModule],
+  imports: [TypeOrmModule.forFeature(entities), forwardRef(() => TenantModule)],
   controllers: [
     ApplicationCatalogController,
     TenantAvailabilityController,

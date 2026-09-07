@@ -6,6 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { paginatedResponse } from '@app/common';
+import { EntitlementPolicyService } from '../../subscription/application/entitlement-policy.service.js';
 import type { ITenantRepository } from '../domain/tenant.repository.interface.js';
 import { TENANT_REPOSITORY } from '../domain/tenant.repository.interface.js';
 import { TenantStatus, type TenantProps } from '../domain/tenant.types.js';
@@ -21,6 +22,7 @@ export class TenantService {
   constructor(
     @Inject(TENANT_REPOSITORY)
     private readonly tenantRepository: ITenantRepository,
+    private readonly entitlementPolicy: EntitlementPolicyService,
   ) {}
 
   async create(dto: CreateTenantDto): Promise<TenantResponseDto> {
@@ -53,7 +55,10 @@ export class TenantService {
   async findById(id: string): Promise<TenantResponseDto> {
     const tenant = await this.tenantRepository.findById(id);
     if (!tenant) throw new NotFoundException(`Tenant '${id}' not found`);
-    return toTenantResponse(tenant);
+    return {
+      ...toTenantResponse(tenant),
+      applications: await this.entitlementPolicy.listAvailable(id),
+    };
   }
 
   async update(id: string, dto: UpdateTenantDto): Promise<TenantResponseDto> {
