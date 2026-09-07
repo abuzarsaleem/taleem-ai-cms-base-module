@@ -8,7 +8,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -21,12 +20,23 @@ import { errorMessage } from '@/lib/auth'
 import { ApplicationStatus, type CatalogApplication } from '@/lib/types'
 import { applicationService } from '@/services/platform'
 
+const emptyDraft = {
+  applicationCode: '',
+  name: '',
+  version: '',
+  launchUrl: '',
+  description: '',
+}
+
+function optional(value: string) {
+  const trimmed = value.trim()
+  return trimmed || undefined
+}
+
 export function ApplicationsPage() {
   const [open, setOpen] = useState(false)
-  const [code, setCode] = useState('')
-  const [name, setName] = useState('')
-  const [launchUrl, setLaunchUrl] = useState('')
-  const [description, setDescription] = useState('')
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [draft, setDraft] = useState(emptyDraft)
   const [busy, setBusy] = useState(false)
   const [loading, setLoading] = useState(true)
   const [rows, setRows] = useState<CatalogApplication[]>([])
@@ -42,68 +52,120 @@ export function ApplicationsPage() {
       .finally(() => setLoading(false))
   }, [])
 
+  function openCreate() {
+    setEditingId(null)
+    setDraft(emptyDraft)
+    setOpen(true)
+  }
+
+  async function openEdit(applicationId: string) {
+    try {
+      const app = await applicationService.get(applicationId)
+      setEditingId(app.id)
+      setDraft({
+        applicationCode: app.applicationCode,
+        name: app.name,
+        version: app.version ?? '',
+        launchUrl: app.launchUrl ?? '',
+        description: app.description ?? '',
+      })
+      setOpen(true)
+    } catch (error) {
+      toast.error(errorMessage(error))
+    }
+  }
+
+  async function save() {
+    if (!draft.name.trim() || (!editingId && !draft.applicationCode.trim())) return
+    setBusy(true)
+    try {
+      if (editingId) {
+        await applicationService.update(editingId, {
+          name: draft.name.trim(),
+          description: optional(draft.description),
+          version: optional(draft.version),
+          launchUrl: optional(draft.launchUrl),
+        })
+        toast.success('Application updated')
+      } else {
+        await applicationService.create({
+          applicationCode: draft.applicationCode.trim(),
+          name: draft.name.trim(),
+          description: optional(draft.description),
+          version: optional(draft.version),
+          launchUrl: optional(draft.launchUrl),
+        })
+        toast.success('Application registered')
+      }
+      setOpen(false)
+      await load()
+    } catch (error) {
+      toast.error(errorMessage(error))
+    } finally {
+      setBusy(false)
+    }
+  }
+
   return (
     <div className="flex flex-1 flex-col gap-6">
       <PageHeader
         eyebrow="Catalogue"
         title="Application catalogue"
         description="Register independently deployable applications. The catalogue does not store application business data."
-        actions={
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button>Register application</Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Register application</DialogTitle>
-                <DialogDescription>Unique application identity and launch information.</DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-3">
-                <Field label="Application code">
-                  <Input value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} />
-                </Field>
-                <Field label="Name">
-                  <Input value={name} onChange={(e) => setName(e.target.value)} />
-                </Field>
-                <Field label="Launch URL">
-                  <Input value={launchUrl} onChange={(e) => setLaunchUrl(e.target.value)} />
-                </Field>
-                <Field label="Description">
-                  <Input value={description} onChange={(e) => setDescription(e.target.value)} />
-                </Field>
-              </div>
-              <DialogFooter>
-                <Button
-                  disabled={busy || !code || !name}
-                  onClick={() => {
-                    setBusy(true)
-                    applicationService
-                      .create({
-                        applicationCode: code,
-                        name,
-                        launchUrl: launchUrl || undefined,
-                        description: description || undefined,
-                      })
-                      .then(async () => {
-                        await load()
-                        setOpen(false)
-                        setCode('')
-                        setName('')
-                        setLaunchUrl('')
-                        setDescription('')
-                        toast.success('Application registered')
-                      })
-                      .catch((error) => toast.error(errorMessage(error)))
-                      .finally(() => setBusy(false))
-                  }}
-                >
-                  Save
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        }
+        actions={<Button onClick={openCreate}>Register application</Button>}
       />
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editingId ? 'Edit application' : 'Register application'}</DialogTitle>
+            <DialogDescription>
+              {editingId
+                ? 'PATCH /application/:id — name, version, launch URL, and description. Code cannot change.'
+                : 'Unique application identity and launch information.'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-3">
+            <Field label="Application code" required>
+              <Input
+                value={draft.applicationCode}
+                disabled={Boolean(editingId)}
+                onChange={(e) => setDraft((current) => ({ ...current, applicationCode: e.target.value.toUpperCase() }))}
+              />
+            </Field>
+            <Field label="Name" required>
+              <Input value={draft.name} onChange={(e) => setDraft((current) => ({ ...current, name: e.target.value }))} />
+            </Field>
+            <Field label="Version">
+              <Input
+                value={draft.version}
+                placeholder="1.0.0"
+                onChange={(e) => setDraft((current) => ({ ...current, version: e.target.value }))}
+              />
+            </Field>
+            <Field label="Launch URL">
+              <Input
+                value={draft.launchUrl}
+                placeholder="https://app.example.edu"
+                onChange={(e) => setDraft((current) => ({ ...current, launchUrl: e.target.value }))}
+              />
+            </Field>
+            <Field label="Description">
+              <Input
+                value={draft.description}
+                onChange={(e) => setDraft((current) => ({ ...current, description: e.target.value }))}
+              />
+            </Field>
+          </div>
+          <DialogFooter>
+            <Button
+              disabled={busy || !draft.name.trim() || (!editingId && !draft.applicationCode.trim())}
+              onClick={() => void save()}
+            >
+              {busy ? 'Saving…' : editingId ? 'Save changes' : 'Save'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       {loading ? (
         <Skeleton className="h-72 rounded-xl" />
       ) : (
@@ -136,23 +198,28 @@ export function ApplicationsPage() {
                     <StatusBadge value={app.status} />
                   </TableCell>
                   <TableCell className="text-right">
-                    {app.status === ApplicationStatus.ACTIVE ? (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          applicationService
-                            .deactivate(app.id)
-                            .then(async () => {
-                              await load()
-                              toast.success(`${app.name} marked ineligible`)
-                            })
-                            .catch((error) => toast.error(errorMessage(error)))
-                        }}
-                      >
-                        Deactivate
+                    <div className="flex justify-end gap-2">
+                      <Button size="sm" variant="outline" onClick={() => void openEdit(app.id)}>
+                        Edit
                       </Button>
-                    ) : null}
+                      {app.status === ApplicationStatus.ACTIVE ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            applicationService
+                              .deactivate(app.id)
+                              .then(async () => {
+                                await load()
+                                toast.success(`${app.name} marked ineligible`)
+                              })
+                              .catch((error) => toast.error(errorMessage(error)))
+                          }}
+                        >
+                          Deactivate
+                        </Button>
+                      ) : null}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
