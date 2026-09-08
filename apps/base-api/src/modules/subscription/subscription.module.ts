@@ -78,6 +78,11 @@ const repositories = [
     TenantAvailabilityService,
     ...repositories,
   ],
-  exports: [EntitlementPolicyService, APPLICATION_REPOSITORY, TENANT_ENTITLEMENT_REPOSITORY],
+  exports: [
+    EntitlementPolicyService,
+    APPLICATION_REPOSITORY,
+    SUBSCRIPTION_REPOSITORY,
+    TENANT_ENTITLEMENT_REPOSITORY,
+  ],
 })
 export class SubscriptionModule {}

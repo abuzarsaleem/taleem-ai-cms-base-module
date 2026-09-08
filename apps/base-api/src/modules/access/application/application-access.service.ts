@@ -16,8 +16,10 @@ import {
 import { MembershipStatus } from '../../invitation/domain/membership.types.js';
 import {
   APPLICATION_REPOSITORY,
+  SUBSCRIPTION_REPOSITORY,
   TENANT_ENTITLEMENT_REPOSITORY,
   type IApplicationRepository,
+  type ISubscriptionRepository,
   type ITenantEntitlementRepository,
 } from '../../subscription/domain/subscription.repository.interface.js';
 import { EntitlementPolicyService } from '../../subscription/application/entitlement-policy.service.js';
@@ -45,6 +47,8 @@ export class ApplicationAccessService {
     private readonly applications: IApplicationRepository,
     @Inject(TENANT_ENTITLEMENT_REPOSITORY)
     private readonly entitlements: ITenantEntitlementRepository,
+    @Inject(SUBSCRIPTION_REPOSITORY)
+    private readonly subscriptions: ISubscriptionRepository,
     @InjectRepository(ApplicationAccessAssignmentEntity)
     private readonly assignments: Repository<ApplicationAccessAssignmentEntity>,
     @InjectRepository(ApplicationPermissionEntity)
@@ -218,10 +222,14 @@ export class ApplicationAccessService {
       throw new BadRequestException('Tenant is not entitled to this application');
     }
 
+    const subscription = entitlement.subscriptionId
+      ? await this.subscriptions.findById(tenantId, entitlement.subscriptionId)
+      : null;
+
     const evaluation = this.entitlementPolicy.evaluateEntitlement(
       entitlement,
       application,
-      null,
+      subscription,
     );
     if (!evaluation.ok) {
       throw new BadRequestException(
