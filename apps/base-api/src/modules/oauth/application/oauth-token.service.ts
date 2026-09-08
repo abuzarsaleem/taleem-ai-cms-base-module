@@ -7,8 +7,8 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { USER_REPOSITORY } from '../../user/domain/user.repository.interface.js';
-import type { IUserRepository } from '../../user/domain/user.repository.interface.js';
+import { IDENTITY_REPOSITORY } from '../../identity/domain/identity.repository.interface.js';
+import type { IIdentityRepository } from '../../identity/domain/identity.repository.interface.js';
 import { APPLICATION_REPOSITORY } from '../../subscription/domain/subscription.repository.interface.js';
 import type { IApplicationRepository } from '../../subscription/domain/subscription.repository.interface.js';
 import { EntitlementPolicyService } from '../../subscription/application/entitlement-policy.service.js';
@@ -51,7 +51,7 @@ export class OauthTokenService {
     private readonly sessionRepo: IOAuthSessionRepository,
     @Inject(REFRESH_TOKEN_REPOSITORY)
     private readonly refreshRepo: IRefreshTokenRepository,
-    @Inject(USER_REPOSITORY) private readonly userRepo: IUserRepository,
+    @Inject(IDENTITY_REPOSITORY) private readonly userRepo: IIdentityRepository,
   ) {}
 
   async token(dto: OAuthTokenRequestDto, ipAddress?: string) {

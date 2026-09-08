@@ -55,6 +55,33 @@ export const TenantRole = {
 
 export type TenantRoleCode = (typeof TenantRole)[keyof typeof TenantRole];
 
+/** Alumni application system roles (seeded for member + admin portals). */
+export const AlumniRole = {
+  MEMBER: 'ALUMNI_MEMBER',
+  ADMIN: 'ALUMNI_ADMIN',
+} as const;
+
+export type AlumniRoleCode = (typeof AlumniRole)[keyof typeof AlumniRole];
+
+/** Alumni application permission codes (seeded in application_permissions). */
+export const AlumniPermission = {
+  PORTAL_ACCESS: 'alumni.portal.access',
+  PROFILE_READ: 'alumni.profile.read',
+  PROFILE_UPDATE: 'alumni.profile.update',
+  DIRECTORY_READ: 'alumni.directory.read',
+  EVENTS_READ: 'alumni.events.read',
+  NEWS_READ: 'alumni.news.read',
+  ADMIN_ACCESS: 'alumni.admin.access',
+  ADMIN_MEMBERS_READ: 'alumni.admin.members.read',
+  ADMIN_MEMBERS_MANAGE: 'alumni.admin.members.manage',
+  ADMIN_EVENTS_MANAGE: 'alumni.admin.events.manage',
+  ADMIN_NEWS_MANAGE: 'alumni.admin.news.manage',
+  ADMIN_REPORTS_READ: 'alumni.admin.reports.read',
+  ADMIN_SETTINGS_MANAGE: 'alumni.admin.settings.manage',
+} as const;
+
+export type AlumniPermissionCode = (typeof AlumniPermission)[keyof typeof AlumniPermission];
+
 /** Permissions granted to each tenant role (runtime derivation). */
 export const TENANT_ROLE_PERMISSIONS: Record<TenantRoleCode, readonly TenantPermissionCode[]> = {
   [TenantRole.ADMIN]: Object.values(TenantPermission),

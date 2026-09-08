@@ -9,10 +9,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PlatformRole, paginatedResponse } from '@app/common';
 import type { PlatformRoleCode } from '@app/common';
-import { USER_REPOSITORY } from '../../user/domain/user.repository.interface.js';
-import type { IUserRepository } from '../../user/domain/user.repository.interface.js';
-import { UserStatus } from '../../user/domain/user.types.js';
-import { RoleEntity, UserRoleEntity } from '../infrastructure/persistence/rbac.entities.js';
+import { IDENTITY_REPOSITORY } from '../../identity/domain/identity.repository.interface.js';
+import type { IIdentityRepository } from '../../identity/domain/identity.repository.interface.js';
+import { IdentityStatus } from '../../identity/domain/identity.types.js';
+import { IdentityRoleEntity, RoleEntity } from '../infrastructure/persistence/rbac.entities.js';
 import { RbacService } from './rbac.service.js';
 import type { AssignPlatformRoleDto, UpdatePlatformUserDto } from './dto/platform-user.dto.js';
 
@@ -25,9 +25,9 @@ const ASSIGNABLE_PLATFORM_ROLES = new Set<string>([
 export class PlatformUserService {
   constructor(
     private readonly rbacService: RbacService,
-    @Inject(USER_REPOSITORY) private readonly userRepository: IUserRepository,
-    @InjectRepository(UserRoleEntity)
-    private readonly userRoleRepository: Repository<UserRoleEntity>,
+    @Inject(IDENTITY_REPOSITORY) private readonly userRepository: IIdentityRepository,
+    @InjectRepository(IdentityRoleEntity)
+    private readonly identityRoleRepository: Repository<IdentityRoleEntity>,
     @InjectRepository(RoleEntity)
     private readonly roleRepository: Repository<RoleEntity>,
   ) {}
@@ -71,7 +71,7 @@ export class PlatformUserService {
 
   async update(userId: string, dto: UpdatePlatformUserDto) {
     await this.getById(userId);
-    if (dto.status === UserStatus.INACTIVE) {
+    if (dto.status === IdentityStatus.INACTIVE) {
       throw new BadRequestException('Use SUSPENDED instead of INACTIVE for platform users');
     }
     await this.userRepository.update(userId, { status: dto.status });
@@ -95,15 +95,15 @@ export class PlatformUserService {
       throw new NotFoundException(`Role '${dto.roleCode}' not found`);
     }
 
-    const existing = await this.userRoleRepository.findOne({
-      where: { userId, roleId: role.id },
+    const existing = await this.identityRoleRepository.findOne({
+      where: { identityId: userId, roleId: role.id },
     });
     if (existing) {
       throw new ConflictException(`User already has role '${dto.roleCode}'`);
     }
 
-    await this.userRoleRepository.save(
-      this.userRoleRepository.create({ userId, roleId: role.id, grantedBy }),
+    await this.identityRoleRepository.save(
+      this.identityRoleRepository.create({ identityId: userId, roleId: role.id, grantedBy }),
     );
 
     return this.listRoles(userId);
@@ -120,7 +120,10 @@ export class PlatformUserService {
       throw new NotFoundException(`Role '${roleCode}' not found`);
     }
 
-    const result = await this.userRoleRepository.delete({ userId, roleId: role.id });
+    const result = await this.identityRoleRepository.delete({
+      identityId: userId,
+      roleId: role.id,
+    });
     if (!result.affected) {
       throw new NotFoundException(`User does not have role '${roleCode}'`);
     }

@@ -1,21 +1,44 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  Query,
+  UploadedFile,
+  UseInterceptors,
+} from '@nestjs/common';
 import {
   ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
   ApiCreatedResponse,
   ApiOkResponse,
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
-import { CurrentUser, PaginationQueryDto, PlatformPermission, RequirePermissions, type AuthenticatedUser } from '@app/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import {
+  CurrentUser,
+  PaginationQueryDto,
+  PlatformPermission,
+  RequirePermissions,
+  type AuthenticatedUser,
+} from '@app/common';
 import { ApplicationCatalogService } from '../application/application-catalog.service.js';
 import { TenantAvailabilityService } from '../application/tenant-availability.service.js';
 import { CreateApplicationDto, UpdateApplicationDto } from '../application/dto/request/subscription.request.dto.js';
+import { UploadApplicationLogoDto } from '../application/dto/request/upload-application-logo.dto.js';
 import {
   ApplicationListResponseDto,
   ApplicationResponseDto,
   ApplicationAccessResponseDto,
   TenantAvailabilityResponseDto,
 } from '../application/dto/response/subscription.response.dto.js';
+import type { UploadedAssetFile } from '../../tenant/application/uploaded-asset-file.js';
 
 @ApiTags('Applications')
 @ApiBearerAuth()
@@ -57,6 +80,32 @@ export class ApplicationCatalogController {
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.service.update(applicationId, dto, user.userId);
+  }
+
+  @Post(':applicationId/logo')
+  @RequirePermissions(PlatformPermission.SUBSCRIPTION_MANAGE)
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({ type: UploadApplicationLogoDto })
+  @ApiOperation({ summary: 'Upload application logo image' })
+  @ApiOkResponse({ type: ApplicationResponseDto })
+  uploadLogo(
+    @Param('applicationId', ParseUUIDPipe) applicationId: string,
+    @UploadedFile() file: UploadedAssetFile,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.service.uploadLogo(applicationId, file, user.userId);
+  }
+
+  @Delete(':applicationId/logo')
+  @RequirePermissions(PlatformPermission.SUBSCRIPTION_MANAGE)
+  @ApiOperation({ summary: 'Remove application logo' })
+  @ApiOkResponse({ type: ApplicationResponseDto })
+  removeLogo(
+    @Param('applicationId', ParseUUIDPipe) applicationId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.service.removeLogo(applicationId, user.userId);
   }
 
   @Post(':applicationId/deactivate')

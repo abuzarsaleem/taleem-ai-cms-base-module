@@ -12,14 +12,13 @@ import { hashToken } from '../../auth/application/token.util.js';
 import { USER_TOKEN_REPOSITORY } from '../../auth/domain/user-token.repository.interface.js';
 import type { IUserTokenRepository } from '../../auth/domain/user-token.repository.interface.js';
 import { UserTokenStatus, UserTokenType } from '../../auth/domain/user-token.types.js';
-import { USER_REPOSITORY } from '../../user/domain/user.repository.interface.js';
-import type { IUserRepository } from '../../user/domain/user.repository.interface.js';
-import { UserStatus } from '../../user/domain/user.types.js';
+import { IDENTITY_REPOSITORY } from '../../identity/domain/identity.repository.interface.js';
+import type { IIdentityRepository } from '../../identity/domain/identity.repository.interface.js';
+import { IdentityStatus } from '../../identity/domain/identity.types.js';
+import { AuthenticationMethodService } from '../../identity/application/authentication-method.service.js';
 import {
   TENANT_MEMBERSHIP_REPOSITORY,
-  USER_IDENTITY_REPOSITORY,
   type ITenantMembershipRepository,
-  type IUserIdentityRepository,
 } from '../domain/invitation.repository.interface.js';
 import { MembershipRole } from '../domain/membership.types.js';
 import type { AcceptInvitationDto } from './dto/request/invitation.request.dto.js';
@@ -33,9 +32,8 @@ export class InvitationAcceptService {
     @Inject(USER_TOKEN_REPOSITORY) private readonly tokenRepository: IUserTokenRepository,
     @Inject(TENANT_MEMBERSHIP_REPOSITORY)
     private readonly membershipRepo: ITenantMembershipRepository,
-    @Inject(USER_IDENTITY_REPOSITORY)
-    private readonly identityRepo: IUserIdentityRepository,
-    @Inject(USER_REPOSITORY) private readonly userRepository: IUserRepository,
+    private readonly authMethods: AuthenticationMethodService,
+    @Inject(IDENTITY_REPOSITORY) private readonly userRepository: IIdentityRepository,
   ) {}
 
   accept(dto: AcceptInvitationDto) {
@@ -130,7 +128,7 @@ export class InvitationAcceptService {
           passwordHash: await bcrypt.hash(dto.password, saltRounds),
           emailVerified: true,
           fullName,
-          status: UserStatus.ACTIVE,
+          status: IdentityStatus.ACTIVE,
         });
       }
     } else {
@@ -146,7 +144,7 @@ export class InvitationAcceptService {
         passwordHash: await bcrypt.hash(dto.password, saltRounds),
         emailVerified: true,
         fullName,
-        status: UserStatus.ACTIVE,
+        status: IdentityStatus.ACTIVE,
       });
     }
 
@@ -154,9 +152,7 @@ export class InvitationAcceptService {
       throw new BadRequestException('Unable to provision user account');
     }
 
-    if (!(await this.identityRepo.findLocalByUserId(user.id))) {
-      await this.identityRepo.createLocal(user.id, email);
-    }
+    await this.authMethods.ensurePassword(user.id, email);
 
     return user;
   }

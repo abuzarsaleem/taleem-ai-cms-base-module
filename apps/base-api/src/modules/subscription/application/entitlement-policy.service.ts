@@ -1,5 +1,9 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import {
+  FILE_STORAGE,
+  type IFileStorageService,
+} from '../../storage/domain/storage.service.interface.js';
+import {
   APPLICATION_REPOSITORY,
   SUBSCRIPTION_REPOSITORY,
   TENANT_ENTITLEMENT_REPOSITORY,
@@ -32,6 +36,7 @@ export class EntitlementPolicyService {
     @Inject(APPLICATION_REPOSITORY) private readonly applications: IApplicationRepository,
     @Inject(SUBSCRIPTION_REPOSITORY) private readonly subscriptions: ISubscriptionRepository,
     @Inject(TENANT_ENTITLEMENT_REPOSITORY) private readonly entitlements: ITenantEntitlementRepository,
+    @Inject(FILE_STORAGE) private readonly storage: IFileStorageService,
   ) {}
 
   assertApplicationEligible(application: ApplicationProps): void {
@@ -175,6 +180,9 @@ export class EntitlementPolicyService {
         applicationCode: application.applicationCode,
         name: application.name,
         launchUrl: application.launchUrl,
+        logoUrl: application.logoUrl
+          ? await this.storage.resolveUrl(application.logoUrl)
+          : undefined,
         entitlementId: entitlement.id!,
         effectiveFrom: entitlement.effectiveFrom!,
         effectiveUntil: entitlement.effectiveUntil,

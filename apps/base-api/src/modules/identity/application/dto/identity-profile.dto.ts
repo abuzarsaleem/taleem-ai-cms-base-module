@@ -2,7 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsEmail, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 
 export class UserProfileResponseDto {
-  @ApiProperty({ format: 'uuid' }) id!: string;
+  @ApiProperty({ format: 'uuid', description: 'Identity ID' }) id!: string;
   @ApiProperty() email!: string;
   @ApiProperty() fullName!: string;
   @ApiProperty() emailVerified!: boolean;

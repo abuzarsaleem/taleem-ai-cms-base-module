@@ -17,9 +17,12 @@ import {
   extensionForMimeType,
 } from '../../tenant/application/asset-upload.validation.js';
 import type { UploadedAssetFile } from '../../tenant/application/uploaded-asset-file.js';
-import { USER_REPOSITORY } from '../../user/domain/user.repository.interface.js';
-import type { IUserRepository } from '../../user/domain/user.repository.interface.js';
-import type { ChangePasswordDto, UpdateUserProfileDto } from '../../user/application/dto/user-profile.dto.js';
+import { IDENTITY_REPOSITORY } from '../../identity/domain/identity.repository.interface.js';
+import type { IIdentityRepository } from '../../identity/domain/identity.repository.interface.js';
+import type {
+  ChangePasswordDto,
+  UpdateUserProfileDto,
+} from '../../identity/application/dto/identity-profile.dto.js';
 import { UserVerificationService } from './user-verification.service.js';
 
 const IMAGE_MIME_TYPES = new Set([
@@ -35,7 +38,7 @@ export class UserProfileService {
     private readonly config: ConfigService,
     private readonly rbacService: RbacService,
     private readonly verificationService: UserVerificationService,
-    @Inject(USER_REPOSITORY) private readonly userRepository: IUserRepository,
+    @Inject(IDENTITY_REPOSITORY) private readonly userRepository: IIdentityRepository,
     @Inject(FILE_STORAGE) private readonly storage: IFileStorageService,
   ) {}
 

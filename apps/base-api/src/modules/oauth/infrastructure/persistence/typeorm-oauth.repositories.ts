@@ -122,7 +122,20 @@ export class TypeOrmAuthorizationCodeRepository implements IAuthorizationCodeRep
   ) {}
 
   async create(props: AuthorizationCodeProps) {
-    const saved = await this.repo.save(this.repo.create(props));
+    const saved = await this.repo.save(
+      this.repo.create({
+        id: props.id,
+        codeHash: props.codeHash,
+        clientId: props.clientId,
+        identityId: props.userId,
+        tenantId: props.tenantId,
+        redirectUri: props.redirectUri,
+        codeChallenge: props.codeChallenge,
+        codeChallengeMethod: props.codeChallengeMethod,
+        scope: props.scope,
+        expiresAt: props.expiresAt,
+      }),
+    );
     return this.map(saved);
   }
 
@@ -140,7 +153,7 @@ export class TypeOrmAuthorizationCodeRepository implements IAuthorizationCodeRep
       id: e.id,
       codeHash: e.codeHash,
       clientId: e.clientId,
-      userId: e.userId,
+      userId: e.identityId,
       tenantId: e.tenantId,
       redirectUri: e.redirectUri,
       codeChallenge: e.codeChallenge,
@@ -159,8 +172,15 @@ export class TypeOrmOAuthSessionRepository implements IOAuthSessionRepository {
   async create(props: OAuthSessionProps) {
     const saved = await this.repo.save(
       this.repo.create({
-        ...props,
+        id: props.id,
         sessionId: props.sessionId || randomUUID(),
+        identityId: props.userId,
+        tenantId: props.tenantId,
+        clientId: props.clientId,
+        status: props.status,
+        expiresAt: props.expiresAt,
+        ipAddress: props.ipAddress,
+        userAgent: props.userAgent,
         lastActivityAt: new Date(),
       }),
     );
@@ -175,7 +195,7 @@ export class TypeOrmOAuthSessionRepository implements IOAuthSessionRepository {
   async findActiveForGrant(userId: string, clientId: string, tenantId?: string) {
     const row = await this.repo.findOne({
       where: {
-        userId,
+        identityId: userId,
         clientId,
         tenantId,
         status: 'ACTIVE',
@@ -193,7 +213,7 @@ export class TypeOrmOAuthSessionRepository implements IOAuthSessionRepository {
   }
 
   async findByIdForUser(id: string, userId: string) {
-    const row = await this.repo.findOne({ where: { id, userId } });
+    const row = await this.repo.findOne({ where: { id, identityId: userId } });
     return row ? { ...this.map(row), id: row.id } : null;
   }
 
@@ -201,7 +221,7 @@ export class TypeOrmOAuthSessionRepository implements IOAuthSessionRepository {
     const qb = this.repo
       .createQueryBuilder('session')
       .leftJoin(OAuthClientEntity, 'client', 'client.id = session.client_id')
-      .where('session.user_id = :userId', { userId })
+      .where('session.identity_id = :userId', { userId })
       .andWhere('session.status = :status', { status: 'ACTIVE' })
       .andWhere('session.expires_at > :now', { now: new Date() })
       .orderBy('session.last_activity_at', 'DESC')
@@ -210,7 +230,7 @@ export class TypeOrmOAuthSessionRepository implements IOAuthSessionRepository {
       .select([
         'session.id AS id',
         'session.session_id AS session_id',
-        'session.user_id AS user_id',
+        'session.identity_id AS identity_id',
         'session.tenant_id AS tenant_id',
         'session.client_id AS client_id',
         'session.status AS status',
@@ -223,14 +243,14 @@ export class TypeOrmOAuthSessionRepository implements IOAuthSessionRepository {
 
     const rows = await qb.getRawMany();
     const total = await this.repo.count({
-      where: { userId, status: 'ACTIVE' },
+      where: { identityId: userId, status: 'ACTIVE' },
     });
 
     return {
       data: rows.map((row) => ({
         id: String(row.id),
         sessionId: String(row.session_id),
-        userId: String(row.user_id),
+        userId: String(row.identity_id),
         tenantId: row.tenant_id ? String(row.tenant_id) : undefined,
         clientId: String(row.client_id),
         status: String(row.status),
@@ -248,7 +268,7 @@ export class TypeOrmOAuthSessionRepository implements IOAuthSessionRepository {
     return {
       id: e.id,
       sessionId: e.sessionId,
-      userId: e.userId,
+      userId: e.identityId,
       tenantId: e.tenantId,
       clientId: e.clientId,
       status: e.status,
@@ -269,7 +289,15 @@ export class TypeOrmRefreshTokenRepository implements IRefreshTokenRepository {
   ) {}
 
   async createFamily(props: RefreshTokenFamilyProps) {
-    const saved = await this.familyRepo.save(this.familyRepo.create(props));
+    const saved = await this.familyRepo.save(
+      this.familyRepo.create({
+        id: props.id,
+        sessionId: props.sessionId,
+        identityId: props.userId,
+        tenantId: props.tenantId,
+        status: props.status,
+      }),
+    );
     return { ...props, id: saved.id };
   }
 
@@ -288,7 +316,7 @@ export class TypeOrmRefreshTokenRepository implements IRefreshTokenRepository {
       revokedAt: saved.revokedAt,
       familyStatus: family.status,
       sessionId: family.sessionId,
-      userId: family.userId,
+      userId: family.identityId,
       tenantId: family.tenantId,
       clientId: session?.clientId ?? '',
       scope: '',
@@ -309,20 +337,24 @@ export class TypeOrmRefreshTokenRepository implements IRefreshTokenRepository {
         rt.revoked_at,
         rf.status AS family_status,
         rf.session_id,
-        rf.user_id,
+        rf.identity_id,
         rf.tenant_id,
         s.client_id,
         ac.scope,
-        u.email
+        em.identifier_value AS email
       FROM ${schema}.refresh_tokens rt
       INNER JOIN ${schema}.refresh_token_families rf ON rf.id = rt.family_id
       INNER JOIN ${schema}.sessions s ON s.id = rf.session_id
       LEFT JOIN LATERAL (
         SELECT scope FROM ${schema}.authorization_codes
-        WHERE client_id = s.client_id AND user_id = rf.user_id
+        WHERE client_id = s.client_id AND identity_id = rf.identity_id
         ORDER BY created_at DESC LIMIT 1
       ) ac ON true
-      INNER JOIN ${schema}.users u ON u.id = rf.user_id
+      INNER JOIN ${schema}.identities i ON i.id = rf.identity_id
+      LEFT JOIN ${schema}.identity_identifiers em
+        ON em.identity_id = i.id
+       AND em.identifier_type = 'EMAIL'
+       AND em.is_primary = TRUE
       WHERE rt.token_hash = $1
       `,
       [tokenHash],
@@ -338,11 +370,11 @@ export class TypeOrmRefreshTokenRepository implements IRefreshTokenRepository {
       revokedAt: row.revoked_at as Date | undefined,
       familyStatus: String(row.family_status),
       sessionId: String(row.session_id),
-      userId: String(row.user_id),
+      userId: String(row.identity_id),
       tenantId: row.tenant_id ? String(row.tenant_id) : undefined,
       clientId: String(row.client_id),
       scope: String(row.scope ?? 'openid profile'),
-      email: String(row.email),
+      email: String(row.email ?? ''),
     } satisfies StoredRefreshToken;
   }
 
@@ -374,7 +406,17 @@ export class TypeOrmOAuthAuditRepository implements IOAuthAuditRepository {
   constructor(@InjectRepository(AuditEventEntity) private readonly repo: Repository<AuditEventEntity>) {}
 
   async create(props: OAuthAuditEventProps) {
-    await this.repo.save(this.repo.create(props));
+    await this.repo.save(
+      this.repo.create({
+        tenantId: props.tenantId,
+        actorIdentityId: props.actorUserId,
+        action: props.action,
+        entityType: props.entityType,
+        entityId: props.entityId,
+        newValue: props.newValue,
+        ipAddress: props.ipAddress,
+      }),
+    );
   }
 }
 

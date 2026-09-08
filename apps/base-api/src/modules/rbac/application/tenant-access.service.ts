@@ -26,7 +26,7 @@ export class TenantAccessService {
 
   async getAccess(userId: string, tenantId: string): Promise<TenantAccessProfile | null> {
     const membership = await this.membershipRepository.findOne({
-      where: { tenantId, userId },
+      where: { tenantId, identityId: userId },
     });
     if (!membership || membership.status !== MembershipStatus.ACTIVE) {
       return null;

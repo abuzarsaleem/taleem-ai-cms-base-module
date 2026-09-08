@@ -8,12 +8,13 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { randomUUID } from 'node:crypto';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { USER_REPOSITORY } from '../../user/domain/user.repository.interface.js';
-import type { IUserRepository } from '../../user/domain/user.repository.interface.js';
-import { UserStatus } from '../../user/domain/user.types.js';
-import { UserIdentityEntity } from '../../invitation/infrastructure/persistence/invitation.entities.js';
+import { IDENTITY_REPOSITORY } from '../../identity/domain/identity.repository.interface.js';
+import type { IIdentityRepository } from '../../identity/domain/identity.repository.interface.js';
+import {
+  AuthenticationMethodType,
+  IdentityStatus,
+} from '../../identity/domain/identity.types.js';
+import { AuthenticationMethodService } from '../../identity/application/authentication-method.service.js';
 import { AuthTokenService } from './auth-token.service.js';
 
 interface GoogleTokenResponse {
@@ -39,9 +40,8 @@ export class SocialAuthService {
     private readonly config: ConfigService,
     private readonly jwtService: JwtService,
     private readonly authTokenService: AuthTokenService,
-    @Inject(USER_REPOSITORY) private readonly userRepository: IUserRepository,
-    @InjectRepository(UserIdentityEntity)
-    private readonly identityRepo: Repository<UserIdentityEntity>,
+    @Inject(IDENTITY_REPOSITORY) private readonly userRepository: IIdentityRepository,
+    private readonly authMethods: AuthenticationMethodService,
   ) {}
 
   startGoogleLogin() {
@@ -128,12 +128,13 @@ export class SocialAuthService {
   }
 
   private async resolveGoogleUser(profile: GoogleUserInfo) {
-    const existingIdentity = await this.identityRepo.findOne({
-      where: { providerType: 'GOOGLE', providerSubject: profile.sub },
-    });
+    const linked = await this.authMethods.findByProvider(
+      AuthenticationMethodType.GOOGLE,
+      profile.sub,
+    );
 
-    if (existingIdentity) {
-      const user = await this.userRepository.findById(existingIdentity.userId);
+    if (linked) {
+      const user = await this.userRepository.findById(linked.identityId);
       if (!user?.id) throw new NotFoundException('Linked user not found');
       return user;
     }
@@ -144,39 +145,21 @@ export class SocialAuthService {
         email: profile.email!,
         fullName: profile.name ?? profile.email!,
         emailVerified: profile.email_verified ?? true,
-        status: UserStatus.ACTIVE,
+        status: IdentityStatus.ACTIVE,
       });
     } else if (profile.email_verified && !user.emailVerified) {
       user = await this.userRepository.update(user.id, { emailVerified: true });
     }
 
-    const hasGoogleIdentity = await this.identityRepo.findOne({
-      where: { userId: user.id!, providerType: 'GOOGLE' },
-    });
-    if (!hasGoogleIdentity) {
-      await this.identityRepo.save(
-        this.identityRepo.create({
-          userId: user.id!,
-          providerType: 'GOOGLE',
-          providerSubject: profile.sub,
-          identifier: profile.email!.toLowerCase(),
-          isPrimary: false,
-        }),
-      );
-    }
+    await this.authMethods.ensureProvider(
+      user.id!,
+      AuthenticationMethodType.GOOGLE,
+      profile.sub,
+      { identifier: profile.email!.toLowerCase() },
+    );
 
-    const hasLocal = await this.identityRepo.findOne({
-      where: { userId: user.id!, providerType: 'LOCAL' },
-    });
-    if (!hasLocal) {
-      await this.identityRepo.save(
-        this.identityRepo.create({
-          userId: user.id!,
-          providerType: 'LOCAL',
-          identifier: profile.email!.toLowerCase(),
-          isPrimary: true,
-        }),
-      );
+    if (user.passwordHash) {
+      await this.authMethods.ensurePassword(user.id!, profile.email!);
     }
 
     return user;

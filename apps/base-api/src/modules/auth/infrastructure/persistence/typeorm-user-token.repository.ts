@@ -21,7 +21,7 @@ export class TypeOrmUserTokenRepository implements IUserTokenRepository {
       this.repo.create({
         tokenType: props.tokenType,
         tokenHash: props.tokenHash,
-        userId: props.userId,
+        identityId: props.userId,
         tenantId: props.tenantId,
         email: props.email?.toLowerCase(),
         membershipRole: props.membershipRole,
@@ -106,28 +106,28 @@ export class TypeOrmUserTokenRepository implements IUserTokenRepository {
   async invalidatePendingForUser(userId: string, tokenType: UserTokenType) {
     if (tokenType === UserTokenType.TENANT_INVITATION) {
       await this.repo.update(
-        { userId, tokenType, status: UserTokenStatus.PENDING, usedAt: IsNull() },
+        { identityId: userId, tokenType, status: UserTokenStatus.PENDING, usedAt: IsNull() },
         { usedAt: new Date(), status: UserTokenStatus.CANCELLED },
       );
       return;
     }
 
     await this.repo.update(
-      { userId, tokenType, usedAt: IsNull() },
+      { identityId: userId, tokenType, usedAt: IsNull() },
       { usedAt: new Date() },
     );
   }
 
   async revokeAllForUser(userId: string, tokenType: UserTokenType) {
     await this.repo.update(
-      { userId, tokenType, revokedAt: IsNull() },
+      { identityId: userId, tokenType, revokedAt: IsNull() },
       { revokedAt: new Date() },
     );
   }
 
   async findByIdForUser(id: string, userId: string, tokenType: UserTokenType) {
     const row = await this.repo.findOne({
-      where: { id, userId, tokenType, revokedAt: IsNull() },
+      where: { id, identityId: userId, tokenType, revokedAt: IsNull() },
     });
     return row ? this.map(row) : null;
   }
@@ -135,7 +135,7 @@ export class TypeOrmUserTokenRepository implements IUserTokenRepository {
   async listActiveByUser(userId: string, tokenType: UserTokenType, page: number, limit: number) {
     const [rows, total] = await this.repo.findAndCount({
       where: {
-        userId,
+        identityId: userId,
         tokenType,
         revokedAt: IsNull(),
         expiresAt: MoreThan(new Date()),
@@ -221,7 +221,7 @@ export class TypeOrmUserTokenRepository implements IUserTokenRepository {
       id: entity.id,
       tokenType: entity.tokenType as UserTokenType,
       tokenHash: entity.tokenHash,
-      userId: entity.userId,
+      userId: entity.identityId,
       tenantId: entity.tenantId,
       email: entity.email,
       membershipRole: entity.membershipRole,

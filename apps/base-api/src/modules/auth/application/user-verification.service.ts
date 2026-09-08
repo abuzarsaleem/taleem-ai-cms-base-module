@@ -7,8 +7,8 @@ import {
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import { EMAIL_SERVICE, type IEmailService } from '../../notification/domain/email.service.interface.js';
-import { USER_REPOSITORY } from '../../user/domain/user.repository.interface.js';
-import type { IUserRepository } from '../../user/domain/user.repository.interface.js';
+import { IDENTITY_REPOSITORY } from '../../identity/domain/identity.repository.interface.js';
+import type { IIdentityRepository } from '../../identity/domain/identity.repository.interface.js';
 import { USER_TOKEN_REPOSITORY } from '../domain/user-token.repository.interface.js';
 import type { IUserTokenRepository } from '../domain/user-token.repository.interface.js';
 import { UserTokenType } from '../domain/user-token.types.js';
@@ -20,7 +20,7 @@ export class UserVerificationService {
   constructor(
     private readonly config: ConfigService,
     private readonly authEmail: AuthEmailService,
-    @Inject(USER_REPOSITORY) private readonly userRepository: IUserRepository,
+    @Inject(IDENTITY_REPOSITORY) private readonly userRepository: IIdentityRepository,
     @Inject(USER_TOKEN_REPOSITORY) private readonly tokenRepository: IUserTokenRepository,
     @Inject(EMAIL_SERVICE) private readonly emailService: IEmailService,
   ) {}

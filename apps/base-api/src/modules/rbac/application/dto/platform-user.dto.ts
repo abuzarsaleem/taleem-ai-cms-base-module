@@ -1,14 +1,14 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsIn, IsString, MaxLength } from 'class-validator';
 import { PaginationMetaDto, PlatformRole, type PlatformRoleCode } from '@app/common';
-import { UserStatus } from '../../../user/domain/user.types.js';
+import { IdentityStatus } from '../../../identity/domain/identity.types.js';
 
 export class PlatformUserSummaryDto {
   @ApiProperty({ format: 'uuid' }) id!: string;
   @ApiProperty() email!: string;
   @ApiProperty() fullName!: string;
   @ApiProperty() emailVerified!: boolean;
-  @ApiProperty({ enum: UserStatus }) status!: UserStatus;
+  @ApiProperty({ enum: IdentityStatus }) status!: IdentityStatus;
   @ApiPropertyOptional() lastLoginAt?: Date;
   @ApiProperty() createdAt!: Date;
   @ApiProperty({ type: [String] }) roles!: string[];
@@ -25,9 +25,9 @@ export class PlatformUserDetailDto extends PlatformUserSummaryDto {
 }
 
 export class UpdatePlatformUserDto {
-  @ApiProperty({ enum: [UserStatus.ACTIVE, UserStatus.SUSPENDED] })
-  @IsIn([UserStatus.ACTIVE, UserStatus.SUSPENDED])
-  status!: UserStatus;
+  @ApiProperty({ enum: [IdentityStatus.ACTIVE, IdentityStatus.SUSPENDED] })
+  @IsIn([IdentityStatus.ACTIVE, IdentityStatus.SUSPENDED])
+  status!: IdentityStatus;
 }
 
 export class AssignPlatformRoleDto {

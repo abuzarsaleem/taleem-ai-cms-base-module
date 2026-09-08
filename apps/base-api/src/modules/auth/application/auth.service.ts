@@ -1,17 +1,17 @@
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
-import type { IUserRepository } from '../../user/domain/user.repository.interface.js';
-import { USER_REPOSITORY } from '../../user/domain/user.repository.interface.js';
-import { UserStatus } from '../../user/domain/user.types.js';
+import type { IIdentityRepository } from '../../identity/domain/identity.repository.interface.js';
+import { IDENTITY_REPOSITORY } from '../../identity/domain/identity.repository.interface.js';
+import { IdentityStatus } from '../../identity/domain/identity.types.js';
 import { LoginDto } from './dto/auth.dto.js';
 import { AuthTokenService } from './auth-token.service.js';
 
 @Injectable()
 export class AuthService {
   constructor(
-    @Inject(USER_REPOSITORY)
-    private readonly userRepository: IUserRepository,
+    @Inject(IDENTITY_REPOSITORY)
+    private readonly userRepository: IIdentityRepository,
     private readonly configService: ConfigService,
     private readonly authTokenService: AuthTokenService,
   ) {}
@@ -23,7 +23,7 @@ export class AuthService {
     }
 
     const valid = await bcrypt.compare(dto.password, user.passwordHash);
-    if (!valid || user.status !== UserStatus.ACTIVE) {
+    if (!valid || user.status !== IdentityStatus.ACTIVE) {
       throw new UnauthorizedException('Invalid credentials');
     }
 

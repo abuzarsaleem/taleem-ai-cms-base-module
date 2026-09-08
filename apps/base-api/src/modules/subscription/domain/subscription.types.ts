@@ -42,6 +42,7 @@ export interface ApplicationProps {
   version?: string;
   status?: ApplicationStatus;
   launchUrl?: string;
+  logoUrl?: string | null;
   createdBy?: string;
   updatedBy?: string;
   createdAt?: Date;
@@ -71,6 +72,8 @@ export interface TenantEntitlementProps {
   status?: EntitlementStatus;
   effectiveFrom?: Date;
   effectiveUntil?: Date;
+  commercialReference?: string;
+  notes?: string;
   createdBy?: string;
   createdAt?: Date;
   updatedAt?: Date;
@@ -79,6 +82,7 @@ export interface TenantEntitlementProps {
 export interface AuditEventProps {
   id?: string;
   tenantId?: string;
+  /** Identity ID (`audit_events.actor_identity_id`) */
   actorUserId?: string;
   action: string;
   entityType?: string;
@@ -91,6 +95,7 @@ export interface AuditEventProps {
 
 export interface AuditEventSearchFilters {
   tenantId?: string;
+  /** Identity ID (`audit_events.actor_identity_id`) */
   actorUserId?: string;
   action?: string;
   from?: Date;

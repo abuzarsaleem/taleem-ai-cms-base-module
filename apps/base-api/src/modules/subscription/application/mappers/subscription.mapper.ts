@@ -36,6 +36,7 @@ export function toApplicationResponse(props: ApplicationProps): ApplicationRespo
     version: props.version,
     status: props.status ?? ApplicationStatus.ACTIVE,
     launchUrl: props.launchUrl,
+    logoUrl: props.logoUrl ?? undefined,
     createdAt: props.createdAt!,
     updatedAt: props.updatedAt!,
   };

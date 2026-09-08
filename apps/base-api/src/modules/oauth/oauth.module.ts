@@ -3,7 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from '../auth/auth.module.js';
 import { InvitationModule } from '../invitation/invitation.module.js';
 import { SubscriptionModule } from '../subscription/subscription.module.js';
-import { UserModule } from '../user/user.module.js';
+import { IdentityModule } from '../identity/identity.module.js';
 import { OauthAuditService } from './application/oauth-audit.service.js';
 import { OauthAuthorizationService } from './application/oauth-authorization.service.js';
 import { OauthClientService } from './application/oauth-client.service.js';
@@ -19,7 +19,6 @@ import {
   RefreshTokenEntity,
   RefreshTokenFamilyEntity,
 } from './infrastructure/persistence/oauth.entities.js';
-import { UserEntity } from '../user/infrastructure/persistence/user.entity.js';
 import { oauthRepositories } from './infrastructure/persistence/typeorm-oauth.repositories.js';
 import {
   OAUTH_SESSION_REPOSITORY,
@@ -38,14 +37,13 @@ const entities = [
   RefreshTokenFamilyEntity,
   RefreshTokenEntity,
   AuditEventEntity,
-  UserEntity,
 ];
 
 @Module({
   imports: [
     TypeOrmModule.forFeature(entities),
     forwardRef(() => AuthModule),
-    UserModule,
+    IdentityModule,
     forwardRef(() => InvitationModule),
     SubscriptionModule,
   ],

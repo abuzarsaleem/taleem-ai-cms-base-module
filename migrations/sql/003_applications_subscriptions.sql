@@ -8,6 +8,7 @@ CREATE TABLE "taleem-ai-base".applications (
   version VARCHAR(50),
   status VARCHAR(30) NOT NULL DEFAULT 'ACTIVE',
   launch_url VARCHAR(500),
+  logo_url VARCHAR(1000),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   created_by UUID,
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),

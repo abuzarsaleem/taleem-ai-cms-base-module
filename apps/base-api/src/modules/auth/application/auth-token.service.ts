@@ -1,9 +1,9 @@
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { USER_REPOSITORY } from '../../user/domain/user.repository.interface.js';
-import type { IUserRepository } from '../../user/domain/user.repository.interface.js';
-import { UserStatus } from '../../user/domain/user.types.js';
+import { IDENTITY_REPOSITORY } from '../../identity/domain/identity.repository.interface.js';
+import type { IIdentityRepository } from '../../identity/domain/identity.repository.interface.js';
+import { IdentityStatus } from '../../identity/domain/identity.types.js';
 import { RbacService } from '../../rbac/application/rbac.service.js';
 import {
   FILE_STORAGE,
@@ -25,7 +25,7 @@ export class AuthTokenService {
     private readonly config: ConfigService,
     private readonly jwtService: JwtService,
     private readonly rbacService: RbacService,
-    @Inject(USER_REPOSITORY) private readonly userRepository: IUserRepository,
+    @Inject(IDENTITY_REPOSITORY) private readonly userRepository: IIdentityRepository,
     @Inject(USER_TOKEN_REPOSITORY) private readonly tokenRepository: IUserTokenRepository,
     @Inject(FILE_STORAGE) private readonly storage: IFileStorageService,
     @Inject(TENANT_MEMBERSHIP_REPOSITORY)
@@ -34,7 +34,7 @@ export class AuthTokenService {
 
   async issueTokenPair(userId: string) {
     const user = await this.userRepository.findById(userId);
-    if (!user?.id || user.status !== UserStatus.ACTIVE) {
+    if (!user?.id || user.status !== IdentityStatus.ACTIVE) {
       throw new UnauthorizedException('User account is not active');
     }
 

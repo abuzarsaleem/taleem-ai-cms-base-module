@@ -8,8 +8,8 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { paginatedResponse } from '@app/common';
 import { EMAIL_SERVICE, type IEmailService } from '../../notification/domain/email.service.interface.js';
-import { USER_REPOSITORY } from '../../user/domain/user.repository.interface.js';
-import type { IUserRepository } from '../../user/domain/user.repository.interface.js';
+import { IDENTITY_REPOSITORY } from '../../identity/domain/identity.repository.interface.js';
+import type { IIdentityRepository } from '../../identity/domain/identity.repository.interface.js';
 import { TENANT_REPOSITORY } from '../../tenant/domain/tenant.repository.interface.js';
 import type { ITenantRepository } from '../../tenant/domain/tenant.repository.interface.js';
 import { TenantContextService } from '../../tenant/application/tenant-context.service.js';
@@ -39,7 +39,7 @@ export class TenantInvitationService {
     @Inject(USER_TOKEN_REPOSITORY) private readonly tokenRepository: IUserTokenRepository,
     @Inject(TENANT_MEMBERSHIP_REPOSITORY)
     private readonly membershipRepo: ITenantMembershipRepository,
-    @Inject(USER_REPOSITORY) private readonly userRepository: IUserRepository,
+    @Inject(IDENTITY_REPOSITORY) private readonly userRepository: IIdentityRepository,
     @Inject(EMAIL_SERVICE) private readonly emailService: IEmailService,
   ) {}
 

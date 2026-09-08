@@ -1,15 +1,15 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { UserModule } from '../user/user.module.js';
+import { IdentityModule } from '../identity/identity.module.js';
 import { RbacService } from './application/rbac.service.js';
 import { TenantAccessService } from './application/tenant-access.service.js';
 import { PlatformUserService } from './application/platform-user.service.js';
 import {
+  IdentityRoleEntity,
   PermissionEntity,
   RoleEntity,
   RolePermissionEntity,
-  UserRoleEntity,
 } from './infrastructure/persistence/rbac.entities.js';
 import {
   TenantMembershipEntity,
@@ -20,12 +20,12 @@ import { PlatformUserController } from './presentation/platform-user.controller.
 
 @Module({
   imports: [
-    UserModule,
+    IdentityModule,
     TypeOrmModule.forFeature([
       RoleEntity,
       PermissionEntity,
       RolePermissionEntity,
-      UserRoleEntity,
+      IdentityRoleEntity,
       TenantMembershipEntity,
     ]),
   ],

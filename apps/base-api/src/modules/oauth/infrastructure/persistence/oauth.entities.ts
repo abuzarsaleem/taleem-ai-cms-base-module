@@ -93,8 +93,8 @@ export class OAuthSessionEntity {
   @Column({ name: 'session_id', type: 'uuid', unique: true })
   sessionId!: string;
 
-  @Column({ name: 'user_id', type: 'uuid' })
-  userId!: string;
+  @Column({ name: 'identity_id', type: 'uuid' })
+  identityId!: string;
 
   @Column({ name: 'tenant_id', type: 'uuid', nullable: true })
   tenantId?: string;
@@ -138,8 +138,8 @@ export class AuthorizationCodeEntity {
   @Column({ name: 'client_id', type: 'uuid' })
   clientId!: string;
 
-  @Column({ name: 'user_id', type: 'uuid' })
-  userId!: string;
+  @Column({ name: 'identity_id', type: 'uuid' })
+  identityId!: string;
 
   @Column({ name: 'tenant_id', type: 'uuid', nullable: true })
   tenantId?: string;
@@ -174,8 +174,8 @@ export class RefreshTokenFamilyEntity {
   @Column({ name: 'session_id', type: 'uuid' })
   sessionId!: string;
 
-  @Column({ name: 'user_id', type: 'uuid' })
-  userId!: string;
+  @Column({ name: 'identity_id', type: 'uuid' })
+  identityId!: string;
 
   @Column({ name: 'tenant_id', type: 'uuid', nullable: true })
   tenantId?: string;
@@ -228,8 +228,8 @@ export class AuditEventEntity {
   @Column({ name: 'tenant_id', type: 'uuid', nullable: true })
   tenantId?: string;
 
-  @Column({ name: 'actor_user_id', type: 'uuid', nullable: true })
-  actorUserId?: string;
+  @Column({ name: 'actor_identity_id', type: 'uuid', nullable: true })
+  actorIdentityId?: string;
 
   @Column({ type: 'varchar', length: 50 })
   action!: string;

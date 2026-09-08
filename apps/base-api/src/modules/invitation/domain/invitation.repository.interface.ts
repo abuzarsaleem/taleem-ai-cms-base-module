@@ -5,6 +5,7 @@ export const TENANT_MEMBERSHIP_REPOSITORY = Symbol('TENANT_MEMBERSHIP_REPOSITORY
 export interface TenantMembershipProps {
   id?: string;
   tenantId: string;
+  /** Identity ID (`tenant_memberships.identity_id`) */
   userId: string;
   status?: MembershipStatus | string;
   role?: MembershipRole | string;
@@ -69,19 +70,4 @@ export interface ITenantMembershipRepository {
   ): Promise<TenantMembershipProps>;
   updateStatus(tenantId: string, id: string, status: MembershipStatus): Promise<TenantMembershipDetailProps>;
   delete(tenantId: string, id: string): Promise<void>;
-}
-
-export const USER_IDENTITY_REPOSITORY = Symbol('USER_IDENTITY_REPOSITORY');
-
-export interface UserIdentityProps {
-  id?: string;
-  userId: string;
-  providerType: string;
-  identifier: string;
-  isPrimary?: boolean;
-}
-
-export interface IUserIdentityRepository {
-  findLocalByUserId(userId: string): Promise<UserIdentityProps | null>;
-  createLocal(userId: string, email: string): Promise<UserIdentityProps>;
 }

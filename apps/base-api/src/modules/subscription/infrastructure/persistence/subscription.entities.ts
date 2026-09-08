@@ -37,6 +37,9 @@ export class ApplicationEntity {
   @Column({ name: 'launch_url', type: 'varchar', length: 500, nullable: true })
   launchUrl?: string;
 
+  @Column({ name: 'logo_url', type: 'varchar', length: 1000, nullable: true })
+  logoUrl?: string | null;
+
   @Column({ name: 'created_by', type: 'uuid', nullable: true })
   createdBy?: string;
 
@@ -112,6 +115,12 @@ export class TenantEntitlementEntity {
   @Column({ name: 'effective_until', type: 'timestamptz', nullable: true })
   effectiveUntil?: Date;
 
+  @Column({ name: 'commercial_reference', type: 'varchar', length: 150, nullable: true })
+  commercialReference?: string;
+
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  notes?: string;
+
   @Column({ name: 'created_by', type: 'uuid', nullable: true })
   createdBy?: string;
 
@@ -130,8 +139,8 @@ export class AuditEventEntity {
   @Column({ name: 'tenant_id', type: 'uuid', nullable: true })
   tenantId?: string;
 
-  @Column({ name: 'actor_user_id', type: 'uuid', nullable: true })
-  actorUserId?: string;
+  @Column({ name: 'actor_identity_id', type: 'uuid', nullable: true })
+  actorIdentityId?: string;
 
   @Column({ type: 'varchar', length: 50 })
   action!: string;

@@ -38,6 +38,13 @@ export class CreateApplicationDto {
   @ApiPropertyOptional({ example: 'https://alumni.taleem.ai' })
   @IsOptional() @IsUrl() @MaxLength(500)
   launchUrl?: string;
+
+  @ApiPropertyOptional({
+    description: 'External logo URL. Prefer POST /application/:id/logo for file upload.',
+    example: 'https://cdn.example.com/alumni-logo.png',
+  })
+  @IsOptional() @IsUrl() @MaxLength(1000)
+  logoUrl?: string;
 }
 
 export class UpdateApplicationDto {
@@ -45,6 +52,11 @@ export class UpdateApplicationDto {
   @ApiPropertyOptional() @IsOptional() @IsString() description?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(50) version?: string;
   @ApiPropertyOptional() @IsOptional() @IsUrl() @MaxLength(500) launchUrl?: string;
+  @ApiPropertyOptional({
+    description: 'External logo URL. Prefer POST /application/:id/logo for file upload.',
+  })
+  @IsOptional() @IsUrl() @MaxLength(1000)
+  logoUrl?: string;
 }
 
 export class CreateTenantSubscriptionDto {

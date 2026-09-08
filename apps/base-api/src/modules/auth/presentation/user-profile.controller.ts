@@ -24,7 +24,7 @@ import {
   UpdateUserProfileDto,
   UploadUserAvatarDto,
   UserProfileResponseDto,
-} from '../../user/application/dto/user-profile.dto.js';
+} from '../../identity/application/dto/identity-profile.dto.js';
 import type { UploadedAssetFile } from '../../tenant/application/uploaded-asset-file.js';
 import { UserProfileService } from '../application/user-profile.service.js';
 

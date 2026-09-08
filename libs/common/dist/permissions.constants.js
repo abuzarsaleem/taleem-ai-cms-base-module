@@ -36,6 +36,25 @@ export const TenantRole = {
     ADMIN: 'TENANT_ADMIN',
     MEMBER: 'TENANT_MEMBER',
 };
+export const AlumniRole = {
+    MEMBER: 'ALUMNI_MEMBER',
+    ADMIN: 'ALUMNI_ADMIN',
+};
+export const AlumniPermission = {
+    PORTAL_ACCESS: 'alumni.portal.access',
+    PROFILE_READ: 'alumni.profile.read',
+    PROFILE_UPDATE: 'alumni.profile.update',
+    DIRECTORY_READ: 'alumni.directory.read',
+    EVENTS_READ: 'alumni.events.read',
+    NEWS_READ: 'alumni.news.read',
+    ADMIN_ACCESS: 'alumni.admin.access',
+    ADMIN_MEMBERS_READ: 'alumni.admin.members.read',
+    ADMIN_MEMBERS_MANAGE: 'alumni.admin.members.manage',
+    ADMIN_EVENTS_MANAGE: 'alumni.admin.events.manage',
+    ADMIN_NEWS_MANAGE: 'alumni.admin.news.manage',
+    ADMIN_REPORTS_READ: 'alumni.admin.reports.read',
+    ADMIN_SETTINGS_MANAGE: 'alumni.admin.settings.manage',
+};
 export const TENANT_ROLE_PERMISSIONS = {
     [TenantRole.ADMIN]: Object.values(TenantPermission),
     [TenantRole.MEMBER]: [TenantPermission.PROFILE_READ],

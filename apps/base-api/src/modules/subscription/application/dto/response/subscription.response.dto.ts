@@ -16,6 +16,8 @@ export class ApplicationResponseDto {
   @ApiPropertyOptional() version?: string;
   @ApiProperty({ enum: ApplicationStatus }) status!: ApplicationStatus;
   @ApiPropertyOptional() launchUrl?: string;
+  @ApiPropertyOptional({ description: 'Resolved public or signed logo URL' })
+  logoUrl?: string;
   @ApiProperty() createdAt!: Date;
   @ApiProperty() updatedAt!: Date;
 }
@@ -69,6 +71,8 @@ export class AvailableApplicationResponseDto {
   @ApiProperty() applicationCode!: string;
   @ApiProperty() name!: string;
   @ApiPropertyOptional() launchUrl?: string;
+  @ApiPropertyOptional({ description: 'Resolved public or signed logo URL' })
+  logoUrl?: string;
   @ApiProperty({ format: 'uuid' }) entitlementId!: string;
   @ApiProperty() effectiveFrom!: Date;
   @ApiPropertyOptional() effectiveUntil?: Date;

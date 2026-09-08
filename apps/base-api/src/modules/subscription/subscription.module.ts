@@ -1,5 +1,6 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { StorageModule } from '../storage/storage.module.js';
 import { TenantModule } from '../tenant/tenant.module.js';
 import {
   APPLICATION_REPOSITORY,
@@ -53,7 +54,11 @@ const repositories = [
 ];
 
 @Module({
-  imports: [TypeOrmModule.forFeature(entities), forwardRef(() => TenantModule)],
+  imports: [
+    TypeOrmModule.forFeature(entities),
+    StorageModule,
+    forwardRef(() => TenantModule),
+  ],
   controllers: [
     ApplicationCatalogController,
     TenantAvailabilityController,
@@ -73,6 +78,6 @@ const repositories = [
     TenantAvailabilityService,
     ...repositories,
   ],
-  exports: [EntitlementPolicyService, APPLICATION_REPOSITORY],
+  exports: [EntitlementPolicyService, APPLICATION_REPOSITORY, TENANT_ENTITLEMENT_REPOSITORY],
 })
 export class SubscriptionModule {}

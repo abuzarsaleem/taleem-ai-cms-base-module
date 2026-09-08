@@ -4,13 +4,12 @@ import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { UserModule } from '../user/user.module.js';
+import { IdentityModule } from '../identity/identity.module.js';
 import { RbacModule } from '../rbac/rbac.module.js';
 import { NotificationModule } from '../notification/notification.module.js';
 import { OauthModule } from '../oauth/oauth.module.js';
 import { StorageModule } from '../storage/storage.module.js';
 import { InvitationModule } from '../invitation/invitation.module.js';
-import { UserIdentityEntity } from '../invitation/infrastructure/persistence/invitation.entities.js';
 import { AuthService } from './application/auth.service.js';
 import { AuthEmailService } from './application/auth-email.service.js';
 import { AuthTokenService } from './application/auth-token.service.js';
@@ -30,13 +29,13 @@ import { USER_TOKEN_REPOSITORY } from './domain/user-token.repository.interface.
 
 @Module({
   imports: [
-    UserModule,
+    IdentityModule,
     RbacModule,
     NotificationModule,
     StorageModule,
     forwardRef(() => OauthModule),
     forwardRef(() => InvitationModule),
-    TypeOrmModule.forFeature([UserTokenEntity, UserIdentityEntity]),
+    TypeOrmModule.forFeature([UserTokenEntity]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       inject: [ConfigService],

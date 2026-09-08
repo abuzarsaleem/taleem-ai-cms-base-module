@@ -26,6 +26,15 @@ export class RoleEntity {
   @Column({ name: 'is_system', type: 'boolean', default: false })
   isSystem!: boolean;
 
+  @Column({ name: 'role_type', type: 'varchar', length: 30, default: 'SYSTEM' })
+  roleType!: string;
+
+  @Column({ name: 'application_id', type: 'uuid', nullable: true })
+  applicationId?: string;
+
+  @Column({ name: 'tenant_id', type: 'uuid', nullable: true })
+  tenantId?: string;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
 
@@ -62,8 +71,11 @@ export class RolePermissionEntity {
   @Column({ name: 'role_id', type: 'uuid' })
   roleId!: string;
 
-  @Column({ name: 'permission_id', type: 'uuid' })
-  permissionId!: string;
+  @Column({ name: 'permission_id', type: 'uuid', nullable: true })
+  permissionId?: string;
+
+  @Column({ name: 'application_permission_id', type: 'uuid', nullable: true })
+  applicationPermissionId?: string;
 
   @Column({ name: 'granted_at', type: 'timestamptz', default: () => 'now()' })
   grantedAt!: Date;
@@ -74,16 +86,16 @@ export class RolePermissionEntity {
 
   @ManyToOne(() => PermissionEntity, (permission) => permission.rolePermissions)
   @JoinColumn({ name: 'permission_id' })
-  permission!: PermissionEntity;
+  permission?: PermissionEntity;
 }
 
-@Entity({ name: 'user_roles', schema: DATABASE_SCHEMA })
-export class UserRoleEntity {
+@Entity({ name: 'identity_roles', schema: DATABASE_SCHEMA })
+export class IdentityRoleEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ name: 'user_id', type: 'uuid' })
-  userId!: string;
+  @Column({ name: 'identity_id', type: 'uuid' })
+  identityId!: string;
 
   @Column({ name: 'role_id', type: 'uuid' })
   roleId!: string;

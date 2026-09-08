@@ -4,7 +4,7 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { IFileStorageService, UploadFileInput } from '../domain/storage.service.interface.js';
 
-const MANAGED_KEY_PREFIX = 'tenants/';
+const MANAGED_KEY_PREFIXES = ['tenants/', 'users/', 'applications/'] as const;
 
 @Injectable()
 export class LocalFileStorageService implements IFileStorageService {
@@ -26,7 +26,7 @@ export class LocalFileStorageService implements IFileStorageService {
   }
 
   isManagedKey(storedValue: string): boolean {
-    return storedValue.startsWith(MANAGED_KEY_PREFIX);
+    return MANAGED_KEY_PREFIXES.some((prefix) => storedValue.startsWith(prefix));
   }
 
   extractKey(storedValue: string): string | null {

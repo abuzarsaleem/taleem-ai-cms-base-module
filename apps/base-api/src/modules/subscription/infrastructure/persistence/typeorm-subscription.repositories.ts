@@ -85,7 +85,18 @@ export class TypeOrmApplicationRepository implements IApplicationRepository {
 
   async create(props: ApplicationProps) {
     try {
-      return this.map(await this.repo.save(this.repo.create(props)));
+      const entity = this.repo.create({
+        applicationCode: props.applicationCode,
+        name: props.name,
+        description: props.description,
+        version: props.version,
+        status: props.status,
+        launchUrl: props.launchUrl,
+        logoUrl: props.logoUrl ?? undefined,
+        createdBy: props.createdBy,
+        updatedBy: props.updatedBy,
+      });
+      return this.map(await this.repo.save(entity));
     } catch (error) {
       rethrowUnique(error, `Application code '${props.applicationCode}' already exists`);
     }
@@ -93,7 +104,17 @@ export class TypeOrmApplicationRepository implements IApplicationRepository {
 
   async update(id: string, props: Partial<ApplicationProps>) {
     if (!(await this.findById(id))) notFound('Application', id);
-    await this.repo.update(id, props);
+    const patch: Partial<ApplicationEntity> = {};
+    if (props.applicationCode !== undefined) patch.applicationCode = props.applicationCode;
+    if (props.name !== undefined) patch.name = props.name;
+    if (props.description !== undefined) patch.description = props.description;
+    if (props.version !== undefined) patch.version = props.version;
+    if (props.status !== undefined) patch.status = props.status;
+    if (props.launchUrl !== undefined) patch.launchUrl = props.launchUrl;
+    if (props.logoUrl !== undefined) patch.logoUrl = props.logoUrl;
+    if (props.createdBy !== undefined) patch.createdBy = props.createdBy;
+    if (props.updatedBy !== undefined) patch.updatedBy = props.updatedBy;
+    await this.repo.update(id, patch);
     return this.map(await this.repo.findOneOrFail({ where: { id } }));
   }
 
@@ -106,6 +127,7 @@ export class TypeOrmApplicationRepository implements IApplicationRepository {
       version: e.version,
       status: e.status,
       launchUrl: e.launchUrl,
+      logoUrl: e.logoUrl,
       createdBy: e.createdBy,
       updatedBy: e.updatedBy,
       createdAt: e.createdAt,
@@ -311,6 +333,8 @@ export class TypeOrmTenantEntitlementRepository implements ITenantEntitlementRep
       status: e.status,
       effectiveFrom: e.effectiveFrom,
       effectiveUntil: e.effectiveUntil,
+      commercialReference: e.commercialReference,
+      notes: e.notes,
       createdBy: e.createdBy,
       createdAt: e.createdAt,
       updatedAt: e.updatedAt,
@@ -326,7 +350,20 @@ export class TypeOrmAuditEventRepository implements IAuditEventRepository {
   ) {}
 
   async create(props: AuditEventProps) {
-    return this.map(await this.repo.save(this.repo.create(props)));
+    return this.map(
+      await this.repo.save(
+        this.repo.create({
+          tenantId: props.tenantId,
+          actorIdentityId: props.actorUserId,
+          action: props.action,
+          entityType: props.entityType,
+          entityId: props.entityId,
+          oldValue: props.oldValue,
+          newValue: props.newValue,
+          ipAddress: props.ipAddress,
+        }),
+      ),
+    );
   }
 
   async search(filters: AuditEventSearchFilters, page: number, limit: number) {
@@ -336,7 +373,9 @@ export class TypeOrmAuditEventRepository implements IAuditEventRepository {
       qb.andWhere('audit.tenant_id = :tenantId', { tenantId: filters.tenantId });
     }
     if (filters.actorUserId) {
-      qb.andWhere('audit.actor_user_id = :actorUserId', { actorUserId: filters.actorUserId });
+      qb.andWhere('audit.actor_identity_id = :actorUserId', {
+        actorUserId: filters.actorUserId,
+      });
     }
     if (filters.action) {
       qb.andWhere('audit.action = :action', { action: filters.action });
@@ -360,7 +399,7 @@ export class TypeOrmAuditEventRepository implements IAuditEventRepository {
     return {
       id: e.id,
       tenantId: e.tenantId,
-      actorUserId: e.actorUserId,
+      actorUserId: e.actorIdentityId,
       action: e.action,
       entityType: e.entityType,
       entityId: e.entityId,

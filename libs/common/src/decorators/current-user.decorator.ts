@@ -7,6 +7,7 @@ export interface TenantAccessContext {
 }
 
 export interface AuthenticatedUser {
+  /** Identity ID (`identities.id`); still named `userId` for backwards compatibility. */
   userId: string;
   email: string;
   tenantId?: string;

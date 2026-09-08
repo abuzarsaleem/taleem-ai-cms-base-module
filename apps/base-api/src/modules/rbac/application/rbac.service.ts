@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { UserRoleEntity } from '../infrastructure/persistence/rbac.entities.js';
+import { IdentityRoleEntity } from '../infrastructure/persistence/rbac.entities.js';
 
 export interface UserAccessProfile {
   roles: string[];
@@ -11,13 +11,13 @@ export interface UserAccessProfile {
 @Injectable()
 export class RbacService {
   constructor(
-    @InjectRepository(UserRoleEntity)
-    private readonly userRoleRepository: Repository<UserRoleEntity>,
+    @InjectRepository(IdentityRoleEntity)
+    private readonly identityRoleRepository: Repository<IdentityRoleEntity>,
   ) {}
 
   async getUserAccess(userId: string): Promise<UserAccessProfile> {
-    const assignments = await this.userRoleRepository.find({
-      where: { userId },
+    const assignments = await this.identityRoleRepository.find({
+      where: { identityId: userId },
       relations: {
         role: {
           rolePermissions: {
@@ -33,7 +33,9 @@ export class RbacService {
     for (const assignment of assignments) {
       roles.add(assignment.role.roleCode);
       for (const rp of assignment.role.rolePermissions ?? []) {
-        permissions.add(rp.permission.permissionCode);
+        if (rp.permission?.permissionCode) {
+          permissions.add(rp.permission.permissionCode);
+        }
       }
     }
 

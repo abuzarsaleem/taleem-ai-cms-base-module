@@ -5,17 +5,37 @@ import { DATABASE_SCHEMA } from '@app/common';
 import { MembershipRole, MembershipStatus } from '../../domain/membership.types.js';
 import {
   ITenantMembershipRepository,
-  IUserIdentityRepository,
   type TenantMembershipDetailProps,
   type TenantMembershipProps,
-  type UserIdentityProps,
   type UserTenantMembershipProps,
 } from '../../domain/invitation.repository.interface.js';
-import {
-  TenantMembershipEntity,
-  UserIdentityEntity,
-} from './invitation.entities.js';
-import { UserEntity } from '../../../user/infrastructure/persistence/user.entity.js';
+import { TenantMembershipEntity } from './invitation.entities.js';
+import { IdentityIdentifierEntity } from '../../../identity/infrastructure/persistence/identity.entities.js';
+import { IdentifierType } from '../../../identity/domain/identity.types.js';
+
+const SCHEMA = `"${DATABASE_SCHEMA}"`;
+
+/** Membership row plus the flattened identity display fields the API exposes. */
+const MEMBERSHIP_PROJECTION = `
+  SELECT
+    m.id,
+    m.tenant_id,
+    m.identity_id,
+    m.status,
+    m.role,
+    m.joined_at,
+    m.created_at,
+    m.updated_at,
+    em.identifier_value AS user_email,
+    p.display_name AS user_full_name
+  FROM ${SCHEMA}.tenant_memberships m
+  INNER JOIN ${SCHEMA}.identities i ON i.id = m.identity_id
+  LEFT JOIN ${SCHEMA}.identity_profiles p ON p.identity_id = m.identity_id
+  LEFT JOIN ${SCHEMA}.identity_identifiers em
+    ON em.identity_id = m.identity_id
+   AND em.identifier_type = 'EMAIL'
+   AND em.is_primary = TRUE
+`;
 
 function notFound(resource: string, id: string): never {
   throw new NotFoundException(`${resource} '${id}' not found`);
@@ -30,26 +50,14 @@ export class TypeOrmTenantMembershipRepository implements ITenantMembershipRepos
   constructor(
     @InjectRepository(TenantMembershipEntity)
     private readonly repo: Repository<TenantMembershipEntity>,
-    @InjectRepository(UserEntity)
-    private readonly userRepo: Repository<UserEntity>,
+    @InjectRepository(IdentityIdentifierEntity)
+    private readonly identifierRepo: Repository<IdentityIdentifierEntity>,
   ) {}
 
   async findByTenant(tenantId: string, page: number, limit: number) {
     const rows = await this.repo.manager.query(
       `
-      SELECT
-        m.id,
-        m.tenant_id,
-        m.user_id,
-        m.status,
-        m.role,
-        m.joined_at,
-        m.created_at,
-        m.updated_at,
-        u.email AS user_email,
-        u.full_name AS user_full_name
-      FROM "${DATABASE_SCHEMA}".tenant_memberships m
-      INNER JOIN "${DATABASE_SCHEMA}".users u ON u.id = m.user_id
+      ${MEMBERSHIP_PROJECTION}
       WHERE m.tenant_id = $1
       ORDER BY m.joined_at DESC
       LIMIT $2 OFFSET $3
@@ -58,7 +66,7 @@ export class TypeOrmTenantMembershipRepository implements ITenantMembershipRepos
     );
 
     const [{ count }] = await this.repo.manager.query(
-      `SELECT COUNT(*)::int AS count FROM "${DATABASE_SCHEMA}".tenant_memberships WHERE tenant_id = $1`,
+      `SELECT COUNT(*)::int AS count FROM ${SCHEMA}.tenant_memberships WHERE tenant_id = $1`,
       [tenantId],
     );
 
@@ -88,7 +96,7 @@ export class TypeOrmTenantMembershipRepository implements ITenantMembershipRepos
     }
     if (filters?.userId) {
       params.push(filters.userId);
-      where.push(`m.user_id = $${params.length}`);
+      where.push(`m.identity_id = $${params.length}`);
     }
     if (filters?.status) {
       params.push(filters.status);
@@ -100,7 +108,7 @@ export class TypeOrmTenantMembershipRepository implements ITenantMembershipRepos
     }
     if (filters?.email) {
       params.push(`%${filters.email.toLowerCase()}%`);
-      where.push(`LOWER(u.email) LIKE $${params.length}`);
+      where.push(`em.identifier_value ILIKE $${params.length}`);
     }
 
     const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
@@ -108,19 +116,7 @@ export class TypeOrmTenantMembershipRepository implements ITenantMembershipRepos
 
     const rows = await this.repo.manager.query(
       `
-      SELECT
-        m.id,
-        m.tenant_id,
-        m.user_id,
-        m.status,
-        m.role,
-        m.joined_at,
-        m.created_at,
-        m.updated_at,
-        u.email AS user_email,
-        u.full_name AS user_full_name
-      FROM "${DATABASE_SCHEMA}".tenant_memberships m
-      INNER JOIN "${DATABASE_SCHEMA}".users u ON u.id = m.user_id
+      ${MEMBERSHIP_PROJECTION}
       ${whereSql}
       ORDER BY m.joined_at DESC
       LIMIT $${params.length - 1} OFFSET $${params.length}
@@ -132,8 +128,12 @@ export class TypeOrmTenantMembershipRepository implements ITenantMembershipRepos
     const [{ count }] = await this.repo.manager.query(
       `
       SELECT COUNT(*)::int AS count
-      FROM "${DATABASE_SCHEMA}".tenant_memberships m
-      INNER JOIN "${DATABASE_SCHEMA}".users u ON u.id = m.user_id
+      FROM ${SCHEMA}.tenant_memberships m
+      INNER JOIN ${SCHEMA}.identities i ON i.id = m.identity_id
+      LEFT JOIN ${SCHEMA}.identity_identifiers em
+        ON em.identity_id = m.identity_id
+       AND em.identifier_type = 'EMAIL'
+       AND em.is_primary = TRUE
       ${whereSql}
       `,
       countParams,
@@ -148,19 +148,7 @@ export class TypeOrmTenantMembershipRepository implements ITenantMembershipRepos
   async findById(tenantId: string, id: string) {
     const rows = await this.repo.manager.query(
       `
-      SELECT
-        m.id,
-        m.tenant_id,
-        m.user_id,
-        m.status,
-        m.role,
-        m.joined_at,
-        m.created_at,
-        m.updated_at,
-        u.email AS user_email,
-        u.full_name AS user_full_name
-      FROM "${DATABASE_SCHEMA}".tenant_memberships m
-      INNER JOIN "${DATABASE_SCHEMA}".users u ON u.id = m.user_id
+      ${MEMBERSHIP_PROJECTION}
       WHERE m.id = $1 AND m.tenant_id = $2
       `,
       [id, tenantId],
@@ -180,9 +168,9 @@ export class TypeOrmTenantMembershipRepository implements ITenantMembershipRepos
         m.status AS membership_status,
         m.role,
         m.joined_at
-      FROM "${DATABASE_SCHEMA}".tenant_memberships m
-      INNER JOIN "${DATABASE_SCHEMA}".tenants t ON t.id = m.tenant_id
-      WHERE m.user_id = $1
+      FROM ${SCHEMA}.tenant_memberships m
+      INNER JOIN ${SCHEMA}.tenants t ON t.id = m.tenant_id
+      WHERE m.identity_id = $1
       ORDER BY m.joined_at DESC
       LIMIT $2 OFFSET $3
       `,
@@ -190,7 +178,7 @@ export class TypeOrmTenantMembershipRepository implements ITenantMembershipRepos
     );
 
     const [{ count }] = await this.repo.manager.query(
-      `SELECT COUNT(*)::int AS count FROM "${DATABASE_SCHEMA}".tenant_memberships WHERE user_id = $1`,
+      `SELECT COUNT(*)::int AS count FROM ${SCHEMA}.tenant_memberships WHERE identity_id = $1`,
       [userId],
     );
 
@@ -201,17 +189,23 @@ export class TypeOrmTenantMembershipRepository implements ITenantMembershipRepos
   }
 
   async findByTenantAndUser(tenantId: string, userId: string) {
-    const row = await this.repo.findOne({ where: { tenantId, userId } });
+    const row = await this.repo.findOne({ where: { tenantId, identityId: userId } });
     return row ? this.map(row) : null;
   }
 
   async findActiveAdminByEmail(tenantId: string, email: string) {
-    const user = await this.userRepo.findOne({ where: { email: email.toLowerCase() } });
-    if (!user) return null;
+    const identifier = await this.identifierRepo.findOne({
+      where: {
+        identifierType: IdentifierType.EMAIL,
+        identifierValue: email.toLowerCase(),
+      },
+    });
+    if (!identifier) return null;
+
     const row = await this.repo.findOne({
       where: {
         tenantId,
-        userId: user.id,
+        identityId: identifier.identityId,
         status: MembershipStatus.ACTIVE,
         role: MembershipRole.ADMIN,
       },
@@ -226,7 +220,7 @@ export class TypeOrmTenantMembershipRepository implements ITenantMembershipRepos
   }
 
   async upsertActive(tenantId: string, userId: string, role: string = MembershipRole.MEMBER) {
-    const existing = await this.repo.findOne({ where: { tenantId, userId } });
+    const existing = await this.repo.findOne({ where: { tenantId, identityId: userId } });
     if (existing) {
       await this.repo.update(
         { id: existing.id },
@@ -238,7 +232,7 @@ export class TypeOrmTenantMembershipRepository implements ITenantMembershipRepos
       await this.repo.save(
         this.repo.create({
           tenantId,
-          userId,
+          identityId: userId,
           status: MembershipStatus.ACTIVE,
           role,
         }),
@@ -247,7 +241,7 @@ export class TypeOrmTenantMembershipRepository implements ITenantMembershipRepos
   }
 
   async updateRole(tenantId: string, userId: string, role: string) {
-    const existing = await this.repo.findOne({ where: { tenantId, userId } });
+    const existing = await this.repo.findOne({ where: { tenantId, identityId: userId } });
     if (!existing) notFound('Membership', `${tenantId}/${userId}`);
     await this.repo.update({ id: existing.id }, { role, updatedAt: new Date() });
     return this.map(await this.repo.findOneOrFail({ where: { id: existing.id } }));
@@ -271,14 +265,14 @@ export class TypeOrmTenantMembershipRepository implements ITenantMembershipRepos
     return {
       id: String(row.id),
       tenantId: String(row.tenant_id),
-      userId: String(row.user_id),
+      userId: String(row.identity_id),
       status: String(row.status),
       role,
       joinedAt: row.joined_at as Date,
       createdAt: row.created_at as Date,
       updatedAt: row.updated_at as Date,
-      userEmail: String(row.user_email),
-      userFullName: String(row.user_full_name),
+      userEmail: String(row.user_email ?? ''),
+      userFullName: String(row.user_full_name ?? ''),
       isTenantAdmin: isAdminRole(role),
     };
   }
@@ -302,48 +296,12 @@ export class TypeOrmTenantMembershipRepository implements ITenantMembershipRepos
     return {
       id: e.id,
       tenantId: e.tenantId,
-      userId: e.userId,
+      userId: e.identityId,
       status: e.status,
       role: e.role,
       joinedAt: e.joinedAt,
       createdAt: e.createdAt,
       updatedAt: e.updatedAt,
-    };
-  }
-}
-
-@Injectable()
-export class TypeOrmUserIdentityRepository implements IUserIdentityRepository {
-  constructor(
-    @InjectRepository(UserIdentityEntity)
-    private readonly repo: Repository<UserIdentityEntity>,
-  ) {}
-
-  async findLocalByUserId(userId: string) {
-    const row = await this.repo.findOne({ where: { userId, providerType: 'LOCAL' } });
-    return row ? this.map(row) : null;
-  }
-
-  async createLocal(userId: string, email: string) {
-    return this.map(
-      await this.repo.save(
-        this.repo.create({
-          userId,
-          providerType: 'LOCAL',
-          identifier: email.toLowerCase(),
-          isPrimary: true,
-        }),
-      ),
-    );
-  }
-
-  private map(e: UserIdentityEntity): UserIdentityProps {
-    return {
-      id: e.id,
-      userId: e.userId,
-      providerType: e.providerType,
-      identifier: e.identifier,
-      isPrimary: e.isPrimary,
     };
   }
 }

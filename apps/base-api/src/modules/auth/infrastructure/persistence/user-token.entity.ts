@@ -12,8 +12,8 @@ export class UserTokenEntity {
   @Column({ name: 'token_hash', type: 'varchar', length: 255, unique: true })
   tokenHash!: string;
 
-  @Column({ name: 'user_id', type: 'uuid', nullable: true })
-  userId?: string;
+  @Column({ name: 'identity_id', type: 'uuid', nullable: true })
+  identityId?: string;
 
   @Column({ name: 'tenant_id', type: 'uuid', nullable: true })
   tenantId?: string;

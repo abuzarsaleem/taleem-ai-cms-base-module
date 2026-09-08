@@ -69,6 +69,7 @@ export interface RefreshTokenProps {
 
 export interface OAuthAuditEventProps {
   tenantId?: string;
+  /** Identity ID (`audit_events.actor_identity_id`) */
   actorUserId?: string;
   action: string;
   entityType?: string;

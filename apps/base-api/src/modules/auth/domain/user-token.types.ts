@@ -16,6 +16,7 @@ export interface UserTokenProps {
   id?: string;
   tokenType: UserTokenType;
   tokenHash: string;
+  /** Identity ID (`user_tokens.identity_id`) */
   userId?: string;
   tenantId?: string;
   email?: string;

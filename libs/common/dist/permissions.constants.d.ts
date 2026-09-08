@@ -33,4 +33,25 @@ export declare const TenantRole: {
     readonly MEMBER: "TENANT_MEMBER";
 };
 export type TenantRoleCode = (typeof TenantRole)[keyof typeof TenantRole];
+export declare const AlumniRole: {
+    readonly MEMBER: "ALUMNI_MEMBER";
+    readonly ADMIN: "ALUMNI_ADMIN";
+};
+export type AlumniRoleCode = (typeof AlumniRole)[keyof typeof AlumniRole];
+export declare const AlumniPermission: {
+    readonly PORTAL_ACCESS: "alumni.portal.access";
+    readonly PROFILE_READ: "alumni.profile.read";
+    readonly PROFILE_UPDATE: "alumni.profile.update";
+    readonly DIRECTORY_READ: "alumni.directory.read";
+    readonly EVENTS_READ: "alumni.events.read";
+    readonly NEWS_READ: "alumni.news.read";
+    readonly ADMIN_ACCESS: "alumni.admin.access";
+    readonly ADMIN_MEMBERS_READ: "alumni.admin.members.read";
+    readonly ADMIN_MEMBERS_MANAGE: "alumni.admin.members.manage";
+    readonly ADMIN_EVENTS_MANAGE: "alumni.admin.events.manage";
+    readonly ADMIN_NEWS_MANAGE: "alumni.admin.news.manage";
+    readonly ADMIN_REPORTS_READ: "alumni.admin.reports.read";
+    readonly ADMIN_SETTINGS_MANAGE: "alumni.admin.settings.manage";
+};
+export type AlumniPermissionCode = (typeof AlumniPermission)[keyof typeof AlumniPermission];
 export declare const TENANT_ROLE_PERMISSIONS: Record<TenantRoleCode, readonly TenantPermissionCode[]>;

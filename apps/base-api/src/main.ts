@@ -44,6 +44,7 @@ async function bootstrap() {
     .addTag('Tenant Memberships', 'Tenant user memberships')
     .addTag('User Memberships', 'Current user tenant memberships')
     .addTag('Applications', 'Application catalog and tenant application availability')
+    .addTag('Application Access', 'Member application access assignments (Alumni portal / admin)')
     .addTag('Tenant Subscriptions', 'Tenant subscription period, type, billing, and applications')
     .addTag('Tenant Entitlements', 'Tenant application entitlement')
     .addTag('Platform Audit', 'Search platform audit events')
