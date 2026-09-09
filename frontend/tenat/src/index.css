@@ -53,7 +53,12 @@
   --sidebar-ring: #00c2b2;
 
   --portal-shadow: 0 12px 35px rgba(8, 27, 69, 0.08);
-  --portal-hero: linear-gradient(120deg, #081b45 0%, #173b79 62%, #1e8f97 140%);
+  --portal-hero: linear-gradient(
+    120deg,
+    var(--sidebar) 0%,
+    color-mix(in oklab, var(--sidebar) 72%, var(--accent)) 62%,
+    color-mix(in oklab, var(--sidebar) 38%, var(--accent)) 140%
+  );
 }
 
 .dark {
@@ -99,7 +104,12 @@
   --sidebar-border: rgba(255, 255, 255, 0.06);
   --sidebar-ring: #00c2b2;
 
-  --portal-hero: linear-gradient(120deg, #05122c 0%, #0b204c 62%, #0e6b72 140%);
+  --portal-hero: linear-gradient(
+    120deg,
+    var(--sidebar) 0%,
+    color-mix(in oklab, var(--sidebar) 72%, var(--accent)) 62%,
+    color-mix(in oklab, var(--sidebar) 38%, var(--accent)) 140%
+  );
   --portal-shadow: 0 12px 35px rgba(0, 0, 0, 0.28);
 }
 
@@ -166,7 +176,7 @@
 
 @layer utilities {
   .portal-card {
-    @apply rounded-[var(--radius)] shadow-[var(--portal-shadow)];
+    @apply rounded-[var(--radius)] bg-card text-card-foreground shadow-[var(--portal-shadow)];
   }
 
   .portal-hero {

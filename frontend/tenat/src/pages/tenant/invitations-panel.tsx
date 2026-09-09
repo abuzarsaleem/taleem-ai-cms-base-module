@@ -164,7 +164,7 @@ export function TenantInvitationsPanel({
         </DialogContent>
       </Dialog>
       {issued ? (
-        <div className="mb-4 space-y-3 rounded-xl border border-[#00c2b2]/30 bg-[#00c2b2]/8 p-4">
+        <div className="mb-4 space-y-3 rounded-xl border border-accent/30 bg-accent/10 p-4">
           <p className="text-sm font-medium">
             Share this link with {issued.email}. It is only shown after create or resend.
           </p>

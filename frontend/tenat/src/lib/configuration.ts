@@ -1,5 +1,5 @@
 import type { TenantConfiguration } from '@/lib/types'
-import { EMAIL_PATTERN, isHexColor, optionalText } from '@/lib/utils'
+import { EMAIL_PATTERN, isHexColor, optionalText, parseHexColor } from '@/lib/utils'
 
 export type ConfigurationDraft = {
   timezone: string
@@ -105,9 +105,9 @@ export function configurationPayload(draft: ConfigurationDraft) {
     logoAssetId: uuidOrUndefined(draft.logoAssetId),
     logoDarkAssetId: uuidOrUndefined(draft.logoDarkAssetId),
     faviconAssetId: uuidOrUndefined(draft.faviconAssetId),
-    primaryColor: optionalText(draft.primaryColor),
-    secondaryColor: optionalText(draft.secondaryColor),
-    accentColor: optionalText(draft.accentColor),
+    primaryColor: parseHexColor(draft.primaryColor) ?? undefined,
+    secondaryColor: parseHexColor(draft.secondaryColor) ?? undefined,
+    accentColor: parseHexColor(draft.accentColor) ?? undefined,
     fontFamily: optionalText(draft.fontFamily),
     emailFromName: optionalText(draft.emailFromName),
     emailFromAddress: optionalText(draft.emailFromAddress),

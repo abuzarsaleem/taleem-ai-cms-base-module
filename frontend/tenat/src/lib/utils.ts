@@ -24,8 +24,16 @@ export const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 export const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
+export function parseHexColor(value: string) {
+  const trimmed = value.trim()
+  if (!trimmed) return null
+  const hex = trimmed.startsWith('#') ? trimmed.slice(1) : trimmed
+  if (!/^[0-9A-Fa-f]{6}$/.test(hex)) return null
+  return `#${hex.toUpperCase()}`
+}
+
 export function isHexColor(value: string) {
-  return /^#[0-9A-Fa-f]{6}$/.test(value)
+  return parseHexColor(value) !== null
 }
 
 export function isUuid(value: string) {

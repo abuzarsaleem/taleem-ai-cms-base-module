@@ -82,7 +82,7 @@ export function TenantEntitlementsPanel({
                 className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-background/70 px-4 py-3.5"
               >
                 <div className="flex min-w-0 items-center gap-3">
-                  <ApplicationIcon code={app.applicationCode} size="sm" />
+                  <ApplicationIcon code={app.applicationCode} logoUrl={app.logoUrl} size="sm" />
                   <div className="min-w-0">
                     <p className="truncate font-medium">{app.name}</p>
                     <p className="truncate font-mono text-[11px] text-muted-foreground">{app.applicationCode}</p>

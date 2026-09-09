@@ -13,6 +13,10 @@ import type {
   Subscription,
   Tenant,
   TenantAddress,
+  ApplicationAccessAssignment,
+  ApplicationAccessStatus,
+  ApplicationPermission,
+  ApplicationRole,
   TenantAsset,
   TenantConfiguration,
   TenantContact,
@@ -95,6 +99,61 @@ export const tenantService = {
   availableApplications(tenantId: string) {
     return apiRequest<{ tenantId: string; applications: AvailableApplication[] }>(
       `/tenant/${tenantId}/application`,
+    )
+  },
+}
+
+export const applicationAccessService = {
+  list(
+    tenantId: string,
+    query?: {
+      page?: number
+      limit?: number
+      userId?: string
+      applicationId?: string
+      status?: ApplicationAccessStatus
+    },
+  ) {
+    return apiRequest<Paginated<ApplicationAccessAssignment>>(
+      `/tenant/${tenantId}/application-access${toQuery({
+        page: query?.page ?? 1,
+        limit: query?.limit ?? 100,
+        userId: query?.userId,
+        applicationId: query?.applicationId,
+        status: query?.status,
+      })}`,
+    )
+  },
+  get(tenantId: string, id: string) {
+    return apiRequest<ApplicationAccessAssignment>(`/tenant/${tenantId}/application-access/${id}`)
+  },
+  create(
+    tenantId: string,
+    body: { userId: string; applicationId: string; roleId: string; isDefault?: boolean },
+  ) {
+    return apiRequest<ApplicationAccessAssignment>(`/tenant/${tenantId}/application-access`, {
+      method: 'POST',
+      body,
+    })
+  },
+  update(
+    tenantId: string,
+    id: string,
+    body: { roleId?: string; status?: ApplicationAccessStatus; isDefault?: boolean },
+  ) {
+    return apiRequest<ApplicationAccessAssignment>(`/tenant/${tenantId}/application-access/${id}`, {
+      method: 'PATCH',
+      body,
+    })
+  },
+  roles(tenantId: string, applicationCode?: string) {
+    return apiRequest<ApplicationRole[]>(
+      `/tenant/${tenantId}/application-access/roles${toQuery({ applicationCode })}`,
+    )
+  },
+  permissions(tenantId: string, applicationId: string) {
+    return apiRequest<ApplicationPermission[]>(
+      `/tenant/${tenantId}/application-access/applications/${applicationId}/permissions`,
     )
   },
 }

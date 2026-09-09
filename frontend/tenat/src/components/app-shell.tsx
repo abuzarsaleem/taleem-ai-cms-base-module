@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import {
+  AppWindow,
   BadgeCheck,
   Building2,
   Image,
@@ -50,6 +51,7 @@ const adminNav: NavGroup[] = [
     items: [
       { to: '/tenant/users', label: 'Members', icon: Users },
       { to: '/tenant/invitations', label: 'Invitations', icon: Mail },
+      { to: '/tenant/application-access', label: 'Application access', icon: AppWindow },
     ],
   },
   {
@@ -92,6 +94,7 @@ function crumbsFor(pathname: string) {
     '/tenant': 'Launcher',
     '/tenant/account': 'Account',
     '/tenant/users': 'Members',
+    '/tenant/application-access': 'Application access',
     '/tenant/profile': 'Profile',
     '/tenant/contacts': 'Contacts',
     '/tenant/addresses': 'Addresses',
@@ -102,6 +105,9 @@ function crumbsFor(pathname: string) {
     '/tenant/invitations': 'Invitations',
   }
   if (map[pathname]) return map[pathname]
+  if (pathname === '/tenant/application-access/new') return 'Assign access'
+  if (pathname.startsWith('/tenant/application-access/assignments/')) return 'Edit access'
+  if (pathname.startsWith('/tenant/application-access/')) return 'Roles'
   if (pathname === '/tenant/contacts/new') return 'Add contact'
   if (pathname.startsWith('/tenant/contacts/')) return 'Edit contact'
   if (pathname === '/tenant/addresses/new') return 'Add address'
@@ -204,19 +210,19 @@ function SidebarBody({
               {isDisplayableImageUrl(avatarUrl) ? (
                 <img src={avatarUrl} alt={name} className="size-full rounded-full object-cover" />
               ) : (
-                <AvatarFallback className="rounded-full bg-sidebar-primary text-xs font-semibold text-[#042a2a]">
+                <AvatarFallback className="rounded-full bg-sidebar-primary text-xs font-semibold text-sidebar-primary-foreground">
                   {initials}
                 </AvatarFallback>
               )}
             </Avatar>
             <div className="min-w-0 flex-1">
               <p className="truncate text-xs font-semibold text-white">{name}</p>
-              <p className="truncate text-[11px] text-[#9fb0ce]">{roleLabel}</p>
+              <p className="truncate text-[11px] text-sidebar-foreground/70">{roleLabel}</p>
             </div>
           </NavLink>
           <button
             type="button"
-            className="rounded-lg p-1.5 text-[#9fb0ce] hover:bg-white/10 hover:text-white"
+            className="rounded-lg p-1.5 text-sidebar-foreground/70 hover:bg-white/10 hover:text-white"
             aria-label="Log out"
             onClick={onSignOut}
           >

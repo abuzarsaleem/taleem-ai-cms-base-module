@@ -20,6 +20,9 @@ import { TenantSmtpPage } from '@/pages/tenant/smtp-page'
 import { TenantAssetsPage } from '@/pages/tenant/assets-page'
 import { TenantAssetFormPage } from '@/pages/tenant/asset-form-page'
 import { TenantMemberInvitationsPage } from '@/pages/tenant/member-invitations-page'
+import { TenantApplicationAccessPage } from '@/pages/tenant/application-access-page'
+import { TenantApplicationAccessAppPage } from '@/pages/tenant/application-access-app-page'
+import { TenantApplicationAccessFormPage } from '@/pages/tenant/application-access-form-page'
 
 function RequireAuth() {
   const { session, ready } = useAuth()
@@ -50,6 +53,13 @@ export default function App() {
             <Route element={<RequireTenantAdmin />}>
               <Route path="/tenant" element={<TenantLauncherPage />} />
               <Route path="/tenant/users" element={<TenantUsersPage />} />
+              <Route path="/tenant/application-access" element={<TenantApplicationAccessPage />} />
+              <Route path="/tenant/application-access/new" element={<TenantApplicationAccessFormPage />} />
+              <Route
+                path="/tenant/application-access/assignments/:assignmentId"
+                element={<TenantApplicationAccessFormPage />}
+              />
+              <Route path="/tenant/application-access/:applicationId" element={<TenantApplicationAccessAppPage />} />
               <Route path="/tenant/profile" element={<TenantProfilePage />} />
               <Route path="/tenant/contacts" element={<TenantContactsPage />} />
               <Route path="/tenant/contacts/new" element={<TenantContactFormPage />} />

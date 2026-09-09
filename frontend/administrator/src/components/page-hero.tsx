@@ -5,11 +5,13 @@ export function PageHero({
   title,
   description,
   badge,
+  media,
 }: {
   eyebrow: string
   title: string
   description?: string
   badge?: ReactNode
+  media?: ReactNode
 }) {
   return (
     <header className="portal-hero relative overflow-hidden rounded-3xl p-8 text-white shadow-[var(--portal-shadow)] sm:p-10">
@@ -21,19 +23,24 @@ export function PageHero({
         aria-hidden
         className="absolute -bottom-20 left-1/3 size-64 rounded-full bg-[#00c2b2]/15 blur-2xl"
       />
-      <p className="relative text-[11px] font-semibold tracking-[0.18em] text-[#7fe2de] uppercase">
-        {eyebrow}
-      </p>
-      <div className="relative mt-3.5 min-w-0 max-w-3xl">
-        <div className="flex flex-wrap items-center gap-2">
-          <h1 className="font-display text-[2.15rem] leading-[1.12] font-semibold tracking-tight sm:text-[2.5rem]">
-            {title}
-          </h1>
-          {badge}
+      <div className="relative flex items-start gap-5">
+        {media ? <div className="shrink-0 pt-1">{media}</div> : null}
+        <div className="min-w-0 flex-1">
+          <p className="text-[11px] font-semibold tracking-[0.18em] text-[#7fe2de] uppercase">
+            {eyebrow}
+          </p>
+          <div className="mt-3.5 min-w-0 max-w-3xl">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="font-display text-[2.15rem] leading-[1.12] font-semibold tracking-tight sm:text-[2.5rem]">
+                {title}
+              </h1>
+              {badge}
+            </div>
+            {description ? (
+              <p className="mt-3 max-w-xl text-sm leading-relaxed text-[#c8d5ed]">{description}</p>
+            ) : null}
+          </div>
         </div>
-        {description ? (
-          <p className="mt-3 max-w-xl text-sm leading-relaxed text-[#c8d5ed]">{description}</p>
-        ) : null}
       </div>
     </header>
   )

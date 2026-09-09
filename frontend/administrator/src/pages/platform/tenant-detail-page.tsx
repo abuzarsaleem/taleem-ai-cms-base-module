@@ -348,7 +348,7 @@ export function TenantDetailPage() {
                       {available.slice(0, 4).map((app) => (
                         <div key={app.entitlementId} className="flex items-center justify-between gap-4 py-3 first:pt-0 last:pb-0">
                           <div className="flex min-w-0 items-center gap-3">
-                            <ApplicationIcon code={app.applicationCode} size="sm" />
+                            <ApplicationIcon code={app.applicationCode} logoUrl={app.logoUrl} size="sm" />
                             <div className="min-w-0">
                               <p className="truncate text-sm font-medium">{app.name}</p>
                               <p className="truncate font-mono text-[11px] text-muted-foreground">{app.applicationCode}</p>

@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import {
@@ -17,6 +18,7 @@ import { Field } from '@/components/field'
 import { PageHeader } from '@/components/page-header'
 import { StatusBadge } from '@/components/status-badge'
 import { errorMessage } from '@/lib/auth'
+import { isDisplayableImageUrl } from '@/lib/utils'
 import { ApplicationStatus, type CatalogApplication } from '@/lib/types'
 import { applicationService } from '@/services/platform'
 
@@ -34,9 +36,13 @@ function optional(value: string) {
 }
 
 export function ApplicationsPage() {
+  const fileRef = useRef<HTMLInputElement>(null)
   const [open, setOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [draft, setDraft] = useState(emptyDraft)
+  const [logoUrl, setLogoUrl] = useState<string | undefined>()
+  const [pendingLogo, setPendingLogo] = useState<File | null>(null)
+  const [logoPreview, setLogoPreview] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [loading, setLoading] = useState(true)
   const [rows, setRows] = useState<CatalogApplication[]>([])
@@ -52,9 +58,18 @@ export function ApplicationsPage() {
       .finally(() => setLoading(false))
   }, [])
 
+  function resetLogo() {
+    if (logoPreview) URL.revokeObjectURL(logoPreview)
+    setLogoPreview(null)
+    setPendingLogo(null)
+    setLogoUrl(undefined)
+    if (fileRef.current) fileRef.current.value = ''
+  }
+
   function openCreate() {
     setEditingId(null)
     setDraft(emptyDraft)
+    resetLogo()
     setOpen(true)
   }
 
@@ -69,9 +84,64 @@ export function ApplicationsPage() {
         launchUrl: app.launchUrl ?? '',
         description: app.description ?? '',
       })
+      if (logoPreview) URL.revokeObjectURL(logoPreview)
+      setLogoPreview(null)
+      setPendingLogo(null)
+      setLogoUrl(app.logoUrl)
       setOpen(true)
     } catch (error) {
       toast.error(errorMessage(error))
+    }
+  }
+
+  async function applyLogo(applicationId: string, file: File) {
+    const updated = await applicationService.uploadLogo(applicationId, file)
+    setLogoUrl(updated.logoUrl)
+    setPendingLogo(null)
+    if (logoPreview) URL.revokeObjectURL(logoPreview)
+    setLogoPreview(null)
+    return updated
+  }
+
+  async function onPickLogo(file?: File) {
+    if (!file) return
+    const preview = URL.createObjectURL(file)
+    if (logoPreview) URL.revokeObjectURL(logoPreview)
+    setLogoPreview(preview)
+    setPendingLogo(file)
+    if (!editingId) return
+    setBusy(true)
+    try {
+      await applyLogo(editingId, file)
+      await load()
+      toast.success('Logo uploaded')
+    } catch (error) {
+      toast.error(errorMessage(error))
+    } finally {
+      setBusy(false)
+      if (fileRef.current) fileRef.current.value = ''
+    }
+  }
+
+  async function onClearLogo() {
+    if (logoPreview) URL.revokeObjectURL(logoPreview)
+    setLogoPreview(null)
+    setPendingLogo(null)
+    if (fileRef.current) fileRef.current.value = ''
+    if (!editingId || !logoUrl) {
+      setLogoUrl(undefined)
+      return
+    }
+    setBusy(true)
+    try {
+      await applicationService.removeLogo(editingId)
+      setLogoUrl(undefined)
+      await load()
+      toast.success('Logo removed')
+    } catch (error) {
+      toast.error(errorMessage(error))
+    } finally {
+      setBusy(false)
     }
   }
 
@@ -88,16 +158,18 @@ export function ApplicationsPage() {
         })
         toast.success('Application updated')
       } else {
-        await applicationService.create({
+        const created = await applicationService.create({
           applicationCode: draft.applicationCode.trim(),
           name: draft.name.trim(),
           description: optional(draft.description),
           version: optional(draft.version),
           launchUrl: optional(draft.launchUrl),
         })
+        if (pendingLogo) await applyLogo(created.id, pendingLogo)
         toast.success('Application registered')
       }
       setOpen(false)
+      resetLogo()
       await load()
     } catch (error) {
       toast.error(errorMessage(error))
@@ -105,6 +177,8 @@ export function ApplicationsPage() {
       setBusy(false)
     }
   }
+
+  const previewUrl = logoPreview || logoUrl
 
   return (
     <div className="flex flex-1 flex-col gap-6">
@@ -114,14 +188,20 @@ export function ApplicationsPage() {
         description="Register independently deployable applications. The catalogue does not store application business data."
         actions={<Button onClick={openCreate}>Register application</Button>}
       />
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog
+        open={open}
+        onOpenChange={(next) => {
+          setOpen(next)
+          if (!next) resetLogo()
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{editingId ? 'Edit application' : 'Register application'}</DialogTitle>
             <DialogDescription>
               {editingId
-                ? 'PATCH /application/:id — name, version, launch URL, and description. Code cannot change.'
-                : 'Unique application identity and launch information.'}
+                ? 'PATCH /application/:id — name, version, launch URL, and description. Upload a logo with POST /application/:id/logo.'
+                : 'Unique application identity and launch information. A selected logo is uploaded after the application is created.'}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-3">
@@ -134,6 +214,30 @@ export function ApplicationsPage() {
             </Field>
             <Field label="Name" required>
               <Input value={draft.name} onChange={(e) => setDraft((current) => ({ ...current, name: e.target.value }))} />
+            </Field>
+            <Field label="Logo">
+              <div className="flex flex-col gap-3">
+                {isDisplayableImageUrl(previewUrl) ? (
+                  <img src={previewUrl} alt="" className="h-14 w-14 rounded-lg border border-border object-cover" />
+                ) : null}
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml"
+                  className="hidden"
+                  onChange={(event) => void onPickLogo(event.target.files?.[0])}
+                />
+                <div className="flex flex-wrap gap-2">
+                  <Button type="button" variant="outline" disabled={busy} onClick={() => fileRef.current?.click()}>
+                    {busy ? 'Uploading…' : previewUrl ? 'Replace logo' : 'Upload logo'}
+                  </Button>
+                  {previewUrl ? (
+                    <Button type="button" variant="outline" disabled={busy} onClick={() => void onClearLogo()}>
+                      Remove logo
+                    </Button>
+                  ) : null}
+                </div>
+              </div>
             </Field>
             <Field label="Version">
               <Input
@@ -185,7 +289,7 @@ export function ApplicationsPage() {
                 <TableRow key={app.id}>
                   <TableCell>
                     <div className="flex items-center gap-3">
-                      <ApplicationIcon code={app.applicationCode} size="sm" />
+                      <ApplicationIcon code={app.applicationCode} logoUrl={app.logoUrl} size="sm" />
                       <div className="min-w-0">
                         <p className="font-medium">{app.name}</p>
                         <p className="text-xs text-muted-foreground">{app.description}</p>
@@ -199,6 +303,9 @@ export function ApplicationsPage() {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
+                      <Button size="sm" variant="outline" asChild>
+                        <Link to={`/platform/applications/${app.id}`}>Access</Link>
+                      </Button>
                       <Button size="sm" variant="outline" onClick={() => void openEdit(app.id)}>
                         Edit
                       </Button>

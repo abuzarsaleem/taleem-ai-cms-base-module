@@ -8,6 +8,7 @@ export function PageHeader({
   actions,
   toolbar,
   badge,
+  media,
 }: {
   eyebrow?: string
   title: string
@@ -15,12 +16,19 @@ export function PageHeader({
   actions?: ReactNode
   toolbar?: ReactNode
   badge?: ReactNode
+  media?: ReactNode
 }) {
   const hasBar = Boolean(toolbar || actions)
 
   return (
     <div className="flex flex-col gap-4">
-      <PageHero eyebrow={eyebrow ?? 'Taleem AI'} title={title} description={description} badge={badge} />
+      <PageHero
+        eyebrow={eyebrow ?? 'Taleem AI'}
+        title={title}
+        description={description}
+        badge={badge}
+        media={media}
+      />
       {hasBar ? (
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex min-w-0 flex-1 flex-wrap items-center gap-3">{toolbar}</div>

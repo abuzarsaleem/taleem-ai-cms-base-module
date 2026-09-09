@@ -205,6 +205,7 @@ export type Tenant = {
   retiredAt?: string
   createdAt: string
   updatedAt: string
+  applications?: AvailableApplication[]
 }
 
 export type InstitutionProfile = {
@@ -342,6 +343,25 @@ export type CatalogApplication = {
   version?: string
   status: ApplicationStatus
   launchUrl?: string
+  logoUrl?: string
+}
+
+export type ApplicationRole = {
+  id: string
+  roleCode: string
+  roleName: string
+  description?: string
+  applicationId: string
+  roleType: string
+  permissionCodes: string[]
+}
+
+export type ApplicationPermission = {
+  id: string
+  applicationId: string
+  permissionCode: string
+  name: string
+  description?: string
 }
 
 export type Subscription = {
@@ -436,6 +456,7 @@ export type AvailableApplication = {
   applicationCode: string
   name: string
   launchUrl?: string
+  logoUrl?: string
   entitlementId: string
   effectiveFrom: string
   effectiveUntil?: string

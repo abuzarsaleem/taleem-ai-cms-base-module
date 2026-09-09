@@ -5,7 +5,7 @@ import {
   LayoutGrid,
   type LucideIcon,
 } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn, isDisplayableImageUrl } from '@/lib/utils'
 
 const ICONS: Record<string, LucideIcon> = {
   ALUMNI: GraduationCap,
@@ -30,25 +30,34 @@ function hashCode(value: string) {
 
 export function ApplicationIcon({
   code,
+  logoUrl,
   className,
   size = 'md',
 }: {
   code: string
+  logoUrl?: string
   className?: string
   size?: 'sm' | 'md'
 }) {
   const key = code.trim().toUpperCase()
+  const box = size === 'sm' ? 'size-8' : 'size-10'
+
+  if (isDisplayableImageUrl(logoUrl)) {
+    return (
+      <img
+        src={logoUrl}
+        alt=""
+        className={cn('shrink-0 rounded-xl border border-border object-cover', box, className)}
+      />
+    )
+  }
+
   const Icon = ICONS[key] ?? FALLBACK_ICONS[hashCode(key) % FALLBACK_ICONS.length]
   const tone = TONES[hashCode(key) % TONES.length]
 
   return (
     <span
-      className={cn(
-        'inline-flex shrink-0 items-center justify-center rounded-xl',
-        size === 'sm' ? 'size-8' : 'size-10',
-        tone,
-        className,
-      )}
+      className={cn('inline-flex shrink-0 items-center justify-center rounded-xl', box, tone, className)}
       aria-hidden
     >
       <Icon className={size === 'sm' ? 'size-3.5' : 'size-4'} />

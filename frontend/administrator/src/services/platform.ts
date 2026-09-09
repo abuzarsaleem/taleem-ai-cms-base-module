@@ -3,6 +3,8 @@ import type { CreateTenantBody, UpdateTenantBody } from '@/lib/tenant'
 import { toQuery } from '@/lib/utils'
 import type {
   AdminInvitation,
+  ApplicationPermission,
+  ApplicationRole,
   AssetType,
   AvailableApplication,
   CatalogApplication,
@@ -67,6 +69,23 @@ export const applicationService = {
   },
   deactivate(applicationId: string) {
     return apiRequest<CatalogApplication>(`/application/${applicationId}/deactivate`, { method: 'POST' })
+  },
+  uploadLogo(applicationId: string, file: File) {
+    const form = new FormData()
+    form.append('file', file)
+    return apiUpload<CatalogApplication>(`/application/${applicationId}/logo`, form)
+  },
+  removeLogo(applicationId: string) {
+    return apiRequest<CatalogApplication>(`/application/${applicationId}/logo`, { method: 'DELETE' })
+  },
+}
+
+export const applicationAccessService = {
+  roles(applicationCode?: string) {
+    return apiRequest<ApplicationRole[]>(`/application-access/roles${toQuery({ applicationCode })}`)
+  },
+  permissions(applicationId: string) {
+    return apiRequest<ApplicationPermission[]>(`/application-access/applications/${applicationId}/permissions`)
   },
 }
 

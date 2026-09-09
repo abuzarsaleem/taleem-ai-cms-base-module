@@ -111,7 +111,7 @@ export function SubscriptionFields({
                       : 'border-border hover:border-[#00c2b2]/40 hover:bg-[#00c2b2]/5',
                   )}
                 >
-                  <ApplicationIcon code={app.applicationCode} size="sm" />
+                  <ApplicationIcon code={app.applicationCode} logoUrl={app.logoUrl} size="sm" />
                   <span className="min-w-0">
                     <span className="block truncate text-sm font-medium">{app.name}</span>
                     <span className="mt-0.5 block truncate font-mono text-[11px] text-muted-foreground">

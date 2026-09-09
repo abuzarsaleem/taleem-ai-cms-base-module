@@ -94,6 +94,13 @@ export const EntitlementStatus = {
 } as const
 export type EntitlementStatus = (typeof EntitlementStatus)[keyof typeof EntitlementStatus]
 
+export const ApplicationAccessStatus = {
+  ACTIVE: 'ACTIVE',
+  SUSPENDED: 'SUSPENDED',
+  REVOKED: 'REVOKED',
+} as const
+export type ApplicationAccessStatus = (typeof ApplicationAccessStatus)[keyof typeof ApplicationAccessStatus]
+
 export const InvitationStatus = {
   PENDING: 'PENDING',
   ACCEPTED: 'ACCEPTED',
@@ -205,6 +212,7 @@ export type Tenant = {
   retiredAt?: string
   createdAt: string
   updatedAt: string
+  applications?: AvailableApplication[]
 }
 
 export type InstitutionProfile = {
@@ -436,8 +444,44 @@ export type AvailableApplication = {
   applicationCode: string
   name: string
   launchUrl?: string
+  logoUrl?: string
   entitlementId: string
   effectiveFrom: string
   effectiveUntil?: string
   subscriptionId?: string
+}
+
+export type ApplicationAccessAssignment = {
+  id: string
+  tenantId: string
+  userId: string
+  applicationId: string
+  applicationCode?: string
+  applicationName?: string
+  roleId: string
+  roleCode?: string
+  roleName?: string
+  status: ApplicationAccessStatus
+  isDefault: boolean
+  permissionCodes?: string[]
+  createdAt: string
+  updatedAt: string
+}
+
+export type ApplicationRole = {
+  id: string
+  roleCode: string
+  roleName: string
+  description?: string
+  applicationId: string
+  roleType: string
+  permissionCodes: string[]
+}
+
+export type ApplicationPermission = {
+  id: string
+  applicationId: string
+  permissionCode: string
+  name: string
+  description?: string
 }

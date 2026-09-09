@@ -105,6 +105,7 @@ function crumbsFor(pathname: string) {
   if (pathname.startsWith('/platform/smtp/')) return 'Edit SMTP'
   if (pathname === '/platform/assets/new') return 'Add asset'
   if (pathname.startsWith('/platform/assets/')) return 'Edit asset'
+  if (pathname.startsWith('/platform/applications/')) return 'Access'
   if (pathname.startsWith('/platform/tenants/')) return 'Tenant'
   return 'Workspace'
 }

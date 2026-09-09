@@ -15,6 +15,7 @@ import {
 import type { TenantAsset } from '@/lib/types'
 import { tenantAssetService, tenantConfigurationService } from '@/services/platform'
 import { TenantAdminFrame } from '@/pages/tenant/tenant-admin-frame'
+import { useBranding } from '@/theme/branding-provider'
 
 export function TenantConfigurationPage() {
   return (
@@ -25,6 +26,7 @@ export function TenantConfigurationPage() {
 }
 
 function TenantConfigurationForm({ tenantId }: { tenantId: string }) {
+  const { apply } = useBranding()
   const [draft, setDraft] = useState(emptyConfigurationDraft())
   const [assets, setAssets] = useState<TenantAsset[]>([])
   const [exists, setExists] = useState(false)
@@ -74,9 +76,11 @@ function TenantConfigurationForm({ tenantId }: { tenantId: string }) {
     setBusy(true)
     try {
       const body = configurationPayload(draft)
-      if (exists) await tenantConfigurationService.update(tenantId, body)
-      else await tenantConfigurationService.create(tenantId, body)
+      const saved = exists
+        ? await tenantConfigurationService.update(tenantId, body)
+        : await tenantConfigurationService.create(tenantId, body)
       setExists(true)
+      apply(saved)
       toast.success(exists ? 'Configuration updated' : 'Configuration created')
     } catch (caught) {
       toast.error(errorMessage(caught))

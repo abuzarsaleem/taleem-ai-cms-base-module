@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { ColorInput } from '@/components/color-input'
 import { Field, FieldGrid } from '@/components/field'
 import { errorMessage } from '@/lib/auth'
 import type { ConfigurationDraft } from '@/lib/configuration'
@@ -139,14 +140,14 @@ export function ConfigurationFields({
       <Field label="Font family">
         <Input value={value.fontFamily} onChange={(e) => patch({ fontFamily: e.target.value })} />
       </Field>
-      <Field label="Primary color" hint="#RRGGBB">
-        <Input value={value.primaryColor} placeholder="#1A73E8" onChange={(e) => patch({ primaryColor: e.target.value })} />
+      <Field label="Primary color">
+        <ColorInput value={value.primaryColor} placeholder="#1A73E8" onChange={(primaryColor) => patch({ primaryColor })} />
       </Field>
-      <Field label="Secondary color" hint="#RRGGBB">
-        <Input value={value.secondaryColor} placeholder="#FFFFFF" onChange={(e) => patch({ secondaryColor: e.target.value })} />
+      <Field label="Secondary color">
+        <ColorInput value={value.secondaryColor} placeholder="#FFFFFF" onChange={(secondaryColor) => patch({ secondaryColor })} />
       </Field>
-      <Field label="Accent color" hint="#RRGGBB">
-        <Input value={value.accentColor} placeholder="#FF5722" onChange={(e) => patch({ accentColor: e.target.value })} />
+      <Field label="Accent color">
+        <ColorInput value={value.accentColor} placeholder="#FF5722" onChange={(accentColor) => patch({ accentColor })} />
       </Field>
       <BrandingAssetField
         label="Logo"
