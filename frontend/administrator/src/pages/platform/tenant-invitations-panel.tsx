@@ -25,7 +25,8 @@ import {
   validateInvitationEmail,
 } from '@/lib/invitation'
 import { InvitationStatus, type AdminInvitation } from '@/lib/types'
-import { invitationService } from '@/services/platform'
+import { CreateMembershipDialog } from '@/components/create-membership-dialog'
+import { invitationService, membershipService } from '@/services/platform'
 
 type InvitationApi = {
   create: (tenantId: string, email: string) => Promise<AdminInvitation & { invitationToken: string }>
@@ -59,6 +60,7 @@ export function TenantInvitationsPanel({
   onReload: () => Promise<void>
 }) {
   const [open, setOpen] = useState(false)
+  const [createOpen, setCreateOpen] = useState(false)
   const [email, setEmail] = useState('')
   const [busy, setBusy] = useState(false)
   const [issued, setIssued] = useState<{ email: string; token: string; expiresAt: string } | null>(null)
@@ -126,10 +128,27 @@ export function TenantInvitationsPanel({
         title={title}
         description={description}
         action={
-          <Button disabled={!canInvite} onClick={() => setOpen(true)}>
-            Send invite
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" disabled={!canInvite} onClick={() => setCreateOpen(true)}>
+              Create administrator
+            </Button>
+            <Button disabled={!canInvite} onClick={() => setOpen(true)}>
+              Send invite
+            </Button>
+          </div>
         }
+      />
+      <CreateMembershipDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        title="Create tenant administrator"
+        description="Provisions the account and adds an active tenant administrator membership. The person can sign in immediately with these credentials."
+        submitLabel="Create administrator"
+        onSubmit={async (body) => {
+          await membershipService.createTenantAdmin(tenantId, body)
+          toast.success('Tenant administrator created')
+          await onReload()
+        }}
       />
       {!canInvite && blockedReason ? (
         <p className="mb-4 rounded-xl border border-amber-500/30 bg-amber-500/8 px-4 py-3 text-sm">{blockedReason}</p>

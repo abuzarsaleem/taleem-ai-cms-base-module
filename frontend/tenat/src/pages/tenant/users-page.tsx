@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
+import { CreateMembershipDialog } from '@/components/create-membership-dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { DataTable } from '@/components/data-table'
@@ -26,6 +28,7 @@ export function TenantUsersPage() {
   const [loading, setLoading] = useState(true)
   const [missing, setMissing] = useState(!tenantId)
   const [busyId, setBusyId] = useState<string | null>(null)
+  const [createOpen, setCreateOpen] = useState(false)
 
   const reload = useCallback(async () => {
     if (!tenantId) {
@@ -91,12 +94,32 @@ export function TenantUsersPage() {
       <PageHeader
         eyebrow={tenant.tenantCode}
         title="Members"
-        description="GET/PATCH/DELETE /tenant/:id/membership — roles are tenant administrator or tenant member. Suspend instead of setting inactive."
+        description="Create members with credentials or invite them by email. Promote members to tenant administrator here."
+        actions={
+          <>
+            <Button variant="outline" asChild>
+              <Link to="/tenant/invitations">Invite by email</Link>
+            </Button>
+            <Button onClick={() => setCreateOpen(true)}>Create member</Button>
+          </>
+        }
+      />
+      <CreateMembershipDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        title="Create tenant member"
+        description="Provisions the account and adds an active tenant member membership. The person can sign in immediately with these credentials."
+        submitLabel="Create member"
+        onSubmit={async (body) => {
+          await membershipService.create(tenantId, body)
+          toast.success('Member created')
+          await reload()
+        }}
       />
       <div className="portal-card p-5 sm:p-6">
         <DataTable
           columns={['Member', 'Role', 'Status', 'Joined', '']}
-          empty="No members yet. Invite people from the Invitations page."
+          empty="No members yet. Create one with credentials or invite by email."
           rows={members.map((row) => {
             const lastAdmin = row.isTenantAdmin && activeAdmins <= 1
             const busy = busyId === row.id

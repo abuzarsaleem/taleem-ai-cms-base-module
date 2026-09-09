@@ -1,11 +1,14 @@
 import { useCallback, useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
+import { Button } from '@/components/ui/button'
+import { CreateMembershipDialog } from '@/components/create-membership-dialog'
 import { Skeleton } from '@/components/ui/skeleton'
 import { EmptyState, PageHeader } from '@/components/page-header'
 import { errorMessage, useAuth } from '@/lib/auth'
 import { ApiError } from '@/lib/api'
 import type { AdminInvitation, Tenant } from '@/lib/types'
-import { memberInvitationService, tenantService } from '@/services/platform'
+import { memberInvitationService, membershipService, tenantService } from '@/services/platform'
 import { TenantInvitationsPanel } from '@/pages/tenant/invitations-panel'
 
 export function TenantMemberInvitationsPage() {
@@ -15,6 +18,7 @@ export function TenantMemberInvitationsPage() {
   const [invitations, setInvitations] = useState<AdminInvitation[]>([])
   const [loading, setLoading] = useState(true)
   const [missing, setMissing] = useState(!tenantId)
+  const [createOpen, setCreateOpen] = useState(false)
 
   const reload = useCallback(async () => {
     if (!tenantId) {
@@ -63,7 +67,27 @@ export function TenantMemberInvitationsPage() {
       <PageHeader
         eyebrow={tenant.tenantCode}
         title="Member invitations"
-        description="Invite tenant members. Administrator invitations stay with the platform."
+        description="Invite tenant members by email, or create them directly with credentials on the Members page."
+        actions={
+          <>
+            <Button variant="outline" asChild>
+              <Link to="/tenant/users">View members</Link>
+            </Button>
+            <Button onClick={() => setCreateOpen(true)}>Create member</Button>
+          </>
+        }
+      />
+      <CreateMembershipDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        title="Create tenant member"
+        description="Provisions the account and adds an active tenant member membership. The person can sign in immediately with these credentials."
+        submitLabel="Create member"
+        onSubmit={async (body) => {
+          await membershipService.create(tenantId, body)
+          toast.success('Member created')
+          await reload()
+        }}
       />
       <div className="portal-card p-5 sm:p-6">
         <TenantInvitationsPanel

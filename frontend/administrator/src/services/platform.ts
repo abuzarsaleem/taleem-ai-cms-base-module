@@ -357,6 +357,18 @@ export const membershipService = {
   remove(tenantId: string, membershipId: string) {
     return apiRequest<void>(`/tenant/${tenantId}/membership/${membershipId}`, { method: 'DELETE' })
   },
+  create(
+    tenantId: string,
+    body: { email: string; password: string; fullName: string },
+  ) {
+    return apiRequest<TenantMembership>(`/tenant/${tenantId}/membership`, { method: 'POST', body })
+  },
+  createTenantAdmin(
+    tenantId: string,
+    body: { email: string; password: string; fullName: string },
+  ) {
+    return apiRequest<TenantMembership>(`/platform/tenant/${tenantId}/admin`, { method: 'POST', body })
+  },
 }
 
 export const memberInvitationService = {
