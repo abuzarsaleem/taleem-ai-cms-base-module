@@ -88,7 +88,7 @@ export class TenantInvitationService {
     const email = dto.email.toLowerCase();
     const role = dto.role;
 
-    await this.assertCanInvite(tenantId, email, role);
+    await this.assertCanAddMember(tenantId, email, role);
 
     const { raw, hash } = generateToken();
     const expiresAt = this.buildExpiryDate();
@@ -146,7 +146,13 @@ export class TenantInvitationService {
     return toCreateInvitationResponse(updated, raw);
   }
 
-  private async assertCanInvite(tenantId: string, email: string, role: MembershipRole) {
+  /** Shared conflict checks for invite + direct create (optional pending-invite check). */
+  async assertCanAddMember(
+    tenantId: string,
+    email: string,
+    role: MembershipRole,
+    options?: { allowPendingInvitation?: boolean },
+  ) {
     if (role === MembershipRole.ADMIN) {
       if (await this.membershipRepo.findActiveAdminByEmail(tenantId, email)) {
         throw new ConflictException('User is already an active tenant administrator');
@@ -161,8 +167,20 @@ export class TenantInvitationService {
       }
     }
 
-    if (await this.tokenRepository.findPendingInvitationByEmail(tenantId, email)) {
-      throw new ConflictException('A pending invitation already exists for this email');
+    if (!options?.allowPendingInvitation) {
+      if (await this.tokenRepository.findPendingInvitationByEmail(tenantId, email)) {
+        throw new ConflictException('A pending invitation already exists for this email');
+      }
+    }
+  }
+
+  async cancelPendingInvitationForEmail(tenantId: string, email: string) {
+    const pending = await this.tokenRepository.findPendingInvitationByEmail(
+      tenantId,
+      email.toLowerCase(),
+    );
+    if (pending?.id) {
+      await this.tokenRepository.update(pending.id, { status: UserTokenStatus.CANCELLED });
     }
   }
 

@@ -6,13 +6,20 @@ import {
   type ITenantMembershipRepository,
 } from '../domain/invitation.repository.interface.js';
 import { MembershipRole, MembershipStatus } from '../domain/membership.types.js';
-import { UpdateTenantMembershipDto } from './dto/request/membership.request.dto.js';
+import {
+  CreateTenantMembershipDto,
+  UpdateTenantMembershipDto,
+} from './dto/request/membership.request.dto.js';
 import { toMembershipResponse, toUserTenantMembershipResponse } from './mappers/membership.mapper.js';
+import { MembershipProvisionService } from './membership-provision.service.js';
+import { TenantInvitationService } from './tenant-invitation.service.js';
 
 @Injectable()
 export class TenantMembershipService {
   constructor(
     private readonly tenantContext: TenantContextService,
+    private readonly invitationService: TenantInvitationService,
+    private readonly provision: MembershipProvisionService,
     @Inject(TENANT_MEMBERSHIP_REPOSITORY)
     private readonly membershipRepo: ITenantMembershipRepository,
   ) {}
@@ -43,6 +50,39 @@ export class TenantMembershipService {
     const row = await this.membershipRepo.findById(tenantId, id);
     if (!row) throw new NotFoundException(`Membership '${id}' not found`);
     return toMembershipResponse(row);
+  }
+
+  /**
+   * Direct create (no invitation email). Cancels any pending invite for the email.
+   * Platform admin → TENANT_ADMIN; Tenant admin → TENANT_MEMBER.
+   */
+  async createDirect(
+    tenantId: string,
+    dto: CreateTenantMembershipDto,
+    role: MembershipRole,
+    _actorUserId?: string,
+  ) {
+    await this.tenantContext.ensureTenantExists(tenantId);
+    const email = dto.email.toLowerCase().trim();
+
+    await this.invitationService.assertCanAddMember(tenantId, email, role, {
+      allowPendingInvitation: true,
+    });
+    await this.invitationService.cancelPendingInvitationForEmail(tenantId, email);
+
+    const identity = await this.provision.provision({
+      email,
+      password: dto.password,
+      fullName: dto.fullName,
+      requireCredentials: true,
+    });
+
+    const created = await this.membershipRepo.upsertActive(tenantId, identity.id!, role);
+    const membership = await this.membershipRepo.findById(tenantId, created.id!);
+    if (!membership) {
+      throw new BadRequestException('Unable to create tenant membership');
+    }
+    return toMembershipResponse(membership);
   }
 
   async update(tenantId: string, id: string, dto: UpdateTenantMembershipDto, _actorUserId?: string) {

@@ -8,10 +8,12 @@ import {
   Param,
   ParseUUIDPipe,
   Patch,
+  Post,
   Query,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
+  ApiCreatedResponse,
   ApiNoContentResponse,
   ApiOkResponse,
   ApiOperation,
@@ -24,8 +26,12 @@ import {
   TenantPermission,
   type AuthenticatedUser,
 } from '@app/common';
+import { MembershipRole } from '../domain/membership.types.js';
 import { TenantMembershipService } from '../application/tenant-membership.service.js';
-import { UpdateTenantMembershipDto } from '../application/dto/request/membership.request.dto.js';
+import {
+  CreateTenantMembershipDto,
+  UpdateTenantMembershipDto,
+} from '../application/dto/request/membership.request.dto.js';
 import {
   TenantMembershipListResponseDto,
   TenantMembershipResponseDto,
@@ -44,6 +50,22 @@ export class TenantMembershipController {
   @ApiOkResponse({ type: TenantMembershipListResponseDto })
   list(@Param('tenantId', ParseUUIDPipe) tenantId: string, @Query() q: PaginationQueryDto) {
     return this.service.listForTenant(tenantId, q.page ?? 1, q.limit ?? 20);
+  }
+
+  @Post()
+  @RequireTenantPermissions(TenantPermission.MEMBERS_MANAGE)
+  @ApiOperation({
+    summary: 'Create a tenant member with credentials (Tenant Admin)',
+    description:
+      'Directly provisions the identity and ACTIVE TENANT_MEMBER membership. Invitation APIs remain available as an alternative.',
+  })
+  @ApiCreatedResponse({ type: TenantMembershipResponseDto })
+  create(
+    @Param('tenantId', ParseUUIDPipe) tenantId: string,
+    @Body() dto: CreateTenantMembershipDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.service.createDirect(tenantId, dto, MembershipRole.MEMBER, user.userId);
   }
 
   @Get(':id')
