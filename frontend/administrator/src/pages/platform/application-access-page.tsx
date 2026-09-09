@@ -202,13 +202,15 @@ function RoleAccordion({
   permissionByCode: Record<string, ApplicationPermission>
   defaultOpen?: boolean
 }) {
+  const [open, setOpen] = useState(Boolean(defaultOpen))
   const granted = new Set(role.permissionCodes)
   const unknownCodes = role.permissionCodes.filter((code) => !permissionByCode[code])
 
   return (
     <details
       className="group rounded-xl border border-border bg-background/70 open:bg-background"
-      defaultOpen={defaultOpen}
+      open={open}
+      onToggle={(event) => setOpen(event.currentTarget.open)}
     >
       <summary className="flex cursor-pointer list-none items-center gap-3 px-4 py-3.5 [&::-webkit-details-marker]:hidden">
         <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-[#00c2b2]/15 text-[#0a7d73] dark:text-[#7ef0e6]">
