@@ -1,10 +1,33 @@
 /** OAuth client for launching Alumni member / admin portals from the tenant workspace. */
-const alumniCallback =
-  (import.meta.env.VITE_ALUMNI_PORTAL_CALLBACK as string | undefined)?.trim() ||
-  'http://localhost:5173/callback'
-const adminCallback =
-  (import.meta.env.VITE_ADMIN_PORTAL_CALLBACK as string | undefined)?.trim() ||
-  'http://localhost:5174/callback'
+
+/** Production alumni portal: https://taleem-ai-cms.vercel.app/ */
+const PROD_ALUMNI_CALLBACK = 'https://taleem-ai-cms.vercel.app/callback'
+
+function resolveCallback(
+  fromEnv: string | undefined,
+  localDefault: string,
+  prodDefault?: string,
+) {
+  const trimmed = fromEnv?.trim()
+  if (trimmed) return trimmed
+  if (import.meta.env.PROD && prodDefault) return prodDefault
+  return localDefault
+}
+
+const alumniCallback = resolveCallback(
+  import.meta.env.VITE_ALUMNI_PORTAL_CALLBACK as string | undefined,
+  'http://localhost:5173/callback',
+  PROD_ALUMNI_CALLBACK,
+)
+
+/**
+ * Admin portal host — set VITE_ADMIN_PORTAL_CALLBACK on Vercel.
+ * Until then, production builds still need this env or Open Alumni Admin will fail.
+ */
+const adminCallback = resolveCallback(
+  import.meta.env.VITE_ADMIN_PORTAL_CALLBACK as string | undefined,
+  'http://localhost:5174/callback',
+)
 
 export const HARDCODED_OAUTH_CLIENT = {
   id: '7d70c68c-1fa3-4e46-9f5b-0c0b488dc892',
@@ -20,10 +43,11 @@ export const HARDCODED_OAUTH_CLIENT = {
   redirectUris: [
     alumniCallback,
     adminCallback,
-    // Production fallbacks (must also be registered on the oauth_clients row)
-    'https://taleem-ai-cms.vercel.app/callback',
+    'http://localhost:5173/callback',
+    'http://localhost:5174/callback',
+    PROD_ALUMNI_CALLBACK,
     'https://taleem-ai-cms.vercel.app/home',
-  ],
+  ].filter((uri, index, all) => all.indexOf(uri) === index),
 } as const
 
 export const DEFAULT_OAUTH_SCOPE = 'openid profile tenant.read'
