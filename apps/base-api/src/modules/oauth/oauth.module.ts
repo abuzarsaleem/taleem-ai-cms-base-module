@@ -1,5 +1,6 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { AccessModule } from '../access/access.module.js';
 import { AuthModule } from '../auth/auth.module.js';
 import { InvitationModule } from '../invitation/invitation.module.js';
 import { SubscriptionModule } from '../subscription/subscription.module.js';
@@ -46,6 +47,7 @@ const entities = [
     IdentityModule,
     forwardRef(() => InvitationModule),
     SubscriptionModule,
+    AccessModule,
   ],
   controllers: [
     OauthAuthorizationController,

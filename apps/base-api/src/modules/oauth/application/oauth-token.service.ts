@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { ApplicationAccessService } from '../../access/application/application-access.service.js';
 import { IDENTITY_REPOSITORY } from '../../identity/domain/identity.repository.interface.js';
 import type { IIdentityRepository } from '../../identity/domain/identity.repository.interface.js';
 import { APPLICATION_REPOSITORY } from '../../subscription/domain/subscription.repository.interface.js';
@@ -22,7 +23,7 @@ import {
   type IOAuthSessionRepository,
   type IRefreshTokenRepository,
 } from '../domain/oauth.repository.interface.js';
-import { OAuthGrantType, RefreshFamilyStatus, SessionStatus } from '../domain/oauth.types.js';
+import { OAuthGrantType, RefreshFamilyStatus } from '../domain/oauth.types.js';
 import type { OAuthRevokeDto, OAuthTokenRequestDto } from './dto/request/oauth.request.dto.js';
 import { OauthOidcService } from './oauth-oidc.service.js';
 import { OauthAuditService } from './oauth-audit.service.js';
@@ -43,6 +44,7 @@ export class OauthTokenService {
     private readonly auditService: OauthAuditService,
     private readonly oidcService: OauthOidcService,
     private readonly entitlementPolicy: EntitlementPolicyService,
+    private readonly applicationAccess: ApplicationAccessService,
     @Inject(OAUTH_CLIENT_REPOSITORY) private readonly clientRepo: IOAuthClientRepository,
     @Inject(APPLICATION_REPOSITORY) private readonly applicationRepo: IApplicationRepository,
     @Inject(AUTHORIZATION_CODE_REPOSITORY)
@@ -149,6 +151,7 @@ export class OauthTokenService {
       tenantId: authCode.tenantId,
       clientId: client.clientId,
       clientDbId: client.id,
+      applicationId: client.applicationId,
       scope: authCode.scope,
       sessionDbId,
       familyId: family.id!,
@@ -221,6 +224,12 @@ export class OauthTokenService {
 
     const user = await this.userRepo.findById(stored.userId);
 
+    const roles = await this.resolveApplicationRoles({
+      identityId: stored.userId,
+      tenantId: stored.tenantId,
+      applicationId: client.applicationId,
+    });
+
     const accessExpiresIn = this.config.get<string>('jwt.accessExpiresIn', '15m');
     const accessToken = this.signAccessToken({
       sub: stored.userId,
@@ -229,6 +238,7 @@ export class OauthTokenService {
       clientId: client.clientId,
       scope: stored.scope,
       sessionId: stored.sessionId,
+      roles,
     });
 
     const idToken = user
@@ -271,6 +281,7 @@ export class OauthTokenService {
     tenantId?: string;
     clientId: string;
     clientDbId: string;
+    applicationId: string;
     scope: string;
     sessionDbId: string;
     familyId: string;
@@ -285,6 +296,12 @@ export class OauthTokenService {
       expiresAt: new Date(Date.now() + refreshTtlSeconds * 1000),
     });
 
+    const roles = await this.resolveApplicationRoles({
+      identityId: params.userId,
+      tenantId: params.tenantId,
+      applicationId: params.applicationId,
+    });
+
     const accessExpiresIn = this.config.get<string>('jwt.accessExpiresIn', '15m');
     const accessToken = this.signAccessToken({
       sub: params.userId,
@@ -293,6 +310,7 @@ export class OauthTokenService {
       clientId: params.clientId,
       scope: params.scope,
       sessionId: params.sessionDbId,
+      roles,
     });
 
     const idToken = this.oidcService.buildIdToken({
@@ -316,6 +334,21 @@ export class OauthTokenService {
     };
   }
 
+  private async resolveApplicationRoles(params: {
+    identityId: string;
+    tenantId?: string;
+    applicationId: string;
+  }): Promise<string[]> {
+    if (!params.tenantId?.trim() || !params.applicationId) {
+      return [];
+    }
+    return this.applicationAccess.listActiveRoleCodes({
+      identityId: params.identityId,
+      tenantId: params.tenantId,
+      applicationId: params.applicationId,
+    });
+  }
+
   private signAccessToken(payload: {
     sub: string;
     email: string;
@@ -323,6 +356,7 @@ export class OauthTokenService {
     clientId: string;
     scope: string;
     sessionId: string;
+    roles: string[];
   }) {
     return this.jwtService.sign({
       sub: payload.sub,
@@ -331,6 +365,7 @@ export class OauthTokenService {
       clientId: payload.clientId,
       scope: payload.scope,
       sessionId: payload.sessionId,
+      roles: payload.roles,
       type: 'oauth',
     });
   }

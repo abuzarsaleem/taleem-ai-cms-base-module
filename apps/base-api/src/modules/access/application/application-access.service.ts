@@ -85,6 +85,36 @@ export class ApplicationAccessService {
     return this.toResponse(row);
   }
 
+  /**
+   * Active application role codes for an identity within a tenant.
+   * Used when issuing OAuth access tokens (e.g. ALUMNI_MEMBER / ALUMNI_ADMIN).
+   */
+  async listActiveRoleCodes(params: {
+    identityId: string;
+    tenantId: string;
+    applicationId: string;
+  }): Promise<string[]> {
+    const rows = await this.assignments
+      .createQueryBuilder('a')
+      .innerJoin(RoleEntity, 'r', 'r.id = a.role_id')
+      .select('DISTINCT r.role_code', 'role_code')
+      .where('a.tenant_id = :tenantId', { tenantId: params.tenantId })
+      .andWhere('a.identity_id = :identityId', { identityId: params.identityId })
+      .andWhere('a.application_id = :applicationId', {
+        applicationId: params.applicationId,
+      })
+      .andWhere('a.status = :status', { status: ApplicationAccessStatus.ACTIVE })
+      .getRawMany<{ role_code?: string; roleCode?: string }>();
+
+    return [
+      ...new Set(
+        rows
+          .map((row) => row.role_code ?? row.roleCode)
+          .filter((code): code is string => Boolean(code?.trim())),
+      ),
+    ];
+  }
+
   async create(tenantId: string, dto: CreateApplicationAccessDto, actorUserId: string) {
     await this.tenantContext.ensureTenantExists(tenantId);
     await this.assertMembershipActive(tenantId, dto.userId);
