@@ -7,7 +7,7 @@ export const HARDCODED_OAUTH_CLIENT = {
   clientType: 'CONFIDENTIAL',
   clientSecret: 'AlumniClientSecret2026!',
   status: 'ACTIVE',
-  redirectUris: ['http://localhost:3001/callback'],
+  redirectUris: ['https://taleem-ai-cms.vercel.app/home'],
 } as const
 
 export const DEFAULT_OAUTH_SCOPE = 'openid profile tenant.read'
