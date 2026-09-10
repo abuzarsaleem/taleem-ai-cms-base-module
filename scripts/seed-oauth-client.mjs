@@ -15,6 +15,7 @@ const redirectUris = (
     'http://localhost:5174/callback',
     'https://taleem-ai-cms.vercel.app/callback',
     'https://taleem-ai-cms.vercel.app/home',
+    'https://taleem-ai-admin.vercel.app/callback',
   ].join(',')
 )
   .split(',')

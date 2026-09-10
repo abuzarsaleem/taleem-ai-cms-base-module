@@ -2,6 +2,8 @@
 
 /** Production alumni portal: https://taleem-ai-cms.vercel.app/ */
 const PROD_ALUMNI_CALLBACK = 'https://taleem-ai-cms.vercel.app/callback'
+/** Production admin portal: https://taleem-ai-admin.vercel.app/ */
+const PROD_ADMIN_CALLBACK = 'https://taleem-ai-admin.vercel.app/callback'
 
 function resolveCallback(
   fromEnv: string | undefined,
@@ -20,13 +22,10 @@ const alumniCallback = resolveCallback(
   PROD_ALUMNI_CALLBACK,
 )
 
-/**
- * Admin portal host — set VITE_ADMIN_PORTAL_CALLBACK on Vercel.
- * Until then, production builds still need this env or Open Alumni Admin will fail.
- */
 const adminCallback = resolveCallback(
   import.meta.env.VITE_ADMIN_PORTAL_CALLBACK as string | undefined,
   'http://localhost:5174/callback',
+  PROD_ADMIN_CALLBACK,
 )
 
 export const HARDCODED_OAUTH_CLIENT = {
@@ -47,6 +46,7 @@ export const HARDCODED_OAUTH_CLIENT = {
     'http://localhost:5174/callback',
     PROD_ALUMNI_CALLBACK,
     'https://taleem-ai-cms.vercel.app/home',
+    PROD_ADMIN_CALLBACK,
   ].filter((uri, index, all) => all.indexOf(uri) === index),
 } as const
 
