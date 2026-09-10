@@ -1,4 +1,9 @@
-import { DEFAULT_OAUTH_SCOPE, HARDCODED_OAUTH_CLIENT } from '@/lib/oauth-client-config'
+import {
+  ALUMNI_PORTAL_TARGETS,
+  DEFAULT_OAUTH_SCOPE,
+  HARDCODED_OAUTH_CLIENT,
+  type AlumniPortalTarget,
+} from '@/lib/oauth-client-config'
 
 export type OAuthAuthorizeParams = {
   client_id: string
@@ -76,7 +81,9 @@ export function oauthSearchFromParams(params: OAuthAuthorizeParams) {
   return search.toString()
 }
 
-export function isCompleteOAuthParams(params: Partial<OAuthAuthorizeParams>): params is OAuthAuthorizeParams {
+export function isCompleteOAuthParams(
+  params: Partial<OAuthAuthorizeParams>,
+): params is OAuthAuthorizeParams {
   return Boolean(
     params.client_id &&
       params.redirect_uri &&
@@ -86,21 +93,23 @@ export function isCompleteOAuthParams(params: Partial<OAuthAuthorizeParams>): pa
   )
 }
 
-export function pickRedirectUri(redirectUris: string[], launchUrl?: string) {
-  if (launchUrl && redirectUris.includes(launchUrl)) return launchUrl
-  if (launchUrl) {
+export function pickRedirectUri(redirectUris: string[], preferred?: string) {
+  if (preferred && redirectUris.includes(preferred)) return preferred
+  if (preferred) {
     try {
-      const callback = new URL('/callback', launchUrl).toString()
+      const callback = new URL('/callback', preferred).toString()
       if (redirectUris.includes(callback)) return callback
     } catch {
-      /* ignore invalid launch URL */
+      /* ignore */
     }
   }
   return redirectUris[0]
 }
 
-export async function buildHardcodedOAuthConsentPath() {
-  const redirectUri = pickRedirectUri([...HARDCODED_OAUTH_CLIENT.redirectUris])
+/** Start OAuth consent for Alumni member or admin portal. */
+export async function buildAlumniPortalConsentPath(target: AlumniPortalTarget) {
+  const preferred = ALUMNI_PORTAL_TARGETS[target].redirectUri
+  const redirectUri = pickRedirectUri([...HARDCODED_OAUTH_CLIENT.redirectUris], preferred)
   if (!redirectUri) {
     throw new Error('No redirect URI configured for OAuth client')
   }
@@ -112,6 +121,80 @@ export async function buildHardcodedOAuthConsentPath() {
   })
 
   return `/oauth/consent?${oauthSearchFromParams(params)}`
+}
+
+/**
+ * Open Alumni member/admin portal without showing the consent UI.
+ * Consent is always approved; tokens are exchanged and the browser redirects.
+ */
+export async function silentLaunchAlumniPortal(
+  target: AlumniPortalTarget,
+  preferredTenantId?: string,
+) {
+  const { oauthService } = await import('@/services/oauth')
+
+  const preferred = ALUMNI_PORTAL_TARGETS[target].redirectUri
+  const redirectUri = pickRedirectUri([...HARDCODED_OAUTH_CLIENT.redirectUris], preferred)
+  if (!redirectUri) {
+    throw new Error('No redirect URI configured for OAuth client')
+  }
+
+  const params = await buildOAuthLaunchParams({
+    clientId: HARDCODED_OAUTH_CLIENT.clientId,
+    redirectUri,
+    scope: DEFAULT_OAUTH_SCOPE,
+  })
+
+  const preview = await oauthService.previewAuthorize(params)
+  const tenantId =
+    (preferredTenantId &&
+      preview.tenants.some((t) => t.tenantId === preferredTenantId) &&
+      preferredTenantId) ||
+    preview.tenants[0]?.tenantId
+
+  if (!tenantId) {
+    throw new Error('No entitled institution available for this application')
+  }
+
+  const pkce = loadOAuthSession()
+  if (!pkce?.codeVerifier) {
+    throw new Error('OAuth session expired. Sign in again.')
+  }
+
+  const consent = await oauthService.submitConsent({
+    client_id: params.client_id,
+    redirect_uri: params.redirect_uri,
+    scope: params.scope,
+    state: params.state,
+    code_challenge: params.code_challenge,
+    code_challenge_method: params.code_challenge_method,
+    tenant_id: tenantId,
+    approved: true,
+  })
+
+  const consentUrl = new URL(consent.redirectUri)
+  const code = consent.code ?? consentUrl.searchParams.get('code')
+  if (!code) {
+    throw new Error('No authorization code received')
+  }
+
+  const tokens = await oauthService.exchangeAuthorizationCode({
+    code,
+    redirect_uri: params.redirect_uri,
+    client_id: HARDCODED_OAUTH_CLIENT.clientId,
+    client_secret: HARDCODED_OAUTH_CLIENT.clientSecret,
+    code_verifier: pkce.codeVerifier,
+  })
+
+  clearOAuthSession()
+  window.location.assign(
+    buildRedirectWithTokenParams(params.redirect_uri, tokens, { state: params.state }),
+  )
+}
+
+/** @deprecated use buildAlumniPortalConsentPath */
+export async function buildHardcodedOAuthConsentPath() {
+  return buildAlumniPortalConsentPath('alumni')
 }
 
 export async function buildOAuthLaunchParams(input: {

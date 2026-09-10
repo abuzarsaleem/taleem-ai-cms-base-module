@@ -44,7 +44,10 @@ type NavGroup = { label: string; items: NavItem[] }
 const adminNav: NavGroup[] = [
   {
     label: 'Overview',
-    items: [{ to: '/tenant', label: 'Launcher', icon: LayoutGrid, end: true }],
+    items: [
+      { to: '/tenant', label: 'Launcher', icon: LayoutGrid, end: true },
+      { to: '/tenant/apps', label: 'Alumni apps', icon: AppWindow },
+    ],
   },
   {
     label: 'People',
@@ -72,6 +75,10 @@ const adminNav: NavGroup[] = [
 ]
 
 const memberNav: NavGroup[] = [
+  {
+    label: 'Applications',
+    items: [{ to: '/tenant/apps', label: 'Alumni apps', icon: AppWindow, end: true }],
+  },
   {
     label: 'Account',
     items: [{ to: '/tenant/account', label: 'Your profile', icon: UserRound, end: true }],

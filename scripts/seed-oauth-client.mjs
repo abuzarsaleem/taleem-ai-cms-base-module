@@ -8,7 +8,18 @@ const schemaRef = `"${schema}"`;
 const appCode = process.env.OAUTH_SEED_APP_CODE ?? 'ALUMNI';
 const clientId = process.env.OAUTH_SEED_CLIENT_ID ?? 'alumni-web';
 const clientSecret = process.env.OAUTH_SEED_CLIENT_SECRET ?? 'AlumniClientSecret2026!';
-const redirectUri = process.env.OAUTH_SEED_REDIRECT_URI ?? 'http://localhost:3001/callback';
+const redirectUris = (
+  process.env.OAUTH_SEED_REDIRECT_URIS ??
+  [
+    process.env.OAUTH_SEED_REDIRECT_URI ?? 'http://localhost:5173/callback',
+    'http://localhost:5174/callback',
+    'https://taleem-ai-cms.vercel.app/callback',
+    'https://taleem-ai-cms.vercel.app/home',
+  ].join(',')
+)
+  .split(',')
+  .map((u) => u.trim())
+  .filter(Boolean);
 const saltRounds = Number(process.env.BCRYPT_SALT_ROUNDS ?? 12);
 
 function buildClientConfig() {
@@ -87,7 +98,7 @@ async function run() {
         updated_at = now()
       RETURNING id, client_id, client_name
       `,
-      [app.id, clientId, 'Alumni Web App', secretHash, JSON.stringify([redirectUri])],
+      [app.id, clientId, 'Alumni Web App', secretHash, JSON.stringify(redirectUris)],
     );
 
     await client.query('COMMIT');
@@ -96,7 +107,7 @@ async function run() {
     console.log(`  Application: ${app.application_code} (${app.name})`);
     console.log(`  Client ID:   ${clientResult.rows[0].client_id}`);
     console.log(`  Client Name: ${clientResult.rows[0].client_name}`);
-    console.log(`  Redirect:    ${redirectUri}`);
+    console.log(`  Redirects:   ${redirectUris.join(', ')}`);
     if (!process.env.OAUTH_SEED_CLIENT_SECRET) {
       console.log(`  Secret:      ${clientSecret} (default — rotate in production)`);
     } else {

@@ -4,7 +4,11 @@ import { ApplicationIcon } from '@/components/application-icon'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { EmptyState, PageHeader } from '@/components/page-header'
+import { errorMessage } from '@/lib/auth'
+import { silentLaunchAlumniPortal } from '@/lib/oauth'
 import { useOwnTenant } from '@/lib/use-own-tenant'
+import { toast } from 'sonner'
+import { useState } from 'react'
 
 const cards = [
   {
@@ -67,6 +71,17 @@ const cards = [
 
 export function TenantLauncherPage() {
   const { tenant, loading, missing } = useOwnTenant()
+  const [launchBusy, setLaunchBusy] = useState<'alumni' | 'admin' | null>(null)
+
+  async function launchAlumni(target: 'alumni' | 'admin') {
+    setLaunchBusy(target)
+    try {
+      await silentLaunchAlumniPortal(target, tenant?.id)
+    } catch (error) {
+      toast.error(errorMessage(error))
+      setLaunchBusy(null)
+    }
+  }
 
   if (loading) {
     return (
@@ -117,7 +132,23 @@ export function TenantLauncherPage() {
                 <p className="mt-3 font-medium">{app.name}</p>
                 <p className="font-mono text-xs text-muted-foreground">{app.applicationCode}</p>
                 <div className="mt-4 flex flex-wrap gap-2">
-                  {app.launchUrl ? (
+                  {app.applicationCode === 'ALUMNI' ? (
+                    <>
+                      <Button
+                        disabled={launchBusy !== null}
+                        onClick={() => void launchAlumni('alumni')}
+                      >
+                        {launchBusy === 'alumni' ? 'Starting…' : 'Open Alumni Portal'}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        disabled={launchBusy !== null}
+                        onClick={() => void launchAlumni('admin')}
+                      >
+                        {launchBusy === 'admin' ? 'Starting…' : 'Open Alumni Admin'}
+                      </Button>
+                    </>
+                  ) : app.launchUrl ? (
                     <Button asChild>
                       <a href={app.launchUrl} target="_blank" rel="noreferrer">
                         Open application

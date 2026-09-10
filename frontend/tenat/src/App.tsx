@@ -8,6 +8,7 @@ import { OAuthAuthorizePage } from '@/pages/auth/oauth-authorize-page'
 import { OAuthConsentPage } from '@/pages/auth/oauth-consent-page'
 import { AcceptInvitationPage } from '@/pages/auth/accept-invitation-page'
 import { AccountPage } from '@/pages/account/account-page'
+import { MemberAppsPage } from '@/pages/tenant/member-apps-page'
 import { TenantLauncherPage } from '@/pages/tenant/launcher-page'
 import { TenantUsersPage } from '@/pages/tenant/users-page'
 import { TenantProfilePage } from '@/pages/tenant/profile-page'
@@ -54,6 +55,7 @@ export default function App() {
         <Route element={<RequireAuth />}>
           <Route element={<AppShell />}>
             <Route path="/tenant/account" element={<AccountPage />} />
+            <Route path="/tenant/apps" element={<MemberAppsPage />} />
             <Route element={<RequireTenantAdmin />}>
               <Route path="/tenant" element={<TenantLauncherPage />} />
               <Route path="/tenant/users" element={<TenantUsersPage />} />

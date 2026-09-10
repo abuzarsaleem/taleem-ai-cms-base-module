@@ -180,6 +180,7 @@ export function useAuth() {
 
 export const APP_HOME = '/tenant'
 export const APP_ACCOUNT = '/tenant/account'
+export const APP_MEMBER_APPS = '/tenant/apps'
 
 export function canUseTenantApp(role: Role | null | undefined) {
   return role === 'TENANT_ADMIN' || role === 'TENANT_MEMBER'
@@ -192,7 +193,7 @@ export function roleLabelFor(role: Role | null | undefined) {
 }
 
 export function homeFor(role?: Role | null) {
-  return role === 'TENANT_MEMBER' ? APP_ACCOUNT : APP_HOME
+  return role === 'TENANT_MEMBER' ? APP_MEMBER_APPS : APP_HOME
 }
 
 export function accountPathFor(_role?: Role) {

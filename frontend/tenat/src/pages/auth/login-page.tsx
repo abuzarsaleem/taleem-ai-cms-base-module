@@ -7,7 +7,6 @@ import { Input } from '@/components/ui/input'
 import { Field } from '@/components/field'
 import { PasswordInput } from '@/components/password-input'
 import { canUseTenantApp, errorMessage, homeFor, roleFrom, useAuth } from '@/lib/auth'
-import { buildHardcodedOAuthConsentPath } from '@/lib/oauth'
 
 export function LoginPage() {
   const navigate = useNavigate()
@@ -32,8 +31,7 @@ export function LoginPage() {
         return
       }
 
-      const consentPath = await buildHardcodedOAuthConsentPath()
-      navigate(consentPath)
+      navigate(homeFor('TENANT_MEMBER'))
     } catch (error) {
       toast.error(errorMessage(error))
     } finally {
@@ -65,8 +63,7 @@ export function LoginPage() {
             <CardHeader>
               <CardTitle>Sign in</CardTitle>
               <CardDescription>
-                Tenant administrators go straight to the workspace. Members authorize application access after
-                sign-in.
+                Tenant administrators manage the institution. Members open Alumni apps after sign-in.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
