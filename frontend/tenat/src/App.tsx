@@ -4,6 +4,8 @@ import { Toaster } from '@/components/ui/sonner'
 import { AppShell } from '@/components/app-shell'
 import { APP_ACCOUNT, APP_HOME, canUseTenantApp, roleFrom, useAuth } from '@/lib/auth'
 import { LoginPage } from '@/pages/auth/login-page'
+import { OAuthAuthorizePage } from '@/pages/auth/oauth-authorize-page'
+import { OAuthConsentPage } from '@/pages/auth/oauth-consent-page'
 import { AcceptInvitationPage } from '@/pages/auth/accept-invitation-page'
 import { AccountPage } from '@/pages/account/account-page'
 import { TenantLauncherPage } from '@/pages/tenant/launcher-page'
@@ -44,6 +46,8 @@ export default function App() {
       <Toaster />
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/oauth/authorize" element={<OAuthAuthorizePage />} />
+        <Route path="/oauth/consent" element={<OAuthConsentPage />} />
         <Route path="/accept-invitation" element={<AcceptInvitationPage />} />
         <Route path="/accept-invite" element={<AcceptInvitationPage />} />
 

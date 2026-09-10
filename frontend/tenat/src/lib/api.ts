@@ -13,6 +13,8 @@ const PUBLIC_AUTH_PATHS = new Set([
   '/auth/forgot-password',
   '/auth/reset-password',
   '/auth/verify-email',
+  '/oauth/token',
+  '/oauth/revoke',
 ])
 
 export class ApiError extends Error {

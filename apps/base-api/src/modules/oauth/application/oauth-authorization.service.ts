@@ -352,8 +352,6 @@ export class OauthAuthorizationService {
 
   }
 
-
-
   private async resolveApplicationCode(applicationId: string): Promise<string> {
 
     const application = await this.applicationRepo.findById(applicationId);

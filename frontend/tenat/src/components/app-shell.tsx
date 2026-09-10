@@ -105,6 +105,7 @@ function crumbsFor(pathname: string) {
     '/tenant/invitations': 'Invitations',
   }
   if (map[pathname]) return map[pathname]
+  if (pathname === '/oauth/consent') return 'Authorize'
   if (pathname === '/tenant/application-access/new') return 'Assign access'
   if (pathname.startsWith('/tenant/application-access/assignments/')) return 'Edit access'
   if (pathname.startsWith('/tenant/application-access/')) return 'Roles'

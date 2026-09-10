@@ -106,7 +106,7 @@ export function TenantLauncherPage() {
         <div>
           <h2 className="font-medium">Assigned applications</h2>
           <p className="text-sm text-muted-foreground">
-            Entitled applications from GET /tenant/:id. Assign member access from Application access.
+            Applications assigned to this institution through an active subscription.
           </p>
         </div>
         {tenant.applications?.length ? (
@@ -118,7 +118,7 @@ export function TenantLauncherPage() {
                 <p className="font-mono text-xs text-muted-foreground">{app.applicationCode}</p>
                 <div className="mt-4 flex flex-wrap gap-2">
                   {app.launchUrl ? (
-                    <Button variant="outline" asChild>
+                    <Button asChild>
                       <a href={app.launchUrl} target="_blank" rel="noreferrer">
                         Open application
                       </a>

@@ -30,6 +30,7 @@
       const infoEl = document.getElementById('info');
       const params = new URLSearchParams(window.location.search);
       const code = params.get('code');
+      const accessToken = params.get('access_token');
       const state = params.get('state');
       const oauthError = params.get('error');
 
@@ -41,8 +42,23 @@
 
       if (oauthError) {
         showError(errorEl, `Authorization denied: ${oauthError}`);
+      } else if (accessToken) {
+        infoEl.textContent = 'Tokens received on callback URL from Taleem tenant portal.';
+        infoEl.classList.remove('hidden');
+        document.getElementById('token-preview').textContent = JSON.stringify(
+          {
+            access_token: accessToken,
+            token_type: params.get('token_type'),
+            expires_in: params.get('expires_in'),
+            refresh_token: params.get('refresh_token'),
+            scope: params.get('scope'),
+            state: params.get('state'),
+          },
+          null,
+          2,
+        );
       } else if (!code) {
-        showError(errorEl, 'No authorization code in callback URL.');
+        showError(errorEl, 'No authorization code or access token in callback URL.');
       } else if (!pkce || pkce.state !== state) {
         showError(errorEl, 'PKCE session missing or state mismatch. Start again from /.');
       } else {

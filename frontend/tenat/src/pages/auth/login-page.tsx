@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Field } from '@/components/field'
 import { PasswordInput } from '@/components/password-input'
 import { canUseTenantApp, errorMessage, homeFor, roleFrom, useAuth } from '@/lib/auth'
+import { buildHardcodedOAuthConsentPath } from '@/lib/oauth'
 
 export function LoginPage() {
   const navigate = useNavigate()
@@ -25,7 +26,14 @@ export function LoginPage() {
         toast.error('This portal is for tenant administrators and members.')
         return
       }
-      navigate(homeFor(role))
+
+      if (role === 'TENANT_ADMIN') {
+        navigate(homeFor(role))
+        return
+      }
+
+      const consentPath = await buildHardcodedOAuthConsentPath()
+      navigate(consentPath)
     } catch (error) {
       toast.error(errorMessage(error))
     } finally {
@@ -56,7 +64,10 @@ export function LoginPage() {
           <Card className="portal-card">
             <CardHeader>
               <CardTitle>Sign in</CardTitle>
-              <CardDescription>Use your tenant administrator or member credentials.</CardDescription>
+              <CardDescription>
+                Tenant administrators go straight to the workspace. Members authorize application access after
+                sign-in.
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <Field label="Email">

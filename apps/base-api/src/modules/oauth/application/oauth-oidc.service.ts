@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { parseExpiresIn, parseScopeString } from './oauth-token.util.js';
+import { parseScopeString } from './oauth-token.util.js';
 
 /** Builds OIDC id_token claims when scope includes openid (no discovery/userinfo/jwks APIs). */
 @Injectable()
@@ -22,9 +22,7 @@ export class OauthOidcService {
       return undefined;
     }
 
-    const accessExpiresIn = this.config.get<string>('jwt.accessExpiresIn', '15m');
-    const now = Math.floor(Date.now() / 1000);
-
+    // JwtService.sign applies expiresIn from module config; do not set exp/iat here.
     return params.sign({
       iss: this.getIssuer(),
       sub: params.userId,
@@ -33,8 +31,6 @@ export class OauthOidcService {
       email_verified: params.emailVerified,
       name: params.fullName,
       tenant_id: params.tenantId,
-      iat: now,
-      exp: now + parseExpiresIn(accessExpiresIn),
     });
   }
 
