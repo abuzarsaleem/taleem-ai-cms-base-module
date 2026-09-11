@@ -77,6 +77,8 @@ export class ApplicationAccessResponseDto {
   @ApiProperty({ format: 'uuid' }) applicationId!: string;
   @ApiPropertyOptional() applicationCode?: string;
   @ApiPropertyOptional() applicationName?: string;
+  @ApiPropertyOptional({ description: 'Catalog launch URL for the application' })
+  launchUrl?: string;
   @ApiProperty({ format: 'uuid' }) roleId!: string;
   @ApiPropertyOptional() roleCode?: string;
   @ApiPropertyOptional() roleName?: string;
@@ -117,4 +119,30 @@ export class ListApplicationRolesQueryDto {
   @MaxLength(50)
   @Transform(({ value }) => (typeof value === 'string' ? value.toUpperCase() : value))
   applicationCode?: string;
+}
+
+export class MyApplicationsQueryDto {
+  @ApiPropertyOptional({
+    format: 'uuid',
+    description: 'Tenant to resolve (defaults to first ACTIVE membership)',
+  })
+  @IsOptional()
+  @Matches(UUID_LIKE, { message: 'tenantId must be a UUID' })
+  tenantId?: string;
+}
+
+/** Member-facing application card (entitled + assigned). */
+export class MyApplicationResponseDto {
+  @ApiProperty({ format: 'uuid' }) assignmentId!: string;
+  @ApiProperty({ format: 'uuid' }) tenantId!: string;
+  @ApiProperty({ format: 'uuid' }) applicationId!: string;
+  @ApiProperty() applicationCode!: string;
+  @ApiProperty() applicationName!: string;
+  @ApiPropertyOptional() launchUrl?: string;
+  @ApiPropertyOptional() logoUrl?: string;
+  @ApiProperty({ format: 'uuid' }) roleId!: string;
+  @ApiProperty() roleCode!: string;
+  @ApiPropertyOptional() roleName?: string;
+  @ApiProperty() isDefault!: boolean;
+  @ApiProperty({ enum: ApplicationAccessStatus }) status!: ApplicationAccessStatus;
 }

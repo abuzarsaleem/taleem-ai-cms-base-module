@@ -29,6 +29,7 @@ import {
   ApplicationAccessStatus,
   ApplicationPermissionEntity,
 } from '../infrastructure/persistence/access.entities.js';
+import { ApplicationStatus } from '../../subscription/domain/subscription.types.js';
 import type {
   ApplicationAccessQueryDto,
   ApplicationAccessResponseDto,
@@ -325,6 +326,7 @@ export class ApplicationAccessService {
       applicationId: row.applicationId,
       applicationCode: application?.applicationCode,
       applicationName: application?.name,
+      launchUrl: application?.launchUrl,
       roleId: row.roleId,
       roleCode: role?.roleCode,
       roleName: role?.roleName,
@@ -334,5 +336,98 @@ export class ApplicationAccessService {
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     };
+  }
+
+  /**
+   * Active assignments for the signed-in member whose tenant is entitled
+   * to the application. Used by the tenant workspace app launcher.
+   */
+  async listMineForTenant(
+    identityId: string,
+    preferredTenantId?: string,
+  ): Promise<
+    Array<{
+      assignmentId: string;
+      tenantId: string;
+      applicationId: string;
+      applicationCode: string;
+      applicationName: string;
+      launchUrl?: string;
+      logoUrl?: string;
+      roleId: string;
+      roleCode: string;
+      roleName?: string;
+      isDefault: boolean;
+      status: ApplicationAccessStatus;
+    }>
+  > {
+    let tenantId = preferredTenantId?.trim() || '';
+    if (!tenantId) {
+      const { data: memberships } = await this.memberships.findByUser(identityId, 1, 50);
+      const active = memberships.find((m) => m.membershipStatus === MembershipStatus.ACTIVE);
+      if (!active) return [];
+      tenantId = active.tenantId;
+    } else {
+      await this.assertMembershipActive(tenantId, identityId);
+    }
+
+    const rows = await this.assignments.find({
+      where: {
+        tenantId,
+        identityId,
+        status: ApplicationAccessStatus.ACTIVE,
+      },
+      order: { createdAt: 'ASC' },
+    });
+
+    const results: Array<{
+      assignmentId: string;
+      tenantId: string;
+      applicationId: string;
+      applicationCode: string;
+      applicationName: string;
+      launchUrl?: string;
+      logoUrl?: string;
+      roleId: string;
+      roleCode: string;
+      roleName?: string;
+      isDefault: boolean;
+      status: ApplicationAccessStatus;
+    }> = [];
+
+    for (const row of rows) {
+      const application = await this.applications.findById(row.applicationId);
+      if (!application || application.status !== ApplicationStatus.ACTIVE) continue;
+
+      const access = await this.entitlementPolicy.evaluateAccess(
+        tenantId,
+        application.applicationCode,
+      );
+      if (!access.entitled) continue;
+
+      const role = await this.roles.findOne({ where: { id: row.roleId } });
+      if (!role?.roleCode) continue;
+
+      results.push({
+        assignmentId: row.id,
+        tenantId: row.tenantId,
+        applicationId: row.applicationId,
+        applicationCode: application.applicationCode,
+        applicationName: application.name,
+        launchUrl: application.launchUrl,
+        logoUrl: application.logoUrl ?? undefined,
+        roleId: row.roleId,
+        roleCode: role.roleCode,
+        roleName: role.roleName,
+        isDefault: row.isDefault,
+        status: row.status,
+      });
+    }
+
+    results.sort((a, b) => {
+      if (a.isDefault !== b.isDefault) return a.isDefault ? -1 : 1;
+      return a.applicationName.localeCompare(b.applicationName);
+    });
+    return results;
   }
 }

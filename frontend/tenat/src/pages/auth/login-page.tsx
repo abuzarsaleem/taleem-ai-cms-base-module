@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Field } from '@/components/field'
 import { PasswordInput } from '@/components/password-input'
 import { canUseTenantApp, errorMessage, homeFor, roleFrom, useAuth } from '@/lib/auth'
+import { resolveMemberPostLoginPath } from '@/lib/member-launch'
 
 export function LoginPage() {
   const navigate = useNavigate()
@@ -31,7 +32,8 @@ export function LoginPage() {
         return
       }
 
-      navigate(homeFor('TENANT_MEMBER'))
+      const { path, launched } = await resolveMemberPostLoginPath(session.tenantId)
+      if (!launched) navigate(path)
     } catch (error) {
       toast.error(errorMessage(error))
     } finally {
@@ -63,7 +65,7 @@ export function LoginPage() {
             <CardHeader>
               <CardTitle>Sign in</CardTitle>
               <CardDescription>
-                Tenant administrators manage the institution. Members open Alumni apps after sign-in.
+                Tenant administrators manage the institution. Members open assigned applications after sign-in.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">

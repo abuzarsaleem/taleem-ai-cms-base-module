@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { EmptyState, PageHeader } from '@/components/page-header'
 import { errorMessage } from '@/lib/auth'
-import { silentLaunchAlumniPortal } from '@/lib/oauth'
+import { oauthClientForApplication } from '@/lib/oauth-client-config'
+import { silentLaunchApplication } from '@/lib/oauth'
 import { useOwnTenant } from '@/lib/use-own-tenant'
 import { toast } from 'sonner'
 import { useState } from 'react'
@@ -71,12 +72,26 @@ const cards = [
 
 export function TenantLauncherPage() {
   const { tenant, loading, missing } = useOwnTenant()
-  const [launchBusy, setLaunchBusy] = useState<'alumni' | 'admin' | null>(null)
+  const [launchBusy, setLaunchBusy] = useState<string | null>(null)
 
-  async function launchAlumni(target: 'alumni' | 'admin') {
-    setLaunchBusy(target)
+  async function openApplication(applicationCode: string, launchUrl?: string) {
+    setLaunchBusy(applicationCode)
     try {
-      await silentLaunchAlumniPortal(target, tenant?.id)
+      if (oauthClientForApplication(applicationCode)) {
+        await silentLaunchApplication({
+          applicationCode,
+          launchUrl,
+          preferredTenantId: tenant?.id,
+        })
+        return
+      }
+      if (launchUrl) {
+        window.open(launchUrl, '_blank', 'noopener,noreferrer')
+        setLaunchBusy(null)
+        return
+      }
+      toast.error('This application has no launch URL configured')
+      setLaunchBusy(null)
     } catch (error) {
       toast.error(errorMessage(error))
       setLaunchBusy(null)
@@ -121,46 +136,37 @@ export function TenantLauncherPage() {
         <div>
           <h2 className="font-medium">Assigned applications</h2>
           <p className="text-sm text-muted-foreground">
-            Applications assigned to this institution through an active subscription.
+            Applications assigned to this institution through an active subscription. Open uses each
+            application’s launch URL.
           </p>
         </div>
         {tenant.applications?.length ? (
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {tenant.applications.map((app) => (
-              <div key={app.applicationId} className="portal-card p-5">
-                <ApplicationIcon code={app.applicationCode} logoUrl={app.logoUrl} />
-                <p className="mt-3 font-medium">{app.name}</p>
-                <p className="font-mono text-xs text-muted-foreground">{app.applicationCode}</p>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {app.applicationCode === 'ALUMNI' ? (
-                    <>
-                      <Button
-                        disabled={launchBusy !== null}
-                        onClick={() => void launchAlumni('alumni')}
-                      >
-                        {launchBusy === 'alumni' ? 'Starting…' : 'Open Alumni Portal'}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        disabled={launchBusy !== null}
-                        onClick={() => void launchAlumni('admin')}
-                      >
-                        {launchBusy === 'admin' ? 'Starting…' : 'Open Alumni Admin'}
-                      </Button>
-                    </>
-                  ) : app.launchUrl ? (
-                    <Button asChild>
-                      <a href={app.launchUrl} target="_blank" rel="noreferrer">
-                        Open application
-                      </a>
-                    </Button>
+            {tenant.applications.map((app) => {
+              const oauth = oauthClientForApplication(app.applicationCode)
+              const label = oauth?.label || app.name
+              return (
+                <div key={app.applicationId} className="portal-card p-5">
+                  <ApplicationIcon code={app.applicationCode} logoUrl={app.logoUrl} />
+                  <p className="mt-3 font-medium">{label}</p>
+                  <p className="font-mono text-xs text-muted-foreground">{app.applicationCode}</p>
+                  {app.launchUrl ? (
+                    <p className="mt-1 truncate text-xs text-muted-foreground">{app.launchUrl}</p>
                   ) : null}
-                  <Button variant="outline" asChild>
-                    <Link to={`/tenant/application-access/${app.applicationId}`}>Manage access</Link>
-                  </Button>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <Button
+                      disabled={launchBusy !== null || (!oauth && !app.launchUrl)}
+                      onClick={() => void openApplication(app.applicationCode, app.launchUrl)}
+                    >
+                      {launchBusy === app.applicationCode ? 'Starting…' : `Open ${label}`}
+                    </Button>
+                    <Button variant="outline" asChild>
+                      <Link to={`/tenant/application-access/${app.applicationId}`}>Manage access</Link>
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         ) : (
           <p className="rounded-xl border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">

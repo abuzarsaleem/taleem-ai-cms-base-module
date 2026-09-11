@@ -37,11 +37,20 @@ export const applications: CatalogApplication[] = [
   {
     id: 'app_alumni',
     applicationCode: 'ALUMNI',
-    name: 'Alumni Network',
-    description: 'Alumni directory, engagement, and institutional network.',
+    name: 'Alumni Portal',
+    description: 'Member profile, directory, events, and announcements.',
     version: '1.2.0',
     status: ApplicationStatus.ACTIVE,
-    launchUrl: 'https://alumni.taleem.ai',
+    launchUrl: 'https://taleem-ai-cms.vercel.app',
+  },
+  {
+    id: 'app_alumni_admin',
+    applicationCode: 'ALUMNI_ADMIN',
+    name: 'Alumni Admin Portal',
+    description: 'Manage alumni registrations, members, events, and news.',
+    version: '1.0.0',
+    status: ApplicationStatus.ACTIVE,
+    launchUrl: 'https://taleem-ai-admin.vercel.app',
   },
   {
     id: 'app_admissions',

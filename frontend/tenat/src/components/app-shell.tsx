@@ -46,7 +46,7 @@ const adminNav: NavGroup[] = [
     label: 'Overview',
     items: [
       { to: '/tenant', label: 'Launcher', icon: LayoutGrid, end: true },
-      { to: '/tenant/apps', label: 'Alumni apps', icon: AppWindow },
+      { to: '/tenant/apps', label: 'Applications', icon: AppWindow },
     ],
   },
   {
@@ -77,7 +77,7 @@ const adminNav: NavGroup[] = [
 const memberNav: NavGroup[] = [
   {
     label: 'Applications',
-    items: [{ to: '/tenant/apps', label: 'Alumni apps', icon: AppWindow, end: true }],
+    items: [{ to: '/tenant/apps', label: 'Applications', icon: AppWindow, end: true }],
   },
   {
     label: 'Account',

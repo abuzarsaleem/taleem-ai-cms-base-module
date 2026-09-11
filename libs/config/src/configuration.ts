@@ -45,6 +45,8 @@ export default () => ({
       process.env.AUTH_EMAIL_VERIFICATION_URL_BASE ?? 'http://localhost:3000/verify-email',
     passwordResetUrlBase:
       process.env.AUTH_PASSWORD_RESET_URL_BASE ?? 'http://localhost:3000/reset-password',
+    /** Shared secret for CMS → IAM registration tenant catalog */
+    publicRegistrationApiKey: process.env.PUBLIC_REGISTRATION_API_KEY ?? '',
     social: {
       google: {
         clientId: process.env.GOOGLE_OAUTH_CLIENT_ID ?? '',

@@ -3,12 +3,14 @@ import {
   ClipboardList,
   GraduationCap,
   LayoutGrid,
+  Shield,
   type LucideIcon,
 } from 'lucide-react'
 import { cn, isDisplayableImageUrl } from '@/lib/utils'
 
 const ICONS: Record<string, LucideIcon> = {
   ALUMNI: GraduationCap,
+  ALUMNI_ADMIN: Shield,
   ADMISSIONS: ClipboardList,
   ACADEMICS: BookOpen,
 }

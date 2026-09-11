@@ -38,6 +38,9 @@ import {
   PlatformSubscriptionController,
 } from './presentation/platform-subscription.controllers.js';
 import { AuditEventController } from './presentation/audit-event.controller.js';
+import { PublicRegistrationController } from './presentation/public-registration.controller.js';
+import { RegistrationTenantsService } from './application/registration-tenants.service.js';
+import { ApiKeyGuard } from '../auth/infrastructure/guards/api-key.guard.js';
 
 const entities = [
   ApplicationEntity,
@@ -67,6 +70,7 @@ const repositories = [
     PlatformSubscriptionController,
     PlatformEntitlementController,
     AuditEventController,
+    PublicRegistrationController,
   ],
   providers: [
     AuditService,
@@ -76,6 +80,8 @@ const repositories = [
     TenantEntitlementService,
     TenantSubscriptionService,
     TenantAvailabilityService,
+    RegistrationTenantsService,
+    ApiKeyGuard,
     ...repositories,
   ],
   exports: [

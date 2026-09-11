@@ -30,6 +30,8 @@ import {
   ApplicationRoleResponseDto,
   CreateApplicationAccessDto,
   ListApplicationRolesQueryDto,
+  MyApplicationResponseDto,
+  MyApplicationsQueryDto,
   UpdateApplicationAccessDto,
 } from '../application/dto/access.dto.js';
 
@@ -95,7 +97,7 @@ export class TenantApplicationAccessController {
   @ApiOperation({
     summary: 'Assign application access to a tenant member',
     description:
-      'Requires ACTIVE membership + ACTIVE tenant entitlement. Use ALUMNI_MEMBER for member portal or ALUMNI_ADMIN for admin portal.',
+      'Requires ACTIVE membership + ACTIVE tenant entitlement. Assign ALUMNI_MEMBER on Alumni Portal, or ALUMNI_ADMIN on Alumni Admin Portal. Mark one assignment as default to auto-open after member sign-in.',
   })
   @ApiCreatedResponse({ type: ApplicationAccessResponseDto })
   create(
@@ -142,5 +144,26 @@ export class ApplicationAccessCatalogController {
   @ApiOkResponse({ type: [ApplicationPermissionResponseDto] })
   listPermissions(@Param('applicationId', ParseUUIDPipe) applicationId: string) {
     return this.service.listPermissionsForApplication(applicationId);
+  }
+}
+
+@ApiTags('My Applications')
+@ApiBearerAuth()
+@Controller('user/me/applications')
+export class MyApplicationsController {
+  constructor(private readonly service: ApplicationAccessService) {}
+
+  @Get()
+  @ApiOperation({
+    summary: 'List applications available to the signed-in member',
+    description:
+      'Returns ACTIVE assignments for the tenant that is also entitled to the application. Used by the member app launcher; default apps can be opened automatically via launchUrl.',
+  })
+  @ApiOkResponse({ type: [MyApplicationResponseDto] })
+  listMine(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query() query: MyApplicationsQueryDto,
+  ) {
+    return this.service.listMineForTenant(user.userId, query.tenantId);
   }
 }

@@ -333,7 +333,7 @@ export function TenantApplicationAccessFormPage() {
             checked={draft.isDefault}
             onCheckedChange={(value) => setDraft((current) => ({ ...current, isDefault: value === true }))}
           />
-          Default application for this member
+          Default application for this member (opens automatically after sign-in)
         </label>
 
         <div className="flex justify-end">

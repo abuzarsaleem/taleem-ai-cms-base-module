@@ -458,6 +458,7 @@ export type ApplicationAccessAssignment = {
   applicationId: string
   applicationCode?: string
   applicationName?: string
+  launchUrl?: string
   roleId: string
   roleCode?: string
   roleName?: string

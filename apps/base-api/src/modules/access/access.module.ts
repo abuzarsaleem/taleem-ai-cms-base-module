@@ -12,6 +12,7 @@ import {
 } from './infrastructure/persistence/access.entities.js';
 import {
   ApplicationAccessCatalogController,
+  MyApplicationsController,
   TenantApplicationAccessController,
 } from './presentation/application-access.controller.js';
 
@@ -27,7 +28,11 @@ import {
     SubscriptionModule,
     RbacModule,
   ],
-  controllers: [TenantApplicationAccessController, ApplicationAccessCatalogController],
+  controllers: [
+    TenantApplicationAccessController,
+    ApplicationAccessCatalogController,
+    MyApplicationsController,
+  ],
   providers: [ApplicationAccessService],
   exports: [ApplicationAccessService],
 })

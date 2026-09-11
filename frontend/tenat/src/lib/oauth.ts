@@ -1,8 +1,12 @@
 import {
   ALUMNI_PORTAL_TARGETS,
+  APP_OAUTH_CLIENTS,
   DEFAULT_OAUTH_SCOPE,
   HARDCODED_OAUTH_CLIENT,
+  callbackUriFromLaunchUrl,
+  oauthClientForApplication,
   type AlumniPortalTarget,
+  type LaunchableAppCode,
 } from '@/lib/oauth-client-config'
 
 export type OAuthAuthorizeParams = {
@@ -106,97 +110,6 @@ export function pickRedirectUri(redirectUris: string[], preferred?: string) {
   return redirectUris[0]
 }
 
-/** Start OAuth consent for Alumni member or admin portal. */
-export async function buildAlumniPortalConsentPath(target: AlumniPortalTarget) {
-  const preferred = ALUMNI_PORTAL_TARGETS[target].redirectUri
-  const redirectUri = pickRedirectUri([...HARDCODED_OAUTH_CLIENT.redirectUris], preferred)
-  if (!redirectUri) {
-    throw new Error('No redirect URI configured for OAuth client')
-  }
-
-  const params = await buildOAuthLaunchParams({
-    clientId: HARDCODED_OAUTH_CLIENT.clientId,
-    redirectUri,
-    scope: DEFAULT_OAUTH_SCOPE,
-  })
-
-  return `/oauth/consent?${oauthSearchFromParams(params)}`
-}
-
-/**
- * Open Alumni member/admin portal without showing the consent UI.
- * Consent is always approved; tokens are exchanged and the browser redirects.
- */
-export async function silentLaunchAlumniPortal(
-  target: AlumniPortalTarget,
-  preferredTenantId?: string,
-) {
-  const { oauthService } = await import('@/services/oauth')
-
-  const preferred = ALUMNI_PORTAL_TARGETS[target].redirectUri
-  const redirectUri = pickRedirectUri([...HARDCODED_OAUTH_CLIENT.redirectUris], preferred)
-  if (!redirectUri) {
-    throw new Error('No redirect URI configured for OAuth client')
-  }
-
-  const params = await buildOAuthLaunchParams({
-    clientId: HARDCODED_OAUTH_CLIENT.clientId,
-    redirectUri,
-    scope: DEFAULT_OAUTH_SCOPE,
-  })
-
-  const preview = await oauthService.previewAuthorize(params)
-  const tenantId =
-    (preferredTenantId &&
-      preview.tenants.some((t) => t.tenantId === preferredTenantId) &&
-      preferredTenantId) ||
-    preview.tenants[0]?.tenantId
-
-  if (!tenantId) {
-    throw new Error('No entitled institution available for this application')
-  }
-
-  const pkce = loadOAuthSession()
-  if (!pkce?.codeVerifier) {
-    throw new Error('OAuth session expired. Sign in again.')
-  }
-
-  const consent = await oauthService.submitConsent({
-    client_id: params.client_id,
-    redirect_uri: params.redirect_uri,
-    scope: params.scope,
-    state: params.state,
-    code_challenge: params.code_challenge,
-    code_challenge_method: params.code_challenge_method,
-    tenant_id: tenantId,
-    approved: true,
-  })
-
-  const consentUrl = new URL(consent.redirectUri)
-  const code = consent.code ?? consentUrl.searchParams.get('code')
-  if (!code) {
-    throw new Error('No authorization code received')
-  }
-
-  const tokens = await oauthService.exchangeAuthorizationCode({
-    code,
-    redirect_uri: params.redirect_uri,
-    client_id: HARDCODED_OAUTH_CLIENT.clientId,
-    client_secret: HARDCODED_OAUTH_CLIENT.clientSecret,
-    code_verifier: pkce.codeVerifier,
-  })
-
-  clearOAuthSession()
-  window.location.assign(
-    buildRedirectWithTokenParams(params.redirect_uri, tokens, { state: params.state }),
-  )
-}
-
-/** @deprecated use buildAlumniPortalConsentPath */
-export async function buildHardcodedOAuthConsentPath() {
-  return buildAlumniPortalConsentPath('alumni')
-}
-
 export async function buildOAuthLaunchParams(input: {
   clientId: string
   redirectUri: string
@@ -239,4 +152,117 @@ export function buildRedirectWithTokenParams(
   if (tokens.scope) url.searchParams.set('scope', tokens.scope)
   if (extra?.state) url.searchParams.set('state', extra.state)
   return url.toString()
+}
+
+/**
+ * Open an entitled application via OAuth using its catalog launch URL.
+ * Consent is always approved; tokens are exchanged and the browser redirects.
+ */
+export async function silentLaunchApplication(input: {
+  applicationCode: string
+  launchUrl?: string | null
+  preferredTenantId?: string
+}) {
+  const { oauthService } = await import('@/services/oauth')
+
+  const client = oauthClientForApplication(input.applicationCode)
+  if (!client) {
+    throw new Error(`No OAuth client configured for ${input.applicationCode}`)
+  }
+
+  const launchUrl = (input.launchUrl?.trim() || client.defaultLaunchUrl).replace(/\/$/, '')
+  const redirectUri = callbackUriFromLaunchUrl(launchUrl)
+
+  const params = await buildOAuthLaunchParams({
+    clientId: client.clientId,
+    redirectUri,
+    scope: DEFAULT_OAUTH_SCOPE,
+  })
+
+  const preview = await oauthService.previewAuthorize(params)
+  const tenantId =
+    (input.preferredTenantId &&
+      preview.tenants.some((t) => t.tenantId === input.preferredTenantId) &&
+      input.preferredTenantId) ||
+    preview.tenants[0]?.tenantId
+
+  if (!tenantId) {
+    throw new Error('No entitled institution available for this application')
+  }
+
+  const pkce = loadOAuthSession()
+  if (!pkce?.codeVerifier) {
+    throw new Error('OAuth session expired. Sign in again.')
+  }
+
+  const consent = await oauthService.submitConsent({
+    client_id: params.client_id,
+    redirect_uri: params.redirect_uri,
+    scope: params.scope,
+    state: params.state,
+    code_challenge: params.code_challenge,
+    code_challenge_method: params.code_challenge_method,
+    tenant_id: tenantId,
+    approved: true,
+  })
+
+  const consentUrl = new URL(consent.redirectUri)
+  const code = consent.code ?? consentUrl.searchParams.get('code')
+  if (!code) {
+    throw new Error('No authorization code received')
+  }
+
+  const tokens = await oauthService.exchangeAuthorizationCode({
+    code,
+    redirect_uri: params.redirect_uri,
+    client_id: client.clientId,
+    client_secret: client.clientSecret,
+    code_verifier: pkce.codeVerifier,
+  })
+
+  clearOAuthSession()
+  window.location.assign(
+    buildRedirectWithTokenParams(params.redirect_uri, tokens, { state: params.state }),
+  )
+}
+
+/** Open Alumni member/admin portal without showing the consent UI. */
+export async function silentLaunchAlumniPortal(
+  target: AlumniPortalTarget,
+  preferredTenantId?: string,
+) {
+  const code: LaunchableAppCode =
+    target === 'admin' ? 'ALUMNI_ADMIN' : 'ALUMNI'
+  return silentLaunchApplication({
+    applicationCode: code,
+    launchUrl: APP_OAUTH_CLIENTS[code].defaultLaunchUrl,
+    preferredTenantId,
+  })
+}
+
+/** Start OAuth consent for Alumni member or admin portal. */
+export async function buildAlumniPortalConsentPath(target: AlumniPortalTarget) {
+  const preferred = ALUMNI_PORTAL_TARGETS[target].redirectUri
+  const client =
+    target === 'admin' ? APP_OAUTH_CLIENTS.ALUMNI_ADMIN : APP_OAUTH_CLIENTS.ALUMNI
+  const redirectUri = pickRedirectUri(
+    [...HARDCODED_OAUTH_CLIENT.redirectUris, preferred],
+    preferred,
+  )
+  if (!redirectUri) {
+    throw new Error('No redirect URI configured for OAuth client')
+  }
+
+  const params = await buildOAuthLaunchParams({
+    clientId: client.clientId,
+    redirectUri,
+    scope: DEFAULT_OAUTH_SCOPE,
+  })
+
+  return `/oauth/consent?${oauthSearchFromParams(params)}`
+}
+
+/** @deprecated use buildAlumniPortalConsentPath */
+export async function buildHardcodedOAuthConsentPath() {
+  return buildAlumniPortalConsentPath('alumni')
 }
