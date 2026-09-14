@@ -407,6 +407,42 @@ export type TenantMembership = {
   isTenantAdmin: boolean
 }
 
+export type TenantDashboardPendingInvitations = {
+  admin: number
+  member: number
+  total: number
+}
+
+export type TenantDashboardProfileCounts = {
+  contacts: number
+  addresses: number
+  identifiers: number
+  assets: number
+}
+
+export type TenantDashboardSubscriptionSummary = {
+  total: number
+  active: number
+  inactive: number
+}
+
+export type TenantDashboardEntitlementSummary = {
+  total: number
+  active: number
+}
+
+export type TenantDashboard = {
+  tenantId: string
+  membersCount: number
+  pendingInvitations: TenantDashboardPendingInvitations
+  entitledApplicationsCount: number
+  profile: TenantDashboardProfileCounts
+  subscriptions: TenantDashboardSubscriptionSummary
+  entitlements: TenantDashboardEntitlementSummary
+  recentMembers: TenantMembership[]
+  recentInvitations: AdminInvitation[]
+}
+
 export type AdminInvitation = {
   id: string
   tenantId: string

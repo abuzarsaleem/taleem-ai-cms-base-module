@@ -21,6 +21,7 @@ import type {
   TenantConfiguration,
   TenantContact,
   TenantIdentifier,
+  TenantDashboard,
   TenantMembership,
   TenantSmtp,
   UserTenantMembership,
@@ -373,6 +374,12 @@ export const entitlementService = {
       method: 'PATCH',
       body,
     })
+  },
+}
+
+export const tenantDashboardService = {
+  get(tenantId: string) {
+    return apiRequest<TenantDashboard>(`/tenant/${tenantId}/dashboard`)
   },
 }
 
