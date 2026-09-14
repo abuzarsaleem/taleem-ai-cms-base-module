@@ -15,7 +15,7 @@ export function toInvitationResponse(props: UserTokenProps): TenantInvitationRes
     status: props.status as InvitationStatus,
     expiresAt: props.expiresAt,
     acceptedAt: props.usedAt,
-    invitedBy: props.invitedBy!,
+    invitedBy: props.invitedBy,
     createdAt: props.createdAt!,
   };
 }

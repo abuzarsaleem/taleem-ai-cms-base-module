@@ -139,6 +139,14 @@ const repositories = [
     InstitutionProfileService,
     ...repositories,
   ],
-  exports: [TenantService, TenantContextService, TENANT_REPOSITORY],
+  exports: [
+    TenantService,
+    TenantContextService,
+    TENANT_REPOSITORY,
+    TENANT_CONTACT_REPOSITORY,
+    TENANT_ADDRESS_REPOSITORY,
+    TENANT_IDENTIFIER_REPOSITORY,
+    TENANT_ASSET_REPOSITORY,
+  ],
 })
 export class TenantModule {}

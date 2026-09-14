@@ -3,6 +3,7 @@ import {
   ConflictException,
   Inject,
   Injectable,
+  Logger,
   forwardRef,
 } from '@nestjs/common';
 import { AuthService } from '../../auth/application/auth.service.js';
@@ -10,6 +11,7 @@ import { hashToken } from '../../auth/application/token.util.js';
 import { USER_TOKEN_REPOSITORY } from '../../auth/domain/user-token.repository.interface.js';
 import type { IUserTokenRepository } from '../../auth/domain/user-token.repository.interface.js';
 import { UserTokenStatus, UserTokenType } from '../../auth/domain/user-token.types.js';
+import { ApplicationAccessService } from '../../access/application/application-access.service.js';
 import { IDENTITY_REPOSITORY } from '../../identity/domain/identity.repository.interface.js';
 import type { IIdentityRepository } from '../../identity/domain/identity.repository.interface.js';
 import {
@@ -22,6 +24,8 @@ import { MembershipProvisionService } from './membership-provision.service.js';
 
 @Injectable()
 export class InvitationAcceptService {
+  private readonly logger = new Logger(InvitationAcceptService.name);
+
   constructor(
     @Inject(forwardRef(() => AuthService))
     private readonly authService: AuthService,
@@ -30,6 +34,8 @@ export class InvitationAcceptService {
     private readonly membershipRepo: ITenantMembershipRepository,
     @Inject(IDENTITY_REPOSITORY) private readonly userRepository: IIdentityRepository,
     private readonly provision: MembershipProvisionService,
+    @Inject(forwardRef(() => ApplicationAccessService))
+    private readonly applicationAccess: ApplicationAccessService,
   ) {}
 
   accept(dto: AcceptInvitationDto) {
@@ -88,6 +94,20 @@ export class InvitationAcceptService {
       status: UserTokenStatus.ACCEPTED,
       usedAt: new Date(),
     });
+
+    try {
+      await this.applicationAccess.applyPendingFromInvitationMetadata(
+        invitation.tenantId!,
+        user.id!,
+        invitation.metadata,
+        user.id!,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Failed to apply pending application access for invitation ${invitation.id}`,
+        error instanceof Error ? error.stack : undefined,
+      );
+    }
 
     return this.authService.issueTokensForUser(user.id!);
   }

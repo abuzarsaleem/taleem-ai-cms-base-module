@@ -30,10 +30,34 @@ import {
   ApplicationRoleResponseDto,
   CreateApplicationAccessDto,
   ListApplicationRolesQueryDto,
+  MembershipApplicationAccessQueryDto,
   MyApplicationResponseDto,
   MyApplicationsQueryDto,
   UpdateApplicationAccessDto,
 } from '../application/dto/access.dto.js';
+
+@ApiTags('Application Access')
+@ApiBearerAuth()
+@Controller('tenant/:tenantId/membership/:membershipId/application')
+export class TenantMembershipApplicationController {
+  constructor(private readonly service: ApplicationAccessService) {}
+
+  @Get()
+  @RequireTenantPermissions(TenantPermission.MEMBERS_READ)
+  @ApiOperation({
+    summary: 'List applications assigned to a tenant member',
+    description:
+      'Returns application access assignments for the membership’s identity within the tenant.',
+  })
+  @ApiOkResponse({ type: ApplicationAccessListResponseDto })
+  list(
+    @Param('tenantId', ParseUUIDPipe) tenantId: string,
+    @Param('membershipId', ParseUUIDPipe) membershipId: string,
+    @Query() query: MembershipApplicationAccessQueryDto,
+  ) {
+    return this.service.listForMembership(tenantId, membershipId, query);
+  }
+}
 
 @ApiTags('Application Access')
 @ApiBearerAuth()

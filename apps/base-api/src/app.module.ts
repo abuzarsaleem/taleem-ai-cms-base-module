@@ -11,6 +11,7 @@ import { RbacModule } from './modules/rbac/rbac.module.js';
 import { NotificationModule } from './modules/notification/notification.module.js';
 import { SubscriptionModule } from './modules/subscription/subscription.module.js';
 import { AccessModule } from './modules/access/access.module.js';
+import { DashboardModule } from './modules/dashboard/dashboard.module.js';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { AccessModule } from './modules/access/access.module.js';
     NotificationModule,
     SubscriptionModule,
     AccessModule,
+    DashboardModule,
   ],
 })
 export class AppModule {}

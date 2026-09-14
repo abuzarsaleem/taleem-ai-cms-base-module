@@ -1,6 +1,9 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import {
+  ArrayNotEmpty,
+  ArrayUnique,
+  IsArray,
   IsBoolean,
   IsEnum,
   IsOptional,
@@ -70,6 +73,19 @@ export class ApplicationAccessQueryDto extends PaginationQueryDto {
   status?: ApplicationAccessStatus;
 }
 
+/** Query for listing apps assigned to a specific membership (userId comes from the path). */
+export class MembershipApplicationAccessQueryDto extends PaginationQueryDto {
+  @ApiPropertyOptional({ format: 'uuid' })
+  @IsOptional()
+  @Matches(UUID_LIKE, { message: 'applicationId must be a UUID' })
+  applicationId?: string;
+
+  @ApiPropertyOptional({ enum: ApplicationAccessStatus })
+  @IsOptional()
+  @IsEnum(ApplicationAccessStatus)
+  status?: ApplicationAccessStatus;
+}
+
 export class ApplicationAccessResponseDto {
   @ApiProperty({ format: 'uuid' }) id!: string;
   @ApiProperty({ format: 'uuid' }) tenantId!: string;
@@ -110,6 +126,63 @@ export class ApplicationRoleResponseDto {
   @ApiProperty({ format: 'uuid' }) applicationId!: string;
   @ApiProperty() roleType!: string;
   @ApiProperty({ type: [String] }) permissionCodes!: string[];
+}
+
+export class CreateApplicationRoleDto {
+  @ApiProperty({ example: 'ALUMNI_MEMBER', maxLength: 50 })
+  @IsString()
+  @MaxLength(50)
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim().toUpperCase() : value))
+  roleCode!: string;
+
+  @ApiProperty({ example: 'Alumni Member', maxLength: 100 })
+  @IsString()
+  @MaxLength(100)
+  roleName!: string;
+
+  @ApiPropertyOptional({ maxLength: 255 })
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  description?: string;
+
+  @ApiPropertyOptional({
+    type: [String],
+    format: 'uuid',
+    description: 'Application permission IDs to grant on create',
+  })
+  @IsOptional()
+  @IsArray()
+  @ArrayUnique()
+  @Matches(UUID_LIKE, { each: true, message: 'each permissionId must be a UUID' })
+  permissionIds?: string[];
+}
+
+export class UpdateApplicationRoleDto {
+  @ApiPropertyOptional({ maxLength: 100 })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  roleName?: string;
+
+  @ApiPropertyOptional({ maxLength: 255 })
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  description?: string;
+}
+
+export class AddApplicationRolePermissionsDto {
+  @ApiProperty({
+    type: [String],
+    format: 'uuid',
+    description: 'Application permission IDs belonging to the same application',
+  })
+  @IsArray()
+  @ArrayNotEmpty()
+  @ArrayUnique()
+  @Matches(UUID_LIKE, { each: true, message: 'each permissionId must be a UUID' })
+  permissionIds!: string[];
 }
 
 export class ListApplicationRolesQueryDto {

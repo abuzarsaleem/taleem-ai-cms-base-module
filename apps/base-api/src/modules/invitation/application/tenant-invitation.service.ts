@@ -83,7 +83,12 @@ export class TenantInvitationService {
     );
   }
 
-  async create(tenantId: string, dto: CreateTenantInvitationDto, invitedBy: string) {
+  async create(
+    tenantId: string,
+    dto: CreateTenantInvitationDto,
+    invitedBy?: string,
+    options?: { metadata?: Record<string, unknown> },
+  ) {
     await this.tenantContext.ensureTenantExists(tenantId);
     const email = dto.email.toLowerCase();
     const role = dto.role;
@@ -102,6 +107,7 @@ export class TenantInvitationService {
       status: UserTokenStatus.PENDING,
       expiresAt,
       invitedBy,
+      metadata: options?.metadata,
     });
 
     const tenant = await this.tenantRepository.findById(tenantId);

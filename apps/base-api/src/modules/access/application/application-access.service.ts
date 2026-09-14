@@ -81,6 +81,30 @@ export class ApplicationAccessService {
     return paginatedResponse(data, total, page, limit);
   }
 
+  /**
+   * Applications assigned to a tenant member identified by membership id.
+   */
+  async listForMembership(
+    tenantId: string,
+    membershipId: string,
+    query: {
+      page?: number;
+      limit?: number;
+      applicationId?: string;
+      status?: ApplicationAccessStatus;
+    },
+  ) {
+    await this.tenantContext.ensureTenantExists(tenantId);
+    const membership = await this.memberships.findById(tenantId, membershipId);
+    if (!membership) {
+      throw new NotFoundException(`Membership '${membershipId}' not found`);
+    }
+    return this.list(tenantId, {
+      ...query,
+      userId: membership.userId,
+    });
+  }
+
   async get(tenantId: string, id: string) {
     const row = await this.requireAssignment(tenantId, id);
     return this.toResponse(row);
@@ -154,6 +178,92 @@ export class ApplicationAccessService {
     );
 
     return this.toResponse(saved);
+  }
+
+  /**
+   * Idempotent assign: creates ACTIVE access if missing; reactivates/updates role if present.
+   */
+  async ensureAccess(
+    tenantId: string,
+    dto: CreateApplicationAccessDto,
+    actorUserId?: string,
+  ) {
+    await this.tenantContext.ensureTenantExists(tenantId);
+    await this.assertMembershipActive(tenantId, dto.userId);
+    await this.assertEntitlementActive(tenantId, dto.applicationId);
+    const role = await this.requireApplicationRole(dto.roleId, dto.applicationId);
+
+    const existing = await this.assignments.findOne({
+      where: {
+        tenantId,
+        identityId: dto.userId,
+        applicationId: dto.applicationId,
+      },
+    });
+
+    const isDefault = dto.isDefault === true;
+    if (isDefault) {
+      await this.clearDefault(tenantId, dto.userId, existing?.id);
+    }
+
+    if (existing) {
+      existing.roleId = role.id;
+      existing.status = ApplicationAccessStatus.ACTIVE;
+      if (dto.isDefault !== undefined) existing.isDefault = isDefault;
+      if (actorUserId) existing.updatedBy = actorUserId;
+      return this.toResponse(await this.assignments.save(existing));
+    }
+
+    const saved = await this.assignments.save(
+      this.assignments.create({
+        tenantId,
+        identityId: dto.userId,
+        applicationId: dto.applicationId,
+        roleId: role.id,
+        status: ApplicationAccessStatus.ACTIVE,
+        isDefault,
+        createdBy: actorUserId,
+        updatedBy: actorUserId,
+      }),
+    );
+
+    return this.toResponse(saved);
+  }
+
+  /**
+   * Applies invitation metadata.pendingApplicationAccess after membership is ACTIVE.
+   */
+  async applyPendingFromInvitationMetadata(
+    tenantId: string,
+    userId: string,
+    metadata: Record<string, unknown> | undefined,
+    actorUserId?: string,
+  ) {
+    const pending = metadata?.pendingApplicationAccess;
+    if (!Array.isArray(pending) || pending.length === 0) return [];
+
+    const results = [];
+    for (const item of pending) {
+      if (!item || typeof item !== 'object') continue;
+      const row = item as Record<string, unknown>;
+      const applicationId = typeof row.applicationId === 'string' ? row.applicationId : null;
+      const roleId = typeof row.roleId === 'string' ? row.roleId : null;
+      if (!applicationId || !roleId) continue;
+
+      results.push(
+        await this.ensureAccess(
+          tenantId,
+          {
+            userId,
+            applicationId,
+            roleId,
+            isDefault: row.isDefault === true,
+          },
+          actorUserId,
+        ),
+      );
+    }
+    return results;
   }
 
   async update(

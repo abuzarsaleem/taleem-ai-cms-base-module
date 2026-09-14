@@ -11,7 +11,7 @@ export class TenantInvitationResponseDto {
   @ApiProperty({ enum: InvitationStatus }) status!: InvitationStatus;
   @ApiProperty() expiresAt!: Date;
   @ApiPropertyOptional() acceptedAt?: Date;
-  @ApiProperty({ format: 'uuid' }) invitedBy!: string;
+  @ApiPropertyOptional({ format: 'uuid' }) invitedBy?: string;
   @ApiProperty() createdAt!: Date;
 }
 
