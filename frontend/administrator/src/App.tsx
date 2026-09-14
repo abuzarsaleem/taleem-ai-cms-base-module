@@ -11,6 +11,7 @@ import { CreateTenantPage } from '@/pages/platform/create-tenant-page'
 import { TenantDetailPage } from '@/pages/platform/tenant-detail-page'
 import { ApplicationsPage } from '@/pages/platform/applications-page'
 import { ApplicationAccessPage } from '@/pages/platform/application-access-page'
+import { OAuthClientsPage } from '@/pages/platform/oauth-clients-page'
 import { PlatformContactsPage } from '@/pages/platform/contacts-page'
 import { PlatformContactFormPage } from '@/pages/platform/contact-form-page'
 import { PlatformAddressesPage } from '@/pages/platform/addresses-page'
@@ -48,6 +49,7 @@ export default function App() {
             <Route path="/platform/tenants/:tenantId" element={<TenantDetailPage />} />
             <Route path="/platform/applications" element={<ApplicationsPage />} />
             <Route path="/platform/applications/:applicationId" element={<ApplicationAccessPage />} />
+            <Route path="/platform/oauth-clients" element={<OAuthClientsPage />} />
             <Route path="/platform/contacts" element={<PlatformContactsPage />} />
             <Route path="/platform/contacts/new" element={<PlatformContactFormPage />} />
             <Route path="/platform/contacts/:tenantId/:id" element={<PlatformContactFormPage />} />

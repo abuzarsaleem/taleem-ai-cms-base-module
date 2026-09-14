@@ -8,7 +8,9 @@ import type {
   AssetType,
   AvailableApplication,
   CatalogApplication,
+  CreateOAuthClientResponse,
   Entitlement,
+  OAuthClient,
   EntitlementStatus,
   MembershipStatus,
   Paginated,
@@ -86,6 +88,22 @@ export const applicationAccessService = {
   },
   permissions(applicationId: string) {
     return apiRequest<ApplicationPermission[]>(`/application-access/applications/${applicationId}/permissions`)
+  },
+}
+
+export const oauthClientService = {
+  list(page = 1, limit = 100) {
+    return apiRequest<Paginated<OAuthClient>>(`/oauth/client?page=${page}&limit=${limit}`)
+  },
+  create(body: {
+    application_id: string
+    client_id: string
+    client_name: string
+    client_type: string
+    redirect_uris: string[]
+    client_secret?: string
+  }) {
+    return apiRequest<CreateOAuthClientResponse>('/oauth/client', { method: 'POST', body })
   },
 }
 

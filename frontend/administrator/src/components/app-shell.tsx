@@ -6,6 +6,7 @@ import {
   Gauge,
   Image,
   LayoutGrid,
+  Lock,
   LogOut,
   Mail,
   MapPin,
@@ -52,7 +53,10 @@ const nav: NavGroup[] = [
   },
   {
     label: 'Catalogue',
-    items: [{ to: '/platform/applications', label: 'Applications', icon: LayoutGrid }],
+    items: [
+      { to: '/platform/applications', label: 'Applications', icon: LayoutGrid },
+      { to: '/platform/oauth-clients', label: 'OAuth clients', icon: Lock },
+    ],
   },
   {
     label: 'Tenant configuration',
@@ -84,6 +88,7 @@ function crumbsFor(pathname: string) {
     '/platform/tenants': 'Tenants',
     '/platform/tenants/new': 'Add tenant',
     '/platform/applications': 'Applications',
+    '/platform/oauth-clients': 'OAuth clients',
     '/platform/contacts': 'Contacts',
     '/platform/addresses': 'Addresses',
     '/platform/identifiers': 'Identifiers',

@@ -364,6 +364,26 @@ export type ApplicationPermission = {
   description?: string
 }
 
+export const OAuthClientType = {
+  PUBLIC: 'PUBLIC',
+  CONFIDENTIAL: 'CONFIDENTIAL',
+} as const
+export type OAuthClientType = (typeof OAuthClientType)[keyof typeof OAuthClientType]
+
+export type OAuthClient = {
+  id: string
+  applicationId: string
+  clientId: string
+  clientName: string
+  clientType: OAuthClientType | string
+  status: string
+  redirectUris: string[]
+}
+
+export type CreateOAuthClientResponse = OAuthClient & {
+  clientSecret?: string
+}
+
 export type Subscription = {
   id: string
   tenantId: string

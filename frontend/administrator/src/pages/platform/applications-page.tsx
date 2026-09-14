@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { Copy, Lock } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -14,12 +15,13 @@ import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { ApplicationIcon } from '@/components/application-icon'
+import { CreateOAuthClientDialog } from '@/components/create-oauth-client-dialog'
 import { Field } from '@/components/field'
 import { PageHeader } from '@/components/page-header'
 import { StatusBadge } from '@/components/status-badge'
 import { errorMessage } from '@/lib/auth'
 import { isDisplayableImageUrl } from '@/lib/utils'
-import { ApplicationStatus, type CatalogApplication } from '@/lib/types'
+import { ApplicationStatus, type CatalogApplication, type CreateOAuthClientResponse } from '@/lib/types'
 import { applicationService } from '@/services/platform'
 
 const emptyDraft = {
@@ -46,6 +48,9 @@ export function ApplicationsPage() {
   const [busy, setBusy] = useState(false)
   const [loading, setLoading] = useState(true)
   const [rows, setRows] = useState<CatalogApplication[]>([])
+  const [oauthOpen, setOauthOpen] = useState(false)
+  const [oauthDefaultAppId, setOauthDefaultAppId] = useState<string | undefined>()
+  const [createdSecret, setCreatedSecret] = useState<CreateOAuthClientResponse | null>(null)
 
   async function load() {
     const result = await applicationService.list(1, 100)
@@ -145,7 +150,7 @@ export function ApplicationsPage() {
     }
   }
 
-  async function save() {
+  async function save(setupOAuth = false) {
     if (!draft.name.trim() || (!editingId && !draft.applicationCode.trim())) return
     setBusy(true)
     try {
@@ -166,7 +171,17 @@ export function ApplicationsPage() {
           launchUrl: optional(draft.launchUrl),
         })
         if (pendingLogo) await applyLogo(created.id, pendingLogo)
-        toast.success('Application registered')
+        await load()
+        setOpen(false)
+        resetLogo()
+        if (setupOAuth) {
+          setOauthDefaultAppId(created.id)
+          setOauthOpen(true)
+          toast.success('Application registered')
+        } else {
+          toast.success('Application registered')
+        }
+        return
       }
       setOpen(false)
       resetLogo()
@@ -177,6 +192,8 @@ export function ApplicationsPage() {
       setBusy(false)
     }
   }
+
+  const canSave = Boolean(draft.name.trim() && (editingId || draft.applicationCode.trim()))
 
   const previewUrl = logoPreview || logoUrl
 
@@ -260,13 +277,21 @@ export function ApplicationsPage() {
               />
             </Field>
           </div>
-          <DialogFooter>
-            <Button
-              disabled={busy || !draft.name.trim() || (!editingId && !draft.applicationCode.trim())}
-              onClick={() => void save()}
-            >
-              {busy ? 'Saving…' : editingId ? 'Save changes' : 'Save'}
-            </Button>
+          <DialogFooter className={editingId ? undefined : 'flex-col gap-2 sm:flex-row sm:justify-end'}>
+            {editingId ? (
+              <Button disabled={busy || !canSave} onClick={() => void save()}>
+                {busy ? 'Saving…' : 'Save changes'}
+              </Button>
+            ) : (
+              <>
+                <Button variant="outline" disabled={busy || !canSave} onClick={() => void save(false)}>
+                  {busy ? 'Saving…' : 'Save'}
+                </Button>
+                <Button disabled={busy || !canSave} onClick={() => void save(true)}>
+                  {busy ? 'Saving…' : 'Save & set up OAuth client'}
+                </Button>
+              </>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -303,6 +328,17 @@ export function ApplicationsPage() {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setOauthDefaultAppId(app.id)
+                          setOauthOpen(true)
+                        }}
+                      >
+                        <Lock />
+                        OAuth
+                      </Button>
                       <Button size="sm" variant="outline" asChild>
                         <Link to={`/platform/applications/${app.id}`}>Access</Link>
                       </Button>
@@ -341,6 +377,49 @@ export function ApplicationsPage() {
           </Table>
         </div>
       )}
+
+      <CreateOAuthClientDialog
+        open={oauthOpen}
+        onOpenChange={setOauthOpen}
+        applications={rows}
+        defaultApplicationId={oauthDefaultAppId}
+        onCreated={(client) => {
+          if (client.clientSecret) setCreatedSecret(client)
+          toast.success('OAuth client registered')
+        }}
+      />
+
+      <Dialog open={Boolean(createdSecret)} onOpenChange={(next) => !next && setCreatedSecret(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Save the client secret</DialogTitle>
+            <DialogDescription>
+              This secret is shown only once. Copy it now and store it securely for{' '}
+              <span className="font-mono">{createdSecret?.clientId}</span>.
+            </DialogDescription>
+          </DialogHeader>
+          {createdSecret?.clientSecret ? (
+            <div className="rounded-xl border border-border bg-muted/40 px-3 py-3 font-mono text-sm break-all">
+              {createdSecret.clientSecret}
+            </div>
+          ) : null}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (createdSecret?.clientSecret) {
+                  void navigator.clipboard.writeText(createdSecret.clientSecret)
+                  toast.success('Client secret copied')
+                }
+              }}
+            >
+              <Copy />
+              Copy secret
+            </Button>
+            <Button onClick={() => setCreatedSecret(null)}>Done</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

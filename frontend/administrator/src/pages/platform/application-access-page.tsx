@@ -70,7 +70,7 @@ export function ApplicationAccessPage() {
     return (
       <div className="flex flex-1 flex-col gap-6">
         <Skeleton className="h-36 rounded-3xl" />
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(18rem,0.85fr)]">
+        <div className="grid gap-6 xl:grid-cols-2">
           <Skeleton className="h-80 rounded-xl" />
           <Skeleton className="h-80 rounded-xl" />
         </div>
@@ -130,11 +130,11 @@ export function ApplicationAccessPage() {
         }
       />
 
-      <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(18rem,0.85fr)]">
+      <div className="grid items-start gap-6 xl:grid-cols-2">
         <section className="portal-card p-5 sm:p-6">
           <SectionTitle
             title="Roles"
-            description="Each role grants a subset of the permissions on the right. Adding a role later means picking a name and ticking those permissions."
+            description="Each role grants a subset of permissions. Tenant admins pick a role when granting member access."
           />
           {roles.length ? (
             <div className="space-y-2">
@@ -155,31 +155,17 @@ export function ApplicationAccessPage() {
           )}
         </section>
 
-        <section className="portal-card p-5 sm:p-6 xl:sticky xl:top-6">
+        <section className="portal-card p-5 sm:p-6">
           <SectionTitle
             title="Permissions"
             description="The capabilities available to compose into roles."
           />
           {permissions.length ? (
-            <ul className="space-y-2">
-              {permissions.map((permission) => (
-                <li
-                  key={permission.id}
-                  className="flex items-start gap-3 rounded-xl border border-border bg-background/70 px-3.5 py-3"
-                >
-                  <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/8 text-primary">
-                    <KeyRound className="size-3.5" />
-                  </span>
-                  <div className="min-w-0">
-                    <p className="font-medium">{permission.name}</p>
-                    <p className="font-mono text-[11px] text-muted-foreground">{permission.permissionCode}</p>
-                    {permission.description ? (
-                      <p className="mt-1 text-sm text-muted-foreground">{permission.description}</p>
-                    ) : null}
-                  </div>
-                </li>
+            <div className="space-y-2">
+              {permissions.map((permission, index) => (
+                <PermissionAccordion key={permission.id} permission={permission} defaultOpen={index === 0} />
               ))}
-            </ul>
+            </div>
           ) : (
             <p className="rounded-xl border border-dashed border-border px-4 py-10 text-center text-sm text-muted-foreground">
               No permissions are registered for this application yet.
@@ -277,6 +263,43 @@ function RoleAccordion({
             ))}
           </div>
         ) : null}
+      </div>
+    </details>
+  )
+}
+
+function PermissionAccordion({
+  permission,
+  defaultOpen,
+}: {
+  permission: ApplicationPermission
+  defaultOpen?: boolean
+}) {
+  const [open, setOpen] = useState(Boolean(defaultOpen))
+
+  return (
+    <details
+      className="group rounded-xl border border-border bg-background/70 open:bg-background"
+      open={open}
+      onToggle={(event) => setOpen(event.currentTarget.open)}
+    >
+      <summary className="flex cursor-pointer list-none items-center gap-3 px-4 py-3.5 [&::-webkit-details-marker]:hidden">
+        <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/8 text-primary">
+          <KeyRound className="size-3.5" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block font-medium">{permission.name}</span>
+          <span className="block font-mono text-[11px] text-muted-foreground">{permission.permissionCode}</span>
+        </span>
+        <ChevronDown className="size-4 shrink-0 text-muted-foreground transition-transform duration-200 group-open:rotate-180" />
+      </summary>
+
+      <div className="border-t border-border px-4 py-4">
+        {permission.description ? (
+          <p className="text-sm text-muted-foreground">{permission.description}</p>
+        ) : (
+          <p className="text-sm text-muted-foreground">No description provided for this permission.</p>
+        )}
       </div>
     </details>
   )

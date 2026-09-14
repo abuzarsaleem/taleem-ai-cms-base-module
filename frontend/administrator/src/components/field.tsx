@@ -16,14 +16,14 @@ export function Field({
   required?: boolean
 }) {
   return (
-    <div className={cn('relative grid gap-1', className)}>
+    <div className={cn('grid gap-1.5', className)}>
       <Label>
         {label}
         {required ? <span className="text-destructive"> *</span> : null}
       </Label>
       {children}
       {hint ? (
-        <p className="absolute top-full left-0 mt-1 line-clamp-1 text-xs leading-4 text-muted-foreground" title={hint}>
+        <p className="text-xs leading-4 text-muted-foreground" title={hint}>
           {hint}
         </p>
       ) : null}

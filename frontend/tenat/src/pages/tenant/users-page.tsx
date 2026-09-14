@@ -1,16 +1,18 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import { CreateMembershipDialog } from '@/components/create-membership-dialog'
+import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { DataTable } from '@/components/data-table'
 import { EmptyState, PageHeader } from '@/components/page-header'
 import { StatusBadge } from '@/components/status-badge'
 import { errorMessage, useAuth } from '@/lib/auth'
 import { ApiError } from '@/lib/api'
 import { formatInvitationInstant } from '@/lib/invitation'
+import { initialsFromName } from '@/lib/utils'
 import {
   MembershipRole,
   MembershipStatus,
@@ -27,8 +29,9 @@ export function TenantUsersPage() {
   const [members, setMembers] = useState<TenantMembership[]>([])
   const [loading, setLoading] = useState(true)
   const [missing, setMissing] = useState(!tenantId)
-  const [busyId, setBusyId] = useState<string | null>(null)
-  const [createOpen, setCreateOpen] = useState(false)
+  const [query, setQuery] = useState('')
+  const [roleFilter, setRoleFilter] = useState('all')
+  const [statusFilter, setStatusFilter] = useState('all')
 
   const reload = useCallback(async () => {
     if (!tenantId) {
@@ -54,22 +57,19 @@ export function TenantUsersPage() {
       .finally(() => setLoading(false))
   }, [reload])
 
-  const activeAdmins = members.filter(
-    (row) => row.isTenantAdmin && row.status === MembershipStatus.ACTIVE,
-  ).length
-
-  async function run(id: string, action: () => Promise<unknown>, success: string) {
-    setBusyId(id)
-    try {
-      await action()
-      toast.success(success)
-      await reload()
-    } catch (error) {
-      toast.error(errorMessage(error))
-    } finally {
-      setBusyId(null)
-    }
-  }
+  const filtered = useMemo(() => {
+    const needle = query.trim().toLowerCase()
+    return members.filter((row) => {
+      if (roleFilter === MembershipRole.TENANT_ADMIN && !row.isTenantAdmin) return false
+      if (roleFilter === MembershipRole.TENANT_MEMBER && row.isTenantAdmin) return false
+      if (statusFilter !== 'all' && row.status !== statusFilter) return false
+      if (!needle) return true
+      return (
+        row.userFullName?.toLowerCase().includes(needle) ||
+        row.userEmail.toLowerCase().includes(needle)
+      )
+    })
+  }, [members, query, roleFilter, statusFilter])
 
   if (loading) {
     return (
@@ -94,109 +94,76 @@ export function TenantUsersPage() {
       <PageHeader
         eyebrow={tenant.tenantCode}
         title="Members"
-        description="Create members with credentials or invite them by email. Promote members to tenant administrator here."
+        description="People who belong to this institution. Open a profile to manage roles, status, and application access."
+        toolbar={
+          <>
+            <Input
+              className="max-w-sm"
+              placeholder="Search by name or email"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+            <Select value={roleFilter} onValueChange={setRoleFilter}>
+              <SelectTrigger className="w-[10.5rem]">
+                <SelectValue placeholder="All roles" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All roles</SelectItem>
+                <SelectItem value={MembershipRole.TENANT_ADMIN}>Administrators</SelectItem>
+                <SelectItem value={MembershipRole.TENANT_MEMBER}>Members</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[10.5rem]">
+                <SelectValue placeholder="All statuses" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All statuses</SelectItem>
+                <SelectItem value={MembershipStatus.ACTIVE}>Active</SelectItem>
+                <SelectItem value={MembershipStatus.SUSPENDED}>Suspended</SelectItem>
+                <SelectItem value={MembershipStatus.INACTIVE}>Inactive</SelectItem>
+              </SelectContent>
+            </Select>
+          </>
+        }
         actions={
           <>
             <Button variant="outline" asChild>
-              <Link to="/tenant/invitations">Invite by email</Link>
+              <Link to="/tenant/invitations">Pending invitations</Link>
             </Button>
-            <Button onClick={() => setCreateOpen(true)}>Create member</Button>
+            <Button asChild>
+              <Link to="/tenant/users/new">Add member</Link>
+            </Button>
           </>
         }
       />
-      <CreateMembershipDialog
-        open={createOpen}
-        onOpenChange={setCreateOpen}
-        title="Create tenant member"
-        description="Provisions the account and adds an active tenant member membership. The person can sign in immediately with these credentials."
-        submitLabel="Create member"
-        onSubmit={async (body) => {
-          await membershipService.create(tenantId, body)
-          toast.success('Member created')
-          await reload()
-        }}
-      />
+
       <div className="portal-card p-5 sm:p-6">
         <DataTable
           columns={['Member', 'Role', 'Status', 'Joined', '']}
-          empty="No members yet. Create one with credentials or invite by email."
-          rows={members.map((row) => {
-            const lastAdmin = row.isTenantAdmin && activeAdmins <= 1
-            const busy = busyId === row.id
+          empty="No members match your filters."
+          rows={filtered.map((row) => {
+            const displayName = row.userFullName || row.userEmail
             const self = row.userId === currentUserId
             return [
-              <div key={`${row.id}-who`}>
-                <p className="font-medium">{row.userFullName || '—'}</p>
-                <p className="text-xs text-muted-foreground">
-                  {row.userEmail}
-                  {self ? ' · you' : ''}
-                </p>
+              <div key={`${row.id}-who`} className="flex items-center gap-3">
+                <Avatar size="sm">
+                  <AvatarFallback>{initialsFromName(displayName)}</AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="font-medium">{displayName}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {row.userEmail}
+                    {self ? ' · you' : ''}
+                  </p>
+                </div>
               </div>,
-              <Select
-                key={`${row.id}-role`}
-                value={row.isTenantAdmin ? MembershipRole.TENANT_ADMIN : MembershipRole.TENANT_MEMBER}
-                disabled={busy || (lastAdmin && row.isTenantAdmin)}
-                onValueChange={(value) => {
-                  const isTenantAdmin = value === MembershipRole.TENANT_ADMIN
-                  if (isTenantAdmin === row.isTenantAdmin) return
-                  void run(
-                    row.id,
-                    () => membershipService.update(tenantId, row.id, { isTenantAdmin }),
-                    isTenantAdmin ? 'Promoted to tenant administrator' : 'Changed to tenant member',
-                  )
-                }}
-              >
-                <SelectTrigger size="sm" className="w-[11.5rem]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={MembershipRole.TENANT_ADMIN}>Tenant administrator</SelectItem>
-                  <SelectItem value={MembershipRole.TENANT_MEMBER}>Tenant member</SelectItem>
-                </SelectContent>
-              </Select>,
+              row.isTenantAdmin ? 'Tenant administrator' : 'Tenant member',
               <StatusBadge key={`${row.id}-status`} value={row.status} />,
               formatInvitationInstant(row.joinedAt),
-              <div key={`${row.id}-actions`} className="flex justify-end gap-2">
-                {row.status === MembershipStatus.SUSPENDED ? (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={busy}
-                    onClick={() =>
-                      void run(
-                        row.id,
-                        () => membershipService.update(tenantId, row.id, { status: MembershipStatus.ACTIVE }),
-                        'Membership activated',
-                      )
-                    }
-                  >
-                    Activate
-                  </Button>
-                ) : (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={busy || lastAdmin}
-                    onClick={() =>
-                      void run(
-                        row.id,
-                        () => membershipService.update(tenantId, row.id, { status: MembershipStatus.SUSPENDED }),
-                        'Membership suspended',
-                      )
-                    }
-                  >
-                    Suspend
-                  </Button>
-                )}
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={busy || lastAdmin}
-                  onClick={() =>
-                    void run(row.id, () => membershipService.remove(tenantId, row.id), 'Member removed')
-                  }
-                >
-                  Remove
+              <div key={`${row.id}-actions`} className="flex justify-end">
+                <Button size="sm" variant="outline" asChild>
+                  <Link to={`/tenant/users/${row.id}`}>View details</Link>
                 </Button>
               </div>,
             ]

@@ -11,6 +11,8 @@ import { AccountPage } from '@/pages/account/account-page'
 import { MemberAppsPage } from '@/pages/tenant/member-apps-page'
 import { TenantLauncherPage } from '@/pages/tenant/launcher-page'
 import { TenantUsersPage } from '@/pages/tenant/users-page'
+import { TenantCreateMemberPage } from '@/pages/tenant/create-member-page'
+import { TenantMemberProfilePage } from '@/pages/tenant/member-profile-page'
 import { TenantProfilePage } from '@/pages/tenant/profile-page'
 import { TenantContactsPage } from '@/pages/tenant/contacts-page'
 import { TenantContactFormPage } from '@/pages/tenant/contact-form-page'
@@ -25,6 +27,7 @@ import { TenantAssetFormPage } from '@/pages/tenant/asset-form-page'
 import { TenantMemberInvitationsPage } from '@/pages/tenant/member-invitations-page'
 import { TenantApplicationAccessPage } from '@/pages/tenant/application-access-page'
 import { TenantApplicationAccessAppPage } from '@/pages/tenant/application-access-app-page'
+import { TenantApplicationAccessRolesPage } from '@/pages/tenant/application-access-roles-page'
 import { TenantApplicationAccessFormPage } from '@/pages/tenant/application-access-form-page'
 
 function RequireAuth() {
@@ -59,11 +62,17 @@ export default function App() {
             <Route element={<RequireTenantAdmin />}>
               <Route path="/tenant" element={<TenantLauncherPage />} />
               <Route path="/tenant/users" element={<TenantUsersPage />} />
+              <Route path="/tenant/users/new" element={<TenantCreateMemberPage />} />
+              <Route path="/tenant/users/:membershipId" element={<TenantMemberProfilePage />} />
               <Route path="/tenant/application-access" element={<TenantApplicationAccessPage />} />
               <Route path="/tenant/application-access/new" element={<TenantApplicationAccessFormPage />} />
               <Route
                 path="/tenant/application-access/assignments/:assignmentId"
                 element={<TenantApplicationAccessFormPage />}
+              />
+              <Route
+                path="/tenant/application-access/:applicationId/roles"
+                element={<TenantApplicationAccessRolesPage />}
               />
               <Route path="/tenant/application-access/:applicationId" element={<TenantApplicationAccessAppPage />} />
               <Route path="/tenant/profile" element={<TenantProfilePage />} />

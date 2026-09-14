@@ -112,10 +112,13 @@ function crumbsFor(pathname: string) {
     '/tenant/invitations': 'Invitations',
   }
   if (map[pathname]) return map[pathname]
+  if (pathname === '/tenant/users/new') return 'Add member'
+  if (pathname.startsWith('/tenant/users/')) return 'Member profile'
   if (pathname === '/oauth/consent') return 'Authorize'
   if (pathname === '/tenant/application-access/new') return 'Assign access'
   if (pathname.startsWith('/tenant/application-access/assignments/')) return 'Edit access'
-  if (pathname.startsWith('/tenant/application-access/')) return 'Roles'
+  if (pathname.endsWith('/roles')) return 'Roles & permissions'
+  if (pathname.startsWith('/tenant/application-access/')) return 'Application'
   if (pathname === '/tenant/contacts/new') return 'Add contact'
   if (pathname.startsWith('/tenant/contacts/')) return 'Edit contact'
   if (pathname === '/tenant/addresses/new') return 'Add address'
