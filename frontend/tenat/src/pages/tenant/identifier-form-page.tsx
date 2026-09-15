@@ -39,6 +39,8 @@ function TenantIdentifierForm({ tenantId }: { tenantId: string }) {
       .finally(() => setLoading(false))
   }, [id, isEdit, navigate, tenantId])
 
+  const validationError = validateIdentifier(draft)
+
   async function submit() {
     const error = validateIdentifier(draft)
     if (error) {
@@ -71,7 +73,7 @@ function TenantIdentifierForm({ tenantId }: { tenantId: string }) {
     >
       <IdentifierFields value={draft} onChange={setDraft} showVerified={isEdit} />
       <div className="flex justify-end">
-        <Button disabled={busy} onClick={() => void submit()}>
+        <Button disabled={busy || Boolean(validationError)} onClick={() => void submit()}>
           {busy ? 'Saving…' : isEdit ? 'Save identifier' : 'Add identifier'}
         </Button>
       </div>

@@ -50,6 +50,8 @@ export function TenantIdentifiersPanel({
     }
   }
 
+  const validationError = validateIdentifier(draft)
+
   async function save() {
     const error = validateIdentifier(draft)
     if (error) {
@@ -86,7 +88,7 @@ export function TenantIdentifiersPanel({
           </DialogHeader>
           <IdentifierFields value={draft} onChange={setDraft} showVerified={Boolean(editingId)} />
           <DialogFooter>
-            <Button disabled={busy || !draft.identifierValue.trim()} onClick={() => void save()}>
+            <Button disabled={busy || Boolean(validationError)} onClick={() => void save()}>
               {busy ? 'Saving…' : 'Save identifier'}
             </Button>
           </DialogFooter>

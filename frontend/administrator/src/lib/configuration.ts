@@ -59,10 +59,34 @@ export function configurationDraftFrom(row: TenantConfiguration): ConfigurationD
   }
 }
 
+export function configurationTimezoneError(draft: ConfigurationDraft): string | null {
+  const value = draft.timezone.trim()
+  if (!value) return 'Timezone is required.'
+  if (value.length > 100) return 'Timezone must be 100 characters or fewer'
+  return null
+}
+
+export function configurationLocaleError(draft: ConfigurationDraft): string | null {
+  const value = draft.locale.trim()
+  if (!value) return 'Locale is required.'
+  if (value.length > 20) return 'Locale must be 20 characters or fewer'
+  return null
+}
+
+export function configurationDateFormatError(draft: ConfigurationDraft): string | null {
+  const value = draft.dateFormat.trim()
+  if (!value) return 'Date format is required.'
+  if (value.length > 30) return 'Date format must be 30 characters or fewer'
+  return null
+}
+
 export function validateConfiguration(draft: ConfigurationDraft) {
-  if (draft.timezone.trim().length > 100) return 'Timezone must be 100 characters or fewer'
-  if (draft.locale.trim().length > 20) return 'Locale must be 20 characters or fewer'
-  if (draft.dateFormat.trim().length > 30) return 'Date format must be 30 characters or fewer'
+  const timezoneError = configurationTimezoneError(draft)
+  if (timezoneError) return timezoneError
+  const localeError = configurationLocaleError(draft)
+  if (localeError) return localeError
+  const dateFormatError = configurationDateFormatError(draft)
+  if (dateFormatError) return dateFormatError
   if (draft.currencyCode.trim() && draft.currencyCode.trim().length > 3) {
     return 'Currency code must be 3 characters'
   }
@@ -97,9 +121,9 @@ function uuidOrUndefined(value: string) {
 
 export function configurationPayload(draft: ConfigurationDraft) {
   return {
-    timezone: optionalText(draft.timezone) ?? 'Asia/Karachi',
-    locale: optionalText(draft.locale) ?? 'en-PK',
-    dateFormat: optionalText(draft.dateFormat),
+    timezone: draft.timezone.trim(),
+    locale: draft.locale.trim(),
+    dateFormat: draft.dateFormat.trim(),
     currencyCode: optionalText(draft.currencyCode) ?? 'PKR',
     brandingName: optionalText(draft.brandingName),
     logoAssetId: uuidOrUndefined(draft.logoAssetId),

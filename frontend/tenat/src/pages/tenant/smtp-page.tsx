@@ -43,6 +43,8 @@ function TenantSmtpForm({ tenantId }: { tenantId: string }) {
       .finally(() => setLoading(false))
   }, [tenantId])
 
+  const validationError = validateSmtp(draft)
+
   async function submit() {
     const error = validateSmtp(draft)
     if (error) {
@@ -72,7 +74,7 @@ function TenantSmtpForm({ tenantId }: { tenantId: string }) {
         title="SMTP"
         description="Host is required. Store a secret reference, not a password."
         actions={
-          <Button disabled={busy} onClick={() => void submit()}>
+          <Button disabled={busy || Boolean(validationError)} onClick={() => void submit()}>
             {busy ? 'Saving…' : exists ? 'Save SMTP' : 'Add SMTP'}
           </Button>
         }

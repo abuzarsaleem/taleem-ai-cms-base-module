@@ -41,6 +41,33 @@ function optional(value: string) {
 }
 
 const EMAIL = EMAIL_PATTERN
+const OPTIONAL_PHONE_CHARS = /^[\d+\s().-]+$/
+export const INVALID_PHONE_MESSAGE = 'Please enter a valid phone number.'
+
+function optionalPhoneError(value: string): string | null {
+  const trimmed = value.trim()
+  if (!trimmed) return null
+  if (!OPTIONAL_PHONE_CHARS.test(trimmed)) return INVALID_PHONE_MESSAGE
+  const digits = trimmed.replace(/\D/g, '')
+  if (digits.length < 7 || digits.length > 15) return INVALID_PHONE_MESSAGE
+  return null
+}
+
+export function contactMobilePhoneError(draft: ContactDraft): string | null {
+  return optionalPhoneError(draft.mobilePhone)
+}
+
+export function contactWhatsappNumberError(draft: ContactDraft): string | null {
+  return optionalPhoneError(draft.whatsappNumber)
+}
+
+export function contactEmailError(draft: ContactDraft): string | null {
+  const email = draft.email.trim()
+  if (!email) return 'Email is required.'
+  if (!EMAIL.test(email)) return 'Email must be a valid address'
+  if (email.length > 255) return 'Email must be 255 characters or fewer'
+  return null
+}
 
 export function validateContact(draft: ContactDraft): string | null {
   if (!draft.contactType) return 'Contact type is required'
@@ -52,13 +79,14 @@ export function validateContact(draft: ContactDraft): string | null {
   if (draft.designation.trim().length > 150) return 'Designation must be 150 characters or fewer'
   if (draft.department.trim().length > 150) return 'Department must be 150 characters or fewer'
   if (draft.responsibility.trim().length > 500) return 'Responsibility must be 500 characters or fewer'
-  const email = draft.email.trim()
-  if (email && !EMAIL.test(email)) return 'Email must be a valid address'
-  if (email.length > 255) return 'Email must be 255 characters or fewer'
+  const emailError = contactEmailError(draft)
+  if (emailError) return emailError
   if (draft.mobilePhone.trim().length > 30) return 'Mobile phone must be 30 characters or fewer'
+  const mobilePhoneError = contactMobilePhoneError(draft)
+  if (mobilePhoneError) return mobilePhoneError
   if (draft.landlinePhone.trim().length > 30) return 'Landline must be 30 characters or fewer'
   if (draft.whatsappNumber.trim().length > 30) return 'WhatsApp number must be 30 characters or fewer'
-  return null
+  return contactWhatsappNumberError(draft)
 }
 
 export function contactDraftFrom(contact: TenantContact): ContactDraft {
@@ -88,7 +116,7 @@ export function contactPayload(draft: ContactDraft) {
     designation: optional(draft.designation),
     department: optional(draft.department),
     responsibility: optional(draft.responsibility),
-    email: optional(draft.email),
+    email: draft.email.trim().toLowerCase(),
     mobilePhone: optional(draft.mobilePhone),
     landlinePhone: optional(draft.landlinePhone),
     whatsappNumber: optional(draft.whatsappNumber),

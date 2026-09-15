@@ -32,6 +32,8 @@ export function TenantConfigurationPanel({
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [uploadedAssets, setUploadedAssets] = useState<TenantAsset[]>([])
 
+  const validationError = validateConfiguration(draft)
+
   async function save() {
     const error = validateConfiguration(draft)
     if (error) {
@@ -64,7 +66,7 @@ export function TenantConfigurationPanel({
                 Delete configuration
               </Button>
             ) : null}
-            <Button disabled={busy} onClick={() => void save()}>
+            <Button disabled={busy || Boolean(validationError)} onClick={() => void save()}>
               {busy ? 'Saving…' : configuration ? 'Update configuration' : 'Add configuration'}
             </Button>
           </div>

@@ -92,7 +92,7 @@ export function TenantLauncherPage() {
         badge={<StatusBadge value={tenant.status} />}
         actions={
           <>
-            <Button size="sm" className="bg-white/10 text-white hover:bg-white/20" variant="ghost" asChild>
+            <Button size="sm" variant="outline" asChild>
               <Link to="/tenant/users/new">
                 <UserPlus />
                 Add member

@@ -50,6 +50,8 @@ export function TenantContactsPanel({
     }
   }
 
+  const validationError = validateContact(draft)
+
   async function save() {
     const error = validateContact(draft)
     if (error) {
@@ -82,13 +84,13 @@ export function TenantContactsPanel({
           <DialogHeader>
             <DialogTitle>{editingId ? 'Edit contact' : 'Add contact'}</DialogTitle>
             <DialogDescription>
-              Required: contactType, firstName. Optional: names, designation, department, phones, WhatsApp, email,
+              Required: contactType, firstName, email. Optional: names, designation, department, phones, WhatsApp,
               isPrimary, isActive.
             </DialogDescription>
           </DialogHeader>
           <ContactFields value={draft} onChange={setDraft} />
           <DialogFooter>
-            <Button disabled={busy || !draft.firstName.trim()} onClick={() => void save()}>
+            <Button disabled={busy || Boolean(validationError)} onClick={() => void save()}>
               {busy ? 'Saving…' : 'Save contact'}
             </Button>
           </DialogFooter>

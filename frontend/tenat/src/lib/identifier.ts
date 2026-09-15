@@ -32,6 +32,37 @@ export function identifierDraftFrom(row: TenantIdentifier): IdentifierDraft {
   }
 }
 
+function shiftIsoDate(isoDate: string, days: number): string {
+  const [year, month, day] = isoDate.split('-').map(Number)
+  const date = new Date(year, month - 1, day)
+  date.setDate(date.getDate() + days)
+  return [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, '0'),
+    String(date.getDate()).padStart(2, '0'),
+  ].join('-')
+}
+
+export function minExpiryDate(issueDate: string): string | undefined {
+  const trimmed = issueDate.trim()
+  if (!trimmed) return undefined
+  return shiftIsoDate(trimmed, 1)
+}
+
+export function maxIssueDate(expiryDate: string): string | undefined {
+  const trimmed = expiryDate.trim()
+  if (!trimmed) return undefined
+  return shiftIsoDate(trimmed, -1)
+}
+
+export function identifierDateRangeError(draft: IdentifierDraft): string | null {
+  const issueDate = draft.issueDate.trim()
+  const expiryDate = draft.expiryDate.trim()
+  if (!issueDate || !expiryDate) return null
+  if (expiryDate <= issueDate) return 'Expiry date must be later than the issue date.'
+  return null
+}
+
 export function validateIdentifier(draft: IdentifierDraft) {
   if (!draft.identifierType.trim()) return 'Identifier type is required'
   if (draft.identifierType.trim().length < 2 || draft.identifierType.trim().length > 50) {
@@ -40,7 +71,7 @@ export function validateIdentifier(draft: IdentifierDraft) {
   if (!draft.identifierValue.trim()) return 'Identifier value is required'
   if (draft.identifierValue.trim().length > 150) return 'Identifier value must be 150 characters or fewer'
   if (draft.issuingAuthority.trim().length > 150) return 'Issuing authority must be 150 characters or fewer'
-  return null
+  return identifierDateRangeError(draft)
 }
 
 export function identifierPayload(draft: IdentifierDraft, mode: 'create' | 'update') {
