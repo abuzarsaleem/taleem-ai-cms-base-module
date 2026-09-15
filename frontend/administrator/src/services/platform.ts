@@ -91,6 +91,39 @@ export const applicationAccessService = {
   },
 }
 
+export const applicationRoleService = {
+  list(applicationId: string) {
+    return apiRequest<ApplicationRole[]>(`/application/${applicationId}/roles`)
+  },
+  get(applicationId: string, roleId: string) {
+    return apiRequest<ApplicationRole>(`/application/${applicationId}/roles/${roleId}`)
+  },
+  create(
+    applicationId: string,
+    body: { roleCode: string; roleName: string; description?: string; permissionIds?: string[] },
+  ) {
+    return apiRequest<ApplicationRole>(`/application/${applicationId}/roles`, { method: 'POST', body })
+  },
+  update(applicationId: string, roleId: string, body: { roleName?: string; description?: string }) {
+    return apiRequest<ApplicationRole>(`/application/${applicationId}/roles/${roleId}`, {
+      method: 'PATCH',
+      body,
+    })
+  },
+  addPermissions(applicationId: string, roleId: string, permissionIds: string[]) {
+    return apiRequest<ApplicationRole>(`/application/${applicationId}/roles/${roleId}/permissions`, {
+      method: 'POST',
+      body: { permissionIds },
+    })
+  },
+  removePermission(applicationId: string, roleId: string, permissionId: string) {
+    return apiRequest<ApplicationRole>(
+      `/application/${applicationId}/roles/${roleId}/permissions/${permissionId}`,
+      { method: 'DELETE' },
+    )
+  },
+}
+
 export const oauthClientService = {
   list(page = 1, limit = 100) {
     return apiRequest<Paginated<OAuthClient>>(`/oauth/client?page=${page}&limit=${limit}`)

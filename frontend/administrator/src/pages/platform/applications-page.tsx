@@ -340,7 +340,7 @@ export function ApplicationsPage() {
                         OAuth
                       </Button>
                       <Button size="sm" variant="outline" asChild>
-                        <Link to={`/platform/applications/${app.id}`}>Access</Link>
+                        <Link to={`/platform/applications/${app.id}`}>Roles</Link>
                       </Button>
                       <Button size="sm" variant="outline" onClick={() => void openEdit(app.id)}>
                         Edit
