@@ -168,14 +168,14 @@ export function TenantLauncherPage() {
         </Card>
 
         <Card className="portal-card h-full border-border/80">
-          <CardHeader className="flex-row items-start justify-between gap-3 space-y-0 border-b border-border/60 pb-4">
-            <div>
+          <CardHeader className="gap-2 border-b border-border/60 pb-4">
+            <div className="flex items-center justify-between gap-3">
               <CardTitle>Institution profile</CardTitle>
-              <CardDescription>Records maintained for this tenant.</CardDescription>
+              <Button size="sm" variant="outline" asChild>
+                <Link to="/tenant/profile">Manage</Link>
+              </Button>
             </div>
-            <Button size="sm" variant="outline" asChild>
-              <Link to="/tenant/profile">Manage</Link>
-            </Button>
+            <CardDescription>Records maintained for this tenant.</CardDescription>
           </CardHeader>
           <CardContent className="pt-4">
             <div className="grid gap-3 sm:grid-cols-2">
