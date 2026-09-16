@@ -217,7 +217,7 @@ export function ApplicationsPage() {
             <DialogTitle>{editingId ? 'Edit application' : 'Register application'}</DialogTitle>
             <DialogDescription>
               {editingId
-                ? 'PATCH /application/:id — name, version, launch URL, and description. Upload a logo with POST /application/:id/logo.'
+                ? 'Update name, version, launch URL, and description. You can upload a new logo after saving.'
                 : 'Unique application identity and launch information. A selected logo is uploaded after the application is created.'}
             </DialogDescription>
           </DialogHeader>

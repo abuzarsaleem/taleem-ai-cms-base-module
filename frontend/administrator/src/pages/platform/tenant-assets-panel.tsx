@@ -127,8 +127,8 @@ export function TenantAssetsPanel({
             </DialogTitle>
             <DialogDescription>
               {mode === 'upload'
-                ? 'POST /tenant/:id/asset/upload — multipart assetType + file.'
-                : 'assetType and fileUrl are required for URL metadata.'}
+                ? 'Upload a file and choose an asset type.'
+                : 'Asset type and file URL are required for URL metadata.'}
             </DialogDescription>
           </DialogHeader>
           <AssetFields value={draft} onChange={setDraft} showUrl={mode !== 'upload'} showMeta={mode !== 'upload'} />

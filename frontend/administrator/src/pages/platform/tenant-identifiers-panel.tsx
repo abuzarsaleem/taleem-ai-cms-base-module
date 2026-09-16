@@ -77,7 +77,7 @@ export function TenantIdentifiersPanel({
     <section className="pt-8">
       <SectionTitle
         title="Identifiers"
-        description="POST/PATCH /tenant/:id/identifier — type must match GET /catalog/identifier-type."
+        description="Registration and accreditation identifiers. Type and value are required."
         action={<Button onClick={openCreate}>Add identifier</Button>}
       />
       <Dialog open={open} onOpenChange={setOpen}>

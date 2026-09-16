@@ -44,7 +44,7 @@ export function IdentifierFields({
 
   return (
     <FieldGrid>
-      <Field label="Type" required hint="Must match an active code from GET /catalog/identifier-type.">
+      <Field label="Type" required hint="Choose an active identifier type from the catalogue.">
         <Select value={value.identifierType} onValueChange={(identifierType) => patch({ identifierType })}>
           <SelectTrigger className="w-full">
             <SelectValue />

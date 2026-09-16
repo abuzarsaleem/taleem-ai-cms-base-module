@@ -76,7 +76,7 @@ export function TenantContactsPanel({
     <section className="pb-8">
       <SectionTitle
         title="Contacts"
-        description="POST/PATCH /tenant/:id/contact — first name and contact type are required."
+        description="People who represent this institution. First name, email, and contact type are required."
         action={<Button onClick={() => void openCreate()}>Add contact</Button>}
       />
       <Dialog open={open} onOpenChange={setOpen}>
@@ -84,8 +84,8 @@ export function TenantContactsPanel({
           <DialogHeader>
             <DialogTitle>{editingId ? 'Edit contact' : 'Add contact'}</DialogTitle>
             <DialogDescription>
-              Required: contactType, firstName, email. Optional: names, designation, department, phones, WhatsApp,
-              isPrimary, isActive.
+              Required: contact type, first name, and email. Optional: other names, designation, department, phones,
+              WhatsApp, and primary or active status.
             </DialogDescription>
           </DialogHeader>
           <ContactFields value={draft} onChange={setDraft} />

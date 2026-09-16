@@ -93,7 +93,7 @@ export function TenantSubscriptionsPanel({
     <div>
       <SectionTitle
         title="Subscriptions"
-        description="POST /tenant/:id/subscription — startDate, endDate, planType, and at least one application code are required. Assigned apps are entitled for this period."
+        description="Commercial access periods for this institution. Start date, end date, plan type, and at least one application are required."
         action={<Button onClick={openCreate}>New subscription</Button>}
       />
       <Dialog open={open} onOpenChange={setOpen}>

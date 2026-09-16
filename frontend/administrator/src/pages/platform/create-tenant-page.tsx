@@ -51,8 +51,7 @@ export function CreateTenantPage() {
         <div>
           <h2 className="font-display text-lg font-semibold tracking-tight">Institution</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            POST /tenant — legal name, display name, and institution type are required. New tenants start as
-            ONBOARDING.
+            Legal name, display name, and institution type are required. New tenants start in onboarding status.
           </p>
         </div>
         <TenantFields mode="create" value={draft} onChange={setDraft} />

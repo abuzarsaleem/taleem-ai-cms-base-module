@@ -129,7 +129,7 @@ export function CreateOAuthClientDialog({
         <DialogHeader>
           <DialogTitle>Register OAuth client</DialogTitle>
           <DialogDescription>
-            POST /oauth/client{selectedApp ? ` for ${selectedApp.applicationCode}` : ''}. The client secret is only
+            Register a client{selectedApp ? ` for ${selectedApp.applicationCode}` : ''}. The client secret is only
             returned once at creation.
           </DialogDescription>
         </DialogHeader>
