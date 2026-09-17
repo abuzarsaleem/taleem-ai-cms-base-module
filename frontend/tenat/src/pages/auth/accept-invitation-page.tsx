@@ -6,12 +6,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Field } from '@/components/field'
 import { validateAcceptInvitation } from '@/lib/account'
-import { canUseTenantApp, errorMessage, homeFor, roleFrom, useAuth } from '@/lib/auth'
+import { errorMessage } from '@/lib/auth'
 import { authService } from '@/services/account'
 
 export function AcceptInvitationPage() {
   const navigate = useNavigate()
-  const { completeAuth, signOut } = useAuth()
   const [searchParams] = useSearchParams()
   const [token, setToken] = useState('')
   const [fullName, setFullName] = useState('')
@@ -33,21 +32,19 @@ export function AcceptInvitationPage() {
     }
     setBusy(true)
     try {
-      const tokens = await authService.acceptInvitation({
+      const result = await authService.acceptInvitation({
         token: token.trim(),
         password,
         fullName: fullName.trim(),
       })
-      const session = await completeAuth(tokens)
-      toast.success('Invitation accepted')
-      const role = roleFrom(session)
-      if (canUseTenantApp(role)) {
-        navigate(homeFor(role))
-        return
-      }
-      signOut()
-      toast.message('This workspace is for tenant administrators and members.')
-      navigate('/login')
+      toast.success(result.message || 'Password saved. Please sign in.')
+      navigate('/login', {
+        replace: true,
+        state: {
+          notice: result.message || 'Password saved. Sign in with your email and password.',
+          email: result.email,
+        },
+      })
     } catch (error) {
       toast.error(errorMessage(error))
     } finally {
@@ -59,9 +56,10 @@ export function AcceptInvitationPage() {
     <div className="flex min-h-svh items-center justify-center bg-background p-6">
       <Card className="portal-card w-full max-w-md">
         <CardHeader>
-          <CardTitle>Accept invitation</CardTitle>
+          <CardTitle>Set your password</CardTitle>
           <CardDescription>
-            Create your administrator password to join the institution. The invite link fills the token for you.
+            Create a password to join the institution. After saving, you will sign in on the next
+            screen — this link does not log you in automatically.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -70,7 +68,11 @@ export function AcceptInvitationPage() {
               Invitation token received from your email link.
             </p>
           ) : (
-            <Field label="Invitation token" required hint="Paste the token from the invite email or the one-time copy shown after send.">
+            <Field
+              label="Invitation token"
+              required
+              hint="Paste the token from the invite email or the one-time copy shown after send."
+            >
               <Input value={token} onChange={(e) => setToken(e.target.value)} autoComplete="off" />
             </Field>
           )}
@@ -104,7 +106,7 @@ export function AcceptInvitationPage() {
             />
           </Field>
           <Button className="w-full" disabled={busy} onClick={() => void submit()}>
-            {busy ? 'Activating…' : 'Activate account'}
+            {busy ? 'Saving…' : 'Save password'}
           </Button>
           <p className="text-center text-sm text-muted-foreground">
             Already have access?{' '}

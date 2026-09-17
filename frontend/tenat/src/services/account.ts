@@ -24,7 +24,13 @@ export const authService = {
     })
   },
   acceptInvitation(body: { token: string; password: string; fullName: string }) {
-    return apiRequest<AuthTokenResponse>('/auth/accept-invitation', {
+    return apiRequest<{
+      accepted: boolean
+      email: string
+      tenantId: string
+      userId: string
+      message: string
+    }>('/auth/accept-invitation', {
       method: 'POST',
       token: null,
       body,

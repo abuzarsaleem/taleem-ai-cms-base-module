@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -12,10 +12,13 @@ import { resolveMemberPostLoginPath } from '@/lib/member-launch'
 
 export function LoginPage() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const noticeState = location.state as { notice?: string; email?: string } | null
   const { login, signOut } = useAuth()
-  const [email, setEmail] = useState('')
+  const [email, setEmail] = useState(noticeState?.email?.trim() || '')
   const [password, setPassword] = useState('')
   const [busy, setBusy] = useState(false)
+  const [notice] = useState(noticeState?.notice?.trim() || '')
 
   async function submit() {
     setBusy(true)
@@ -67,10 +70,16 @@ export function LoginPage() {
             <CardHeader>
               <CardTitle>Sign in</CardTitle>
               <CardDescription>
-                Tenant administrators manage the institution. Members open assigned applications after sign-in.
+                Tenant administrators manage the institution. Members open assigned applications after
+                sign-in.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              {notice ? (
+                <p className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-800 dark:text-emerald-200">
+                  {notice}
+                </p>
+              ) : null}
               <Field label="Email">
                 <Input
                   type="email"
@@ -89,13 +98,20 @@ export function LoginPage() {
                   }}
                 />
               </Field>
-              <Button className="w-full" disabled={busy || !email || !password} onClick={() => void submit()}>
+              <Button
+                className="w-full"
+                disabled={busy || !email || !password}
+                onClick={() => void submit()}
+              >
                 {busy ? 'Signing in…' : 'Continue'}
               </Button>
               <p className="text-center text-sm text-muted-foreground">
                 Have an invitation?{' '}
-                <Link to="/accept-invitation" className="text-primary underline-offset-4 hover:underline">
-                  Activate your account
+                <Link
+                  to="/accept-invitation"
+                  className="text-primary underline-offset-4 hover:underline"
+                >
+                  Set your password
                 </Link>
               </p>
             </CardContent>

@@ -1,7 +1,8 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsEmail,
   IsEnum,
+  IsOptional,
   IsString,
   MaxLength,
   MinLength,
@@ -49,12 +50,14 @@ export class AcceptInvitationDto {
   @MaxLength(128)
   password!: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     example: 'Ali Khan',
-    description: 'Required display name when creating or activating the account',
+    description:
+      'Optional when the invitation already carries fullName in metadata (alumni CMS bridge).',
   })
+  @IsOptional()
   @IsString()
   @MinLength(1)
   @MaxLength(150)
-  fullName!: string;
+  fullName?: string;
 }

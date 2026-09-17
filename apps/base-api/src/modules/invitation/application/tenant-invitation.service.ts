@@ -87,7 +87,7 @@ export class TenantInvitationService {
     tenantId: string,
     dto: CreateTenantInvitationDto,
     invitedBy?: string,
-    options?: { metadata?: Record<string, unknown> },
+    options?: { metadata?: Record<string, unknown>; sendEmail?: boolean },
   ) {
     await this.tenantContext.ensureTenantExists(tenantId);
     const email = dto.email.toLowerCase();
@@ -110,13 +110,15 @@ export class TenantInvitationService {
       metadata: options?.metadata,
     });
 
-    const tenant = await this.tenantRepository.findById(tenantId);
-    await this.sendInvitationEmail(role, {
-      to: email,
-      tenantName: tenant?.displayName ?? tenant?.legalName ?? 'your institution',
-      invitationToken: raw,
-      expiresAt,
-    });
+    if (options?.sendEmail !== false) {
+      const tenant = await this.tenantRepository.findById(tenantId);
+      await this.sendInvitationEmail(role, {
+        to: email,
+        tenantName: tenant?.displayName ?? tenant?.legalName ?? 'your institution',
+        invitationToken: raw,
+        expiresAt,
+      });
+    }
 
     return toCreateInvitationResponse(invitation, raw);
   }

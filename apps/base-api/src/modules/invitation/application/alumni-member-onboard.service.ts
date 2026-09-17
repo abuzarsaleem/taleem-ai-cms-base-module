@@ -84,6 +84,8 @@ export class AlumniMemberOnboardService {
       { email, role: MembershipRole.MEMBER },
       undefined,
       {
+        // Alumni CMS emails the alumni-portal activation link; do not send IAM invite mail.
+        sendEmail: false,
         metadata: {
           source: 'alumni-member-onboard',
           fullName: dto.fullName,

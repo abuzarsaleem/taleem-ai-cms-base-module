@@ -69,7 +69,16 @@ export class InvitationAcceptService {
     const role = invitation.membershipRole ?? MembershipRole.MEMBER;
     const email = invitation.email!;
     const password = dto.password;
-    const fullName = dto.fullName.trim();
+    const metaFullName =
+      invitation.metadata &&
+      typeof invitation.metadata === 'object' &&
+      typeof (invitation.metadata as { fullName?: unknown }).fullName === 'string'
+        ? String((invitation.metadata as { fullName: string }).fullName).trim()
+        : '';
+    const fullName = (dto.fullName?.trim() || metaFullName).trim();
+    if (!fullName) {
+      throw new BadRequestException('Full name is required to activate this account');
+    }
 
     if (role === MembershipRole.ADMIN) {
       if (await this.membershipRepo.findActiveAdminByEmail(invitation.tenantId!, email)) {
