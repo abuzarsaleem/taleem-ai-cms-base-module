@@ -10,14 +10,27 @@ function resolveUrl(fromEnv: string | undefined, localDefault: string, prodDefau
   return localDefault
 }
 
+function originFromCallback(callback?: string) {
+  const trimmed = callback?.trim()
+  if (!trimmed) return undefined
+  try {
+    const url = new URL(trimmed)
+    return `${url.protocol}//${url.host}`
+  } catch {
+    return undefined
+  }
+}
+
 const alumniOrigin = resolveUrl(
-  import.meta.env.VITE_ALUMNI_PORTAL_URL as string | undefined,
+  (import.meta.env.VITE_ALUMNI_PORTAL_URL as string | undefined) ||
+    originFromCallback(import.meta.env.VITE_ALUMNI_PORTAL_CALLBACK as string | undefined),
   'http://localhost:5173',
   PROD_ALUMNI_ORIGIN,
 )
 
 const adminOrigin = resolveUrl(
-  import.meta.env.VITE_ADMIN_PORTAL_URL as string | undefined,
+  (import.meta.env.VITE_ADMIN_PORTAL_URL as string | undefined) ||
+    originFromCallback(import.meta.env.VITE_ADMIN_PORTAL_CALLBACK as string | undefined),
   'http://localhost:5174',
   PROD_ADMIN_ORIGIN,
 )

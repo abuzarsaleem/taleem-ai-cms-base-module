@@ -4,8 +4,8 @@ import { oauthClientForApplication } from '@/lib/oauth-client-config'
 import { myApplicationsService, type MyApplication } from '@/services/my-applications'
 
 /**
- * After member login: if a default application is assigned, open it via launch URL.
- * Otherwise return the apps chooser path.
+ * After member login: open default app, or the only assigned app, via launch URL.
+ * Only show the chooser when the member has multiple non-default options.
  */
 export async function resolveMemberPostLoginPath(
   tenantId?: string | null,
@@ -17,12 +17,18 @@ export async function resolveMemberPostLoginPath(
     return { path: APP_MEMBER_APPS, launched: false }
   }
 
-  const defaultApp = apps.find((app) => app.isDefault)
-  if (defaultApp && oauthClientForApplication(defaultApp.applicationCode)) {
+  const launchable = apps.filter((app) =>
+    oauthClientForApplication(app.applicationCode),
+  )
+  const target =
+    launchable.find((app) => app.isDefault) ||
+    (launchable.length === 1 ? launchable[0] : undefined)
+
+  if (target) {
     await silentLaunchApplication({
-      applicationCode: defaultApp.applicationCode,
-      launchUrl: defaultApp.launchUrl,
-      preferredTenantId: defaultApp.tenantId || tenantId || undefined,
+      applicationCode: target.applicationCode,
+      launchUrl: target.launchUrl,
+      preferredTenantId: target.tenantId || tenantId || undefined,
     })
     return { path: APP_MEMBER_APPS, launched: true }
   }

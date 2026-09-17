@@ -19,14 +19,41 @@ export function MemberAppsPage() {
   const [apps, setApps] = useState<MyApplication[]>([])
   const [loading, setLoading] = useState(true)
   const [busyId, setBusyId] = useState<string | null>(null)
+  const [autoLaunchAttempted, setAutoLaunchAttempted] = useState(false)
 
   useEffect(() => {
     let cancelled = false
     setLoading(true)
     void myApplicationsService
       .listMine(session?.tenantId)
-      .then((rows) => {
-        if (!cancelled) setApps(rows)
+      .then(async (rows) => {
+        if (cancelled) return
+        setApps(rows)
+
+        const launchable = rows.filter((app) =>
+          oauthClientForApplication(app.applicationCode),
+        )
+        const target =
+          launchable.find((app) => app.isDefault) ||
+          (launchable.length === 1 ? launchable[0] : undefined)
+
+        if (target && !autoLaunchAttempted) {
+          setAutoLaunchAttempted(true)
+          setBusyId(target.assignmentId)
+          try {
+            await silentLaunchApplication({
+              applicationCode: target.applicationCode,
+              launchUrl: target.launchUrl,
+              preferredTenantId: target.tenantId || session?.tenantId,
+            })
+            return
+          } catch (error) {
+            if (!cancelled) {
+              toast.error(errorMessage(error))
+              setBusyId(null)
+            }
+          }
+        }
       })
       .catch((error) => {
         if (!cancelled) {
@@ -40,7 +67,7 @@ export function MemberAppsPage() {
     return () => {
       cancelled = true
     }
-  }, [session?.tenantId])
+  }, [session?.tenantId, autoLaunchAttempted])
 
   async function openApp(app: MyApplication) {
     setBusyId(app.assignmentId)
@@ -56,11 +83,13 @@ export function MemberAppsPage() {
     }
   }
 
-  if (loading) {
+  if (loading || busyId) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-3 text-muted-foreground">
         <Loader2 className="size-6 animate-spin" />
-        <p className="text-sm">Loading your applications…</p>
+        <p className="text-sm">
+          {busyId ? 'Opening your portal…' : 'Loading your applications…'}
+        </p>
       </div>
     )
   }
@@ -69,7 +98,7 @@ export function MemberAppsPage() {
     return (
       <EmptyState
         title="No applications available"
-        description="Your institution must be entitled to an application, and a tenant administrator must assign you a role before you can open it."
+        description="Ask your institution administrator to grant you access."
       />
     )
   }
@@ -78,8 +107,8 @@ export function MemberAppsPage() {
     <div className="flex flex-1 flex-col gap-6">
       <PageHeader
         eyebrow="Applications"
-        title="Open your apps"
-        description="Only applications your institution is entitled to — and that you have a role for — are listed. Opening always uses the application launch URL."
+        title="Open your portal"
+        description="Choose a portal to continue."
       />
       <div className="grid gap-4 sm:grid-cols-2">
         {apps.map((app) => {
