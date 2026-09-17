@@ -34,14 +34,16 @@ export class InvitationEmailService {
       html: `
         <p>Hello,</p>
         <p>You have been invited to join <strong>${params.tenantName}</strong> on Taleem AI as a ${roleLabel}.</p>
-        <p><a href="${acceptUrl}">Accept invitation</a></p>
+        <p><a href="${acceptUrl}">Set your password</a></p>
+        <p>After you save your password, sign in with your email and password. This link will not sign you in automatically.</p>
         <p>This invitation expires on ${params.expiresAt.toUTCString()}.</p>
         <p>If you did not expect this email, you can ignore it.</p>
         <p>— ${sender.name}</p>
       `.trim(),
       text: [
         `You have been invited to join ${params.tenantName} on Taleem AI as a ${roleLabel}.`,
-        `Accept your invitation: ${acceptUrl}`,
+        `Set your password: ${acceptUrl}`,
+        'After saving your password, sign in with your email and password. This link will not sign you in automatically.',
         `Expires: ${params.expiresAt.toUTCString()}`,
       ].join('\n\n'),
     });

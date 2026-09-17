@@ -25,7 +25,6 @@ import {
   Public,
   type AuthenticatedUser,
 } from '@app/common';
-import { AuthTokenResponseDto } from '../../auth/application/dto/auth.dto.js';
 import { MembershipRole } from '../domain/membership.types.js';
 import { InvitationAcceptService } from '../application/invitation-accept.service.js';
 import { TenantInvitationService } from '../application/tenant-invitation.service.js';
@@ -33,6 +32,7 @@ import {
   AcceptInvitationDto,
   CreateTenantAdminInvitationDto,
 } from '../application/dto/request/invitation.request.dto.js';
+import { AcceptInvitationResponseDto } from '../application/dto/response/accept-invitation.response.dto.js';
 import {
   CreateTenantInvitationResponseDto,
   TenantInvitationListResponseDto,
@@ -142,8 +142,11 @@ export class InvitationAcceptController {
 
   @Public()
   @Post('accept-invitation')
-  @ApiOperation({ summary: 'Accept invitation (admin or member) via the single email link token' })
-  @ApiCreatedResponse({ type: AuthTokenResponseDto })
+  @ApiOperation({
+    summary:
+      'Accept invitation (admin or member) via the email link token. Sets password; does not sign the user in.',
+  })
+  @ApiCreatedResponse({ type: AcceptInvitationResponseDto })
   accept(@Body() dto: AcceptInvitationDto) {
     return this.acceptService.accept(dto);
   }

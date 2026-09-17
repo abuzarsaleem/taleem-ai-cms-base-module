@@ -4,9 +4,10 @@ import {
   Inject,
   Injectable,
   Logger,
+  UnauthorizedException,
   forwardRef,
 } from '@nestjs/common';
-import { AuthService } from '../../auth/application/auth.service.js';
+import * as bcrypt from 'bcrypt';
 import { hashToken } from '../../auth/application/token.util.js';
 import { USER_TOKEN_REPOSITORY } from '../../auth/domain/user-token.repository.interface.js';
 import type { IUserTokenRepository } from '../../auth/domain/user-token.repository.interface.js';
@@ -20,6 +21,7 @@ import {
 } from '../domain/invitation.repository.interface.js';
 import { MembershipRole } from '../domain/membership.types.js';
 import type { AcceptInvitationDto } from './dto/request/invitation.request.dto.js';
+import { AcceptInvitationResponseDto } from './dto/response/accept-invitation.response.dto.js';
 import { MembershipProvisionService } from './membership-provision.service.js';
 
 @Injectable()
@@ -27,8 +29,6 @@ export class InvitationAcceptService {
   private readonly logger = new Logger(InvitationAcceptService.name);
 
   constructor(
-    @Inject(forwardRef(() => AuthService))
-    private readonly authService: AuthService,
     @Inject(USER_TOKEN_REPOSITORY) private readonly tokenRepository: IUserTokenRepository,
     @Inject(TENANT_MEMBERSHIP_REPOSITORY)
     private readonly membershipRepo: ITenantMembershipRepository,
@@ -38,12 +38,15 @@ export class InvitationAcceptService {
     private readonly applicationAccess: ApplicationAccessService,
   ) {}
 
-  accept(dto: AcceptInvitationDto) {
+  accept(dto: AcceptInvitationDto): Promise<AcceptInvitationResponseDto> {
     const tokenHash = hashToken(dto.token);
     return this.acceptByTokenHash(tokenHash, dto);
   }
 
-  private async acceptByTokenHash(tokenHash: string, dto: AcceptInvitationDto) {
+  private async acceptByTokenHash(
+    tokenHash: string,
+    dto: AcceptInvitationDto,
+  ): Promise<AcceptInvitationResponseDto> {
     const invitation = await this.tokenRepository.findValidByHash(
       tokenHash,
       UserTokenType.TENANT_INVITATION,
@@ -58,13 +61,15 @@ export class InvitationAcceptService {
   private async acceptInvitation(
     invitation: NonNullable<Awaited<ReturnType<IUserTokenRepository['findValidByHash']>>>,
     dto: AcceptInvitationDto,
-  ) {
+  ): Promise<AcceptInvitationResponseDto> {
     await this.assertInvitationPending(invitation.status, invitation.expiresAt, async () => {
       await this.tokenRepository.update(invitation.id!, { status: UserTokenStatus.EXPIRED });
     });
 
     const role = invitation.membershipRole ?? MembershipRole.MEMBER;
     const email = invitation.email!;
+    const password = dto.password;
+    const fullName = dto.fullName.trim();
 
     if (role === MembershipRole.ADMIN) {
       if (await this.membershipRepo.findActiveAdminByEmail(invitation.tenantId!, email)) {
@@ -80,13 +85,19 @@ export class InvitationAcceptService {
         if (existingMembership?.status === 'ACTIVE') {
           throw new ConflictException('User is already an active member of this tenant');
         }
+        if (existingUser.passwordHash) {
+          const matches = await bcrypt.compare(password, existingUser.passwordHash);
+          if (!matches) {
+            throw new UnauthorizedException('Incorrect password for this email');
+          }
+        }
       }
     }
 
     const user = await this.provision.provision({
       email,
-      password: dto.password,
-      fullName: dto.fullName,
+      password,
+      fullName,
     });
     await this.membershipRepo.upsertActive(invitation.tenantId!, user.id!, role);
 
@@ -109,7 +120,14 @@ export class InvitationAcceptService {
       );
     }
 
-    return this.authService.issueTokensForUser(user.id!);
+    // Do not issue session tokens — caller must sign in with the password they set.
+    return {
+      accepted: true,
+      email,
+      tenantId: invitation.tenantId!,
+      userId: user.id!,
+      message: 'Password saved. Sign in with your email and password to continue.',
+    };
   }
 
   private async assertInvitationPending(

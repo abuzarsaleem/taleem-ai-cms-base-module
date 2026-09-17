@@ -1,12 +1,10 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty } from '@nestjs/swagger';
 import {
   IsEmail,
   IsEnum,
-  IsOptional,
   IsString,
   MaxLength,
   MinLength,
-  ValidateIf,
 } from 'class-validator';
 import { MembershipRole } from '../../../domain/membership.types.js';
 
@@ -40,24 +38,23 @@ export class AcceptInvitationDto {
   @MaxLength(512)
   token!: string;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     example: 'SecurePass123!',
     minLength: 8,
-    description: 'Required when creating a new account or the invited email has no password yet',
+    description:
+      'Required. Sets the account password for new users, or must match the existing password.',
   })
-  @ValidateIf((o: AcceptInvitationDto) => o.password !== undefined && o.password !== '')
   @IsString()
   @MinLength(8)
   @MaxLength(128)
-  password?: string;
+  password!: string;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     example: 'Ali Khan',
-    description: 'Required when creating a new account or activating one without a password',
+    description: 'Required display name when creating or activating the account',
   })
-  @ValidateIf((o: AcceptInvitationDto) => o.password !== undefined && o.password !== '')
   @IsString()
   @MinLength(1)
   @MaxLength(150)
-  fullName?: string;
+  fullName!: string;
 }
