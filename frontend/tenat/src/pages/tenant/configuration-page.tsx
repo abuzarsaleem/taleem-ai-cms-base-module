@@ -67,6 +67,8 @@ function TenantConfigurationForm({ tenantId }: { tenantId: string }) {
     }
   }, [tenantId])
 
+  const validationError = validateConfiguration(draft)
+
   async function submit() {
     const error = validateConfiguration(draft)
     if (error) {
@@ -98,7 +100,7 @@ function TenantConfigurationForm({ tenantId }: { tenantId: string }) {
         title="Configuration"
         description="Locale, timezone, currency, and branding for this institution."
         actions={
-          <Button disabled={busy} onClick={() => void submit()}>
+          <Button disabled={busy || Boolean(validationError)} onClick={() => void submit()}>
             {busy ? 'Saving…' : exists ? 'Save configuration' : 'Add configuration'}
           </Button>
         }

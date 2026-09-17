@@ -217,7 +217,7 @@ export function ApplicationsPage() {
             <DialogTitle>{editingId ? 'Edit application' : 'Register application'}</DialogTitle>
             <DialogDescription>
               {editingId
-                ? 'PATCH /application/:id — name, version, launch URL, and description. Upload a logo with POST /application/:id/logo.'
+                ? 'Update name, version, launch URL, and description. You can upload a new logo after saving.'
                 : 'Unique application identity and launch information. A selected logo is uploaded after the application is created.'}
             </DialogDescription>
           </DialogHeader>
@@ -340,7 +340,7 @@ export function ApplicationsPage() {
                         OAuth
                       </Button>
                       <Button size="sm" variant="outline" asChild>
-                        <Link to={`/platform/applications/${app.id}`}>Access</Link>
+                        <Link to={`/platform/applications/${app.id}`}>Roles</Link>
                       </Button>
                       <Button size="sm" variant="outline" onClick={() => void openEdit(app.id)}>
                         Edit

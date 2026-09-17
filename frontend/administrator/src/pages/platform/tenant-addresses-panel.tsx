@@ -74,7 +74,7 @@ export function TenantAddressesPanel({
     <section className="py-8">
       <SectionTitle
         title="Addresses"
-        description="POST/PATCH /tenant/:id/address — type, line 1, and city are required."
+        description="Physical locations for this institution. Type, address line 1, and city are required."
         action={<Button onClick={() => void openCreate()}>Add address</Button>}
       />
       <Dialog open={open} onOpenChange={setOpen}>
@@ -82,7 +82,7 @@ export function TenantAddressesPanel({
           <DialogHeader>
             <DialogTitle>{editingId ? 'Edit address' : 'Add address'}</DialogTitle>
             <DialogDescription>
-              Required: addressType, addressLine1, city. Country defaults to PK.
+              Required: address type, address line 1, and city. Country defaults to PK.
             </DialogDescription>
           </DialogHeader>
           <AddressFields value={draft} onChange={setDraft} />

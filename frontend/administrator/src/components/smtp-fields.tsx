@@ -2,7 +2,8 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Field, FieldGrid } from '@/components/field'
-import type { SmtpDraft } from '@/lib/smtp'
+import { PasswordInput } from '@/components/password-input'
+import { smtpHostError, smtpPasswordSecretRefError, type SmtpDraft } from '@/lib/smtp'
 import { SmtpEncryption } from '@/lib/types'
 
 export function SmtpFields({
@@ -13,11 +14,20 @@ export function SmtpFields({
   onChange: (next: SmtpDraft) => void
 }) {
   const patch = (partial: Partial<SmtpDraft>) => onChange({ ...value, ...partial })
+  const hostError = smtpHostError(value)
+  const secretRefError = smtpPasswordSecretRefError(value)
 
   return (
     <FieldGrid>
-      <Field label="Host" required>
-        <Input value={value.host} maxLength={255} onChange={(e) => patch({ host: e.target.value })} />
+      <Field label="Host" required error={hostError ?? undefined}>
+        <Input
+          value={value.host}
+          maxLength={255}
+          autoComplete="off"
+          spellCheck={false}
+          aria-invalid={Boolean(hostError)}
+          onChange={(e) => patch({ host: e.target.value })}
+        />
       </Field>
       <Field label="Port">
         <Input type="number" min={1} max={65535} value={value.port} onChange={(e) => patch({ port: e.target.value })} />
@@ -25,8 +35,18 @@ export function SmtpFields({
       <Field label="Username">
         <Input value={value.username} maxLength={255} onChange={(e) => patch({ username: e.target.value })} />
       </Field>
-      <Field label="Password secret ref" hint="Secret manager reference, never plaintext.">
-        <Input value={value.passwordSecretRef} maxLength={500} onChange={(e) => patch({ passwordSecretRef: e.target.value })} />
+      <Field
+        label="Secret reference"
+        hint="Protected secret location reference, e.g. secret://path/to/secret or vault://key-name."
+        error={secretRefError ?? undefined}
+      >
+        <PasswordInput
+          autoComplete="off"
+          maxLength={500}
+          value={value.passwordSecretRef}
+          aria-invalid={Boolean(secretRefError)}
+          onChange={(e) => patch({ passwordSecretRef: e.target.value })}
+        />
       </Field>
       <Field label="Encryption">
         <Select value={value.encryption} onValueChange={(encryption) => patch({ encryption: encryption as SmtpEncryption })}>

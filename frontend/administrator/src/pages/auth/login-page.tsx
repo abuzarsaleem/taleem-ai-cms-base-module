@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Field } from '@/components/field'
 import { PasswordInput } from '@/components/password-input'
+import { ThemeToggle } from '@/components/theme-toggle'
 import { APP_HOME, APP_ROLE, errorMessage, roleFrom, useAuth } from '@/lib/auth'
 
 export function LoginPage() {
@@ -33,7 +34,8 @@ export function LoginPage() {
   }
 
   return (
-    <div className="grid min-h-svh lg:grid-cols-[1.1fr_0.9fr]">
+    <div className="relative grid min-h-svh lg:grid-cols-[1.1fr_0.9fr]">
+      <ThemeToggle className="absolute top-4 right-4 z-10 sm:top-6 sm:right-6" />
       <section className="portal-hero hidden flex-col justify-between p-10 text-white lg:flex">
         <p className="font-display text-2xl">Taleem AI</p>
         <div className="max-w-lg">

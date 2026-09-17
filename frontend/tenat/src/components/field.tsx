@@ -7,12 +7,14 @@ export function Field({
   children,
   className,
   hint,
+  error,
   required,
 }: {
   label: string
   children: ReactNode
   className?: string
   hint?: string
+  error?: string
   required?: boolean
 }) {
   return (
@@ -22,7 +24,9 @@ export function Field({
         {required ? <span className="text-destructive"> *</span> : null}
       </Label>
       {children}
-      {hint ? (
+      {error ? (
+        <p className="absolute top-full left-0 mt-1 line-clamp-2 text-xs leading-4 text-destructive">{error}</p>
+      ) : hint ? (
         <p className="absolute top-full left-0 mt-1 line-clamp-1 text-xs leading-4 text-muted-foreground" title={hint}>
           {hint}
         </p>

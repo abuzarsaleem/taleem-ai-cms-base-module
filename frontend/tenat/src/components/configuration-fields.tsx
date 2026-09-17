@@ -5,7 +5,12 @@ import { Input } from '@/components/ui/input'
 import { ColorInput } from '@/components/color-input'
 import { Field, FieldGrid } from '@/components/field'
 import { errorMessage } from '@/lib/auth'
-import type { ConfigurationDraft } from '@/lib/configuration'
+import {
+  configurationDateFormatError,
+  configurationLocaleError,
+  configurationTimezoneError,
+  type ConfigurationDraft,
+} from '@/lib/configuration'
 import { isDisplayableImageUrl } from '@/lib/utils'
 import type { TenantAsset } from '@/lib/types'
 import { AssetType } from '@/lib/types'
@@ -119,17 +124,35 @@ export function ConfigurationFields({
 }) {
   const patch = (partial: Partial<ConfigurationDraft>) => onChange({ ...value, ...partial })
   const remember = (asset: TenantAsset) => onAssetUploaded?.(asset)
+  const timezoneError = configurationTimezoneError(value)
+  const localeError = configurationLocaleError(value)
+  const dateFormatError = configurationDateFormatError(value)
 
   return (
     <FieldGrid>
-      <Field label="Timezone">
-        <Input value={value.timezone} maxLength={100} onChange={(e) => patch({ timezone: e.target.value })} />
+      <Field label="Timezone" required error={timezoneError ?? undefined}>
+        <Input
+          value={value.timezone}
+          maxLength={100}
+          aria-invalid={Boolean(timezoneError)}
+          onChange={(e) => patch({ timezone: e.target.value })}
+        />
       </Field>
-      <Field label="Locale">
-        <Input value={value.locale} maxLength={20} onChange={(e) => patch({ locale: e.target.value })} />
+      <Field label="Locale" required error={localeError ?? undefined}>
+        <Input
+          value={value.locale}
+          maxLength={20}
+          aria-invalid={Boolean(localeError)}
+          onChange={(e) => patch({ locale: e.target.value })}
+        />
       </Field>
-      <Field label="Date format">
-        <Input value={value.dateFormat} maxLength={30} onChange={(e) => patch({ dateFormat: e.target.value })} />
+      <Field label="Date format" required error={dateFormatError ?? undefined}>
+        <Input
+          value={value.dateFormat}
+          maxLength={30}
+          aria-invalid={Boolean(dateFormatError)}
+          onChange={(e) => patch({ dateFormat: e.target.value })}
+        />
       </Field>
       <Field label="Currency">
         <Input value={value.currencyCode} maxLength={3} onChange={(e) => patch({ currencyCode: e.target.value.toUpperCase() })} />

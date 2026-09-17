@@ -50,6 +50,8 @@ export function TenantContactsPanel({
     }
   }
 
+  const validationError = validateContact(draft)
+
   async function save() {
     const error = validateContact(draft)
     if (error) {
@@ -74,7 +76,7 @@ export function TenantContactsPanel({
     <section className="pb-8">
       <SectionTitle
         title="Contacts"
-        description="POST/PATCH /tenant/:id/contact — first name and contact type are required."
+        description="People who represent this institution. First name, email, and contact type are required."
         action={<Button onClick={() => void openCreate()}>Add contact</Button>}
       />
       <Dialog open={open} onOpenChange={setOpen}>
@@ -82,13 +84,13 @@ export function TenantContactsPanel({
           <DialogHeader>
             <DialogTitle>{editingId ? 'Edit contact' : 'Add contact'}</DialogTitle>
             <DialogDescription>
-              Required: contactType, firstName. Optional: names, designation, department, phones, WhatsApp, email,
-              isPrimary, isActive.
+              Required: contact type, first name, and email. Optional: other names, designation, department, phones,
+              WhatsApp, and primary or active status.
             </DialogDescription>
           </DialogHeader>
           <ContactFields value={draft} onChange={setDraft} />
           <DialogFooter>
-            <Button disabled={busy || !draft.firstName.trim()} onClick={() => void save()}>
+            <Button disabled={busy || Boolean(validationError)} onClick={() => void save()}>
               {busy ? 'Saving…' : 'Save contact'}
             </Button>
           </DialogFooter>

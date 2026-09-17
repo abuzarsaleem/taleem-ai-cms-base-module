@@ -95,7 +95,7 @@ export function TenantMemberInvitationsPage() {
           invitations={invitations}
           service={memberInvitationService}
           title="Tenant member invitations"
-          description="POST /tenant/:id/member-invitation — email only. Accepted users join as tenant members. Promote them on the Members page."
+          description="Invite members by email. Accepted users join as tenant members. Promote roles on the Members page."
           dialogTitle="Invite tenant member"
           dialogDescription="Only an email address is sent. The person joins as a tenant member, not an administrator. A pending invite or an already active member is rejected."
           empty="No member invitations yet."

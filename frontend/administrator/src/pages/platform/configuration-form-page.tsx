@@ -62,6 +62,8 @@ export function PlatformConfigurationFormPage() {
       .finally(() => setLoading(false))
   }, [isEdit, navigate, routeTenantId])
 
+  const validationError = validateConfiguration(draft)
+
   async function submit() {
     if (!formTenantId) {
       toast.error('Select a tenant')
@@ -109,7 +111,7 @@ export function PlatformConfigurationFormPage() {
         }
       />
       <div className="flex justify-end">
-        <Button disabled={busy} onClick={() => void submit()}>
+        <Button disabled={busy || Boolean(validationError)} onClick={() => void submit()}>
           {busy ? 'Saving…' : exists ? 'Save configuration' : 'Add configuration'}
         </Button>
       </div>

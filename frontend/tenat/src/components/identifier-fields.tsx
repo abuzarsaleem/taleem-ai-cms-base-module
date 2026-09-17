@@ -3,7 +3,12 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Field, FieldGrid } from '@/components/field'
-import type { IdentifierDraft } from '@/lib/identifier'
+import {
+  identifierDateRangeError,
+  maxIssueDate,
+  minExpiryDate,
+  type IdentifierDraft,
+} from '@/lib/identifier'
 import { IdentifierType } from '@/lib/types'
 import { catalogService, type CatalogItem } from '@/services/platform'
 
@@ -25,6 +30,7 @@ export function IdentifierFields({
 }) {
   const [types, setTypes] = useState<CatalogItem[]>(FALLBACK_TYPES)
   const patch = (partial: Partial<IdentifierDraft>) => onChange({ ...value, ...partial })
+  const dateRangeError = identifierDateRangeError(value)
 
   useEffect(() => {
     void catalogService
@@ -38,7 +44,7 @@ export function IdentifierFields({
 
   return (
     <FieldGrid>
-      <Field label="Type" required hint="Must match an active code from GET /catalog/identifier-type.">
+      <Field label="Type" required hint="Choose an active identifier type from the catalogue.">
         <Select value={value.identifierType} onValueChange={(identifierType) => patch({ identifierType })}>
           <SelectTrigger className="w-full">
             <SelectValue />
@@ -62,10 +68,21 @@ export function IdentifierFields({
         <Input value={value.issuingAuthority} maxLength={150} onChange={(e) => patch({ issuingAuthority: e.target.value })} />
       </Field>
       <Field label="Issue date">
-        <Input type="date" value={value.issueDate} onChange={(e) => patch({ issueDate: e.target.value })} />
+        <Input
+          type="date"
+          value={value.issueDate}
+          max={maxIssueDate(value.expiryDate)}
+          onChange={(e) => patch({ issueDate: e.target.value })}
+        />
       </Field>
-      <Field label="Expiry date">
-        <Input type="date" value={value.expiryDate} onChange={(e) => patch({ expiryDate: e.target.value })} />
+      <Field label="Expiry date" error={dateRangeError ?? undefined}>
+        <Input
+          type="date"
+          value={value.expiryDate}
+          min={minExpiryDate(value.issueDate)}
+          aria-invalid={Boolean(dateRangeError)}
+          onChange={(e) => patch({ expiryDate: e.target.value })}
+        />
       </Field>
       {showVerified ? (
         <label className="flex items-center gap-2 text-sm sm:col-span-2">

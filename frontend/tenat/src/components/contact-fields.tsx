@@ -3,7 +3,12 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Field, FieldGrid } from '@/components/field'
-import { type ContactDraft } from '@/lib/contact'
+import {
+  contactEmailError,
+  contactMobilePhoneError,
+  contactWhatsappNumberError,
+  type ContactDraft,
+} from '@/lib/contact'
 import { ContactType } from '@/lib/types'
 import { catalogService, type CatalogItem } from '@/services/platform'
 
@@ -74,6 +79,9 @@ export function ContactFields({
   }, [])
 
   const patch = (partial: Partial<ContactDraft>) => onChange({ ...value, ...partial })
+  const emailError = contactEmailError(value)
+  const mobilePhoneError = contactMobilePhoneError(value)
+  const whatsappNumberError = contactWhatsappNumberError(value)
 
   return (
     <FieldGrid>
@@ -112,17 +120,45 @@ export function ContactFields({
         items={departments}
         onChange={(department) => patch({ department })}
       />
-      <Field label="Email">
-        <Input type="email" value={value.email} onChange={(e) => patch({ email: e.target.value })} />
+      <Field label="Email" required error={emailError ?? undefined}>
+        <Input
+          type="email"
+          autoComplete="email"
+          maxLength={255}
+          value={value.email}
+          aria-invalid={Boolean(emailError)}
+          onChange={(e) => patch({ email: e.target.value })}
+        />
       </Field>
-      <Field label="Mobile phone">
-        <Input value={value.mobilePhone} onChange={(e) => patch({ mobilePhone: e.target.value })} />
+      <Field label="Mobile phone" error={mobilePhoneError ?? undefined}>
+        <Input
+          type="tel"
+          inputMode="tel"
+          autoComplete="tel"
+          maxLength={30}
+          value={value.mobilePhone}
+          aria-invalid={Boolean(mobilePhoneError)}
+          onChange={(e) => patch({ mobilePhone: e.target.value })}
+        />
       </Field>
       <Field label="Landline">
-        <Input value={value.landlinePhone} onChange={(e) => patch({ landlinePhone: e.target.value })} />
+        <Input
+          type="tel"
+          inputMode="tel"
+          maxLength={30}
+          value={value.landlinePhone}
+          onChange={(e) => patch({ landlinePhone: e.target.value })}
+        />
       </Field>
-      <Field label="WhatsApp">
-        <Input value={value.whatsappNumber} onChange={(e) => patch({ whatsappNumber: e.target.value })} />
+      <Field label="WhatsApp" error={whatsappNumberError ?? undefined}>
+        <Input
+          type="tel"
+          inputMode="tel"
+          maxLength={30}
+          value={value.whatsappNumber}
+          aria-invalid={Boolean(whatsappNumberError)}
+          onChange={(e) => patch({ whatsappNumber: e.target.value })}
+        />
       </Field>
       <Field label="Responsibility" className="sm:col-span-2">
         <Input value={value.responsibility} onChange={(e) => patch({ responsibility: e.target.value })} />

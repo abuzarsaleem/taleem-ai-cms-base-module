@@ -39,6 +39,8 @@ function TenantContactForm({ tenantId }: { tenantId: string }) {
       .finally(() => setLoading(false))
   }, [id, isEdit, navigate, tenantId])
 
+  const validationError = validateContact(draft)
+
   async function submit() {
     const error = validateContact(draft)
     if (error) {
@@ -65,13 +67,13 @@ function TenantContactForm({ tenantId }: { tenantId: string }) {
     <ResourceFormLayout
       eyebrow="Institution"
       title={isEdit ? 'Edit contact' : 'Add contact'}
-      description="First name and contact type are required."
+      description="First name, email, and contact type are required."
       backTo="/tenant/contacts"
       backLabel="Back to contacts"
     >
       <ContactFields value={draft} onChange={setDraft} />
       <div className="flex justify-end">
-        <Button disabled={busy} onClick={() => void submit()}>
+        <Button disabled={busy || Boolean(validationError)} onClick={() => void submit()}>
           {busy ? 'Saving…' : isEdit ? 'Save contact' : 'Add contact'}
         </Button>
       </div>

@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Field } from '@/components/field'
+import { PasswordInput } from '@/components/password-input'
 import { PageHeader } from '@/components/page-header'
 import { errorMessage, useAuth } from '@/lib/auth'
 import {
@@ -246,8 +247,7 @@ export function AccountPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <Field label="Current password" required>
-              <Input
-                type="password"
+              <PasswordInput
                 autoComplete="current-password"
                 value={currentPassword}
                 maxLength={128}
@@ -255,8 +255,7 @@ export function AccountPage() {
               />
             </Field>
             <Field label="New password" required>
-              <Input
-                type="password"
+              <PasswordInput
                 autoComplete="new-password"
                 value={newPassword}
                 maxLength={128}
@@ -264,8 +263,7 @@ export function AccountPage() {
               />
             </Field>
             <Field label="Confirm new password" required>
-              <Input
-                type="password"
+              <PasswordInput
                 autoComplete="new-password"
                 value={confirmPassword}
                 maxLength={128}

@@ -37,6 +37,8 @@ export function PlatformContactFormPage() {
       .finally(() => setLoading(false))
   }, [id, isEdit, navigate, routeTenantId])
 
+  const validationError = validateContact(draft)
+
   async function submit() {
     if (!formTenantId) {
       toast.error('Select a tenant')
@@ -69,14 +71,14 @@ export function PlatformContactFormPage() {
     <ResourceFormLayout
       eyebrow="Tenant configuration"
       title={isEdit ? 'Edit contact' : 'Add contact'}
-      description="First name and contact type are required."
+      description="First name, email, and contact type are required."
       backTo="/platform/contacts"
       backLabel="Back to contacts"
     >
       <TenantPicker tenants={tenants} value={formTenantId} onChange={setFormTenantId} disabled={isEdit} />
       <ContactFields value={draft} onChange={setDraft} />
       <div className="flex justify-end">
-        <Button disabled={busy} onClick={() => void submit()}>
+        <Button disabled={busy || Boolean(validationError)} onClick={() => void submit()}>
           {busy ? 'Saving…' : isEdit ? 'Save contact' : 'Add contact'}
         </Button>
       </div>

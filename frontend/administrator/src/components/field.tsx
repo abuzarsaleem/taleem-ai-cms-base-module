@@ -7,12 +7,14 @@ export function Field({
   children,
   className,
   hint,
+  error,
   required,
 }: {
   label: string
   children: ReactNode
   className?: string
   hint?: string
+  error?: string
   required?: boolean
 }) {
   return (
@@ -22,7 +24,9 @@ export function Field({
         {required ? <span className="text-destructive"> *</span> : null}
       </Label>
       {children}
-      {hint ? (
+      {error ? (
+        <p className="text-xs leading-4 text-destructive">{error}</p>
+      ) : hint ? (
         <p className="text-xs leading-4 text-muted-foreground" title={hint}>
           {hint}
         </p>
@@ -31,6 +35,16 @@ export function Field({
   )
 }
 
-export function FieldGrid({ children }: { children: ReactNode }) {
-  return <div className="grid grid-cols-1 gap-x-4 gap-y-7 sm:grid-cols-2">{children}</div>
+export function FieldGrid({
+  children,
+  className,
+}: {
+  children: ReactNode
+  className?: string
+}) {
+  return (
+    <div className={cn('grid grid-cols-1 items-start gap-x-4 gap-y-4 sm:grid-cols-2', className)}>
+      {children}
+    </div>
+  )
 }

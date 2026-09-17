@@ -37,6 +37,8 @@ export function PlatformIdentifierFormPage() {
       .finally(() => setLoading(false))
   }, [id, isEdit, navigate, routeTenantId])
 
+  const validationError = validateIdentifier(draft)
+
   async function submit() {
     if (!formTenantId) {
       toast.error('Select a tenant')
@@ -76,7 +78,7 @@ export function PlatformIdentifierFormPage() {
       <TenantPicker tenants={tenants} value={formTenantId} onChange={setFormTenantId} disabled={isEdit} />
       <IdentifierFields value={draft} onChange={setDraft} showVerified={isEdit} />
       <div className="flex justify-end">
-        <Button disabled={busy} onClick={() => void submit()}>
+        <Button disabled={busy || Boolean(validationError)} onClick={() => void submit()}>
           {busy ? 'Saving…' : isEdit ? 'Save identifier' : 'Add identifier'}
         </Button>
       </div>

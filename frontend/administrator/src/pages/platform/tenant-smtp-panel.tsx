@@ -22,6 +22,8 @@ export function TenantSmtpPanel({
   const [busy, setBusy] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
 
+  const validationError = validateSmtp(draft)
+
   async function save() {
     const error = validateSmtp(draft)
     if (error) {
@@ -54,7 +56,7 @@ export function TenantSmtpPanel({
                 Delete SMTP
               </Button>
             ) : null}
-            <Button disabled={busy} onClick={() => void save()}>
+            <Button disabled={busy || Boolean(validationError)} onClick={() => void save()}>
               {busy ? 'Saving…' : smtp ? 'Update SMTP' : 'Add SMTP'}
             </Button>
           </div>

@@ -39,7 +39,7 @@ export function TenantInvitationsPanel({
   canInvite = true,
   blockedReason,
   title = 'Administrator invitations',
-  description = 'POST /tenant/:id/admin-invitation — email only. The token is returned once on create and resend.',
+  description = 'Send an email invitation. The invitation token is shown only once when created or resent.',
   dialogTitle = 'Invite tenant administrator',
   dialogDescription = 'Only an email address is sent. A second pending invite, or an email that is already an active tenant admin, is rejected.',
   empty = 'No administrator invitations yet.',
