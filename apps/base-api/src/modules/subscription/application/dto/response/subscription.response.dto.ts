@@ -27,6 +27,24 @@ export class ApplicationResponseDto {
   @ApiProperty() updatedAt!: Date;
 }
 
+export class RegisteredApplicationRoleDto {
+  @ApiProperty({ format: 'uuid' }) id!: string;
+  @ApiProperty() roleCode!: string;
+  @ApiProperty() roleName!: string;
+  @ApiPropertyOptional() description?: string;
+  @ApiProperty({ format: 'uuid' }) applicationId!: string;
+  @ApiProperty() roleType!: string;
+  @ApiProperty({ type: [String] }) permissionCodes!: string[];
+}
+
+export class RegisterApplicationResponseDto {
+  @ApiProperty({ type: ApplicationResponseDto })
+  application!: ApplicationResponseDto;
+
+  @ApiProperty({ type: [RegisteredApplicationRoleDto] })
+  roles!: RegisteredApplicationRoleDto[];
+}
+
 export class ApplicationCatalogueVsPreviousMonthDto {
   @ApiProperty({ description: 'Net change in total applications since start of month' })
   total!: number;

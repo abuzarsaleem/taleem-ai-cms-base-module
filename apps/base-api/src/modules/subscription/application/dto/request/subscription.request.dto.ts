@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
   ArrayNotEmpty,
   ArrayUnique,
@@ -51,6 +51,41 @@ export class CreateApplicationDto {
   })
   @IsOptional() @IsUrl() @MaxLength(1000)
   logoUrl?: string;
+}
+
+export class RegisterApplicationRoleDto {
+  @ApiProperty({ example: 'ALUMNI_ADMIN', maxLength: 50 })
+  @IsString()
+  @MinLength(2)
+  @MaxLength(50)
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim().toUpperCase() : value))
+  roleCode!: string;
+
+  @ApiProperty({ example: 'Alumni Admin', maxLength: 100 })
+  @IsString()
+  @MaxLength(100)
+  roleName!: string;
+
+  @ApiPropertyOptional({ example: 'Full administrative access', maxLength: 255 })
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  description?: string;
+}
+
+export class RegisterApplicationDto extends CreateApplicationDto {
+  @ApiPropertyOptional({
+    type: [RegisterApplicationRoleDto],
+    description: 'Optional system roles to create with the application (permissions can be added later)',
+  })
+  @IsOptional()
+  @IsArray()
+  @ArrayUnique((item: RegisterApplicationRoleDto) =>
+    typeof item?.roleCode === 'string' ? item.roleCode.trim().toUpperCase() : item?.roleCode,
+  )
+  @ValidateNested({ each: true })
+  @Type(() => RegisterApplicationRoleDto)
+  roles?: RegisterApplicationRoleDto[];
 }
 
 export class UpdateApplicationDto {

@@ -57,6 +57,18 @@ export class ApplicationRoleService {
     return this.toResponse(role);
   }
 
+  async assertRoleCodesAvailable(roleCodes: string[]): Promise<void> {
+    const codes = [...new Set(roleCodes.map((c) => c.trim().toUpperCase()).filter(Boolean))];
+    if (!codes.length) return;
+
+    const existing = await this.roles.find({ where: { roleCode: In(codes) } });
+    if (existing.length) {
+      throw new ConflictException(
+        `Role code(s) already exist: ${existing.map((r) => r.roleCode).join(', ')}`,
+      );
+    }
+  }
+
   async create(
     applicationId: string,
     dto: CreateApplicationRoleDto,

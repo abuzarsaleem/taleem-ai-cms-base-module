@@ -9,6 +9,7 @@ import {
 import { SubscriptionModule } from '../subscription/subscription.module.js';
 import { TenantModule } from '../tenant/tenant.module.js';
 import { ApplicationAccessService } from './application/application-access.service.js';
+import { ApplicationRegistrationService } from './application/application-registration.service.js';
 import { ApplicationRoleService } from './application/application-role.service.js';
 import {
   ApplicationAccessAssignmentEntity,
@@ -20,6 +21,7 @@ import {
   TenantApplicationAccessController,
   TenantMembershipApplicationController,
 } from './presentation/application-access.controller.js';
+import { ApplicationRegistrationController } from './presentation/application-registration.controller.js';
 import { PlatformApplicationRoleController } from './presentation/platform-application-role.controller.js';
 
 @Module({
@@ -32,17 +34,18 @@ import { PlatformApplicationRoleController } from './presentation/platform-appli
     ]),
     TenantModule,
     forwardRef(() => InvitationModule),
-    SubscriptionModule,
+    forwardRef(() => SubscriptionModule),
     RbacModule,
   ],
   controllers: [
+    ApplicationRegistrationController,
     PlatformApplicationRoleController,
     TenantMembershipApplicationController,
     TenantApplicationAccessController,
     ApplicationAccessCatalogController,
     MyApplicationsController,
   ],
-  providers: [ApplicationAccessService, ApplicationRoleService],
+  providers: [ApplicationAccessService, ApplicationRoleService, ApplicationRegistrationService],
   exports: [ApplicationAccessService, ApplicationRoleService],
 })
 export class AccessModule {}
