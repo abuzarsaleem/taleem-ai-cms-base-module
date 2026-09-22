@@ -2,8 +2,16 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import type { ITenantRepository } from '../../domain/tenant.repository.interface.js';
-import type { TenantProps } from '../../domain/tenant.types.js';
+import { TenantStatus, type TenantProps } from '../../domain/tenant.types.js';
 import { TenantEntity } from './tenant.entity.js';
+
+type TenantStatusCounts = {
+  total: number;
+  active: number;
+  onboarding: number;
+  suspended: number;
+  retired: number;
+};
 
 @Injectable()
 export class TypeOrmTenantRepository implements ITenantRepository {
@@ -86,6 +94,45 @@ export class TypeOrmTenantRepository implements ITenantRepository {
 
   async delete(id: string): Promise<void> {
     await this.repository.delete(id);
+  }
+
+  async countByStatus(): Promise<TenantStatusCounts> {
+    return this.aggregateStatusCounts();
+  }
+
+  async countCreatedBefore(date: Date): Promise<TenantStatusCounts> {
+    return this.aggregateStatusCounts(date);
+  }
+
+  private async aggregateStatusCounts(createdBefore?: Date): Promise<TenantStatusCounts> {
+    const qb = this.repository
+      .createQueryBuilder('t')
+      .select('t.status', 'status')
+      .addSelect('COUNT(*)', 'count')
+      .groupBy('t.status');
+
+    if (createdBefore) {
+      qb.where('t.created_at < :createdBefore', { createdBefore });
+    }
+
+    const rows = await qb.getRawMany<{ status: string; count: string }>();
+    const counts: TenantStatusCounts = {
+      total: 0,
+      active: 0,
+      onboarding: 0,
+      suspended: 0,
+      retired: 0,
+    };
+
+    for (const row of rows) {
+      const count = Number(row.count) || 0;
+      counts.total += count;
+      if (row.status === TenantStatus.ACTIVE) counts.active = count;
+      if (row.status === TenantStatus.ONBOARDING) counts.onboarding = count;
+      if (row.status === TenantStatus.SUSPENDED) counts.suspended = count;
+      if (row.status === TenantStatus.RETIRED) counts.retired = count;
+    }
+    return counts;
   }
 
   private toDomain(entity: TenantEntity): TenantProps {

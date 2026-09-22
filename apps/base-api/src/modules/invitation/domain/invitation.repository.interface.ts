@@ -20,6 +20,11 @@ export interface TenantMembershipDetailProps extends TenantMembershipProps {
   isTenantAdmin: boolean;
 }
 
+export interface TenantAdminDirectoryProps extends TenantMembershipDetailProps {
+  tenantCode: string;
+  tenantDisplayName: string;
+}
+
 export interface UserTenantMembershipProps {
   membershipId: string;
   tenantId: string;
@@ -44,6 +49,16 @@ export interface ITenantMembershipRepository {
       email?: string;
     },
   ): Promise<{ data: TenantMembershipDetailProps[]; total: number }>;
+  findTenantAdmins(
+    page: number,
+    limit: number,
+    filters?: {
+      tenantId?: string;
+      applicationId?: string;
+      status?: string;
+      search?: string;
+    },
+  ): Promise<{ data: TenantAdminDirectoryProps[]; total: number }>;
   findByTenant(
     tenantId: string,
     page: number,

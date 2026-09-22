@@ -27,7 +27,10 @@ export function effectiveSubscriptionStatus(
   return SubscriptionStatus.ACTIVE;
 }
 
-export function toApplicationResponse(props: ApplicationProps): ApplicationResponseDto {
+export function toApplicationResponse(
+  props: ApplicationProps,
+  tenantCount = 0,
+): ApplicationResponseDto {
   return {
     id: props.id!,
     applicationCode: props.applicationCode,
@@ -37,6 +40,7 @@ export function toApplicationResponse(props: ApplicationProps): ApplicationRespo
     status: props.status ?? ApplicationStatus.ACTIVE,
     launchUrl: props.launchUrl,
     logoUrl: props.logoUrl ?? undefined,
+    tenantCount,
     createdAt: props.createdAt!,
     updatedAt: props.updatedAt!,
   };
@@ -60,7 +64,7 @@ export function toSubscriptionResponse(props: SubscriptionProps): SubscriptionRe
 
 export function toEntitlementResponse(
   props: TenantEntitlementProps,
-  application?: Pick<ApplicationProps, 'applicationCode' | 'name'>,
+  application?: Pick<ApplicationProps, 'applicationCode' | 'name' | 'launchUrl'>,
 ): EntitlementResponseDto {
   return {
     id: props.id!,
@@ -70,6 +74,8 @@ export function toEntitlementResponse(
     applicationName: application?.name,
     subscriptionId: props.subscriptionId,
     status: props.status ?? EntitlementStatus.ACTIVE,
+    launchUrl: props.launchUrl ?? application?.launchUrl,
+    maxUsers: props.maxUsers ?? null,
     effectiveFrom: props.effectiveFrom!,
     effectiveUntil: props.effectiveUntil,
     createdAt: props.createdAt!,

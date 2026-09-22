@@ -1,5 +1,15 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsBoolean, IsEnum, IsOptional, IsString, IsUrl, MaxLength, MinLength } from 'class-validator';
+import {
+  ArrayNotEmpty,
+  IsArray,
+  IsBoolean,
+  IsEnum,
+  IsOptional,
+  IsString,
+  IsUrl,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
 import { CodeChallengeMethod } from '../../../domain/oauth.types.js';
 
 export class OAuthAuthorizeQueryDto {
@@ -153,6 +163,9 @@ export class CreateOAuthClientDto {
   client_type!: string;
 
   @ApiProperty({ type: [String], example: ['http://localhost:3001/callback'] })
+  @IsArray()
+  @ArrayNotEmpty()
+  @IsUrl({ require_tld: false }, { each: true })
   redirect_uris!: string[];
 
   @ApiPropertyOptional({ description: 'Required for CONFIDENTIAL clients' })

@@ -15,6 +15,7 @@ import { TypeOrmTenantMembershipRepository } from './infrastructure/persistence/
 import { AlumniMemberOnboardService } from './application/alumni-member-onboard.service.js';
 import { InvitationAcceptService } from './application/invitation-accept.service.js';
 import { MembershipProvisionService } from './application/membership-provision.service.js';
+import { PlatformTenantAdminService } from './application/platform-tenant-admin.service.js';
 import { TenantInvitationService } from './application/tenant-invitation.service.js';
 import { TenantMembershipService } from './application/tenant-membership.service.js';
 import { InvitationEmailService } from './application/invitation-email.service.js';
@@ -33,6 +34,7 @@ import {
   PlatformMemberInvitationController,
   PlatformMembershipController,
   PlatformTenantAdminController,
+  PlatformTenantAdminDirectoryController,
 } from './presentation/platform-invitation.controllers.js';
 
 const entities = [TenantMembershipEntity, IdentityIdentifierEntity, RoleEntity];
@@ -64,6 +66,7 @@ const repositories = [
     PlatformAdminInvitationController,
     PlatformMemberInvitationController,
     PlatformMembershipController,
+    PlatformTenantAdminDirectoryController,
     PlatformTenantAdminController,
   ],
   providers: [
@@ -72,6 +75,7 @@ const repositories = [
     MembershipProvisionService,
     TenantInvitationService,
     TenantMembershipService,
+    PlatformTenantAdminService,
     InvitationEmailService,
     ApiKeyGuard,
     ...repositories,

@@ -14,6 +14,7 @@ import {
   AssetType,
   ContactType,
   DeploymentModel,
+  TenantSetupProgressStatus,
   TenantStatus,
 } from '../../../domain/tenant.types.js';
 
@@ -165,6 +166,25 @@ export class PlatformConfigurationQueryDto extends PaginationQueryDto {
   @IsOptional()
   @Matches(UUID_LIKE, { message: 'tenantId must be a UUID' })
   tenantId?: string;
+
+  @ApiPropertyOptional({ enum: TenantStatus })
+  @IsOptional()
+  @IsEnum(TenantStatus)
+  status?: TenantStatus;
+
+  @ApiPropertyOptional({
+    enum: TenantSetupProgressStatus,
+    description: 'Filter by setup progress (identifier, primary contact, SMTP, address)',
+  })
+  @IsOptional()
+  @IsEnum(TenantSetupProgressStatus)
+  progressStatus?: TenantSetupProgressStatus;
+
+  @ApiPropertyOptional({ description: 'Search by tenant name, code, or website' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  search?: string;
 
   @ApiPropertyOptional({ example: 'Asia/Karachi' })
   @IsOptional()

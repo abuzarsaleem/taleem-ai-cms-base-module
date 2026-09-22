@@ -142,6 +142,7 @@ const repositories = [
   exports: [
     TenantService,
     TenantContextService,
+    TenantConfigurationService,
     TENANT_REPOSITORY,
     TENANT_CONTACT_REPOSITORY,
     TENANT_ADDRESS_REPOSITORY,

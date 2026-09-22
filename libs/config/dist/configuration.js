@@ -40,6 +40,7 @@ export default () => ({
         passwordResetTokenTtlHours: parseInt(process.env.AUTH_PASSWORD_RESET_TOKEN_TTL_HOURS ?? '1', 10),
         emailVerificationUrlBase: process.env.AUTH_EMAIL_VERIFICATION_URL_BASE ?? 'http://localhost:3000/verify-email',
         passwordResetUrlBase: process.env.AUTH_PASSWORD_RESET_URL_BASE ?? 'http://localhost:3000/reset-password',
+        publicRegistrationApiKey: process.env.PUBLIC_REGISTRATION_API_KEY ?? '',
         social: {
             google: {
                 clientId: process.env.GOOGLE_OAUTH_CLIENT_ID ?? '',
@@ -75,6 +76,13 @@ export default () => ({
     invitation: {
         ttlHours: parseInt(process.env.INVITATION_TTL_HOURS ?? '168', 10),
         acceptUrlBase: process.env.INVITATION_ACCEPT_URL_BASE ?? 'http://localhost:3000/accept-invite',
+    },
+    subscription: {
+        expiryWarningDays: (process.env.SUBSCRIPTION_EXPIRY_WARNING_DAYS ?? '30,14,7,3,1')
+            .split(',')
+            .map((value) => parseInt(value.trim(), 10))
+            .filter((value) => Number.isFinite(value) && value > 0),
+        lifecycleJobsEnabled: process.env.SUBSCRIPTION_LIFECYCLE_JOBS_ENABLED !== 'false',
     },
 });
 //# sourceMappingURL=configuration.js.map

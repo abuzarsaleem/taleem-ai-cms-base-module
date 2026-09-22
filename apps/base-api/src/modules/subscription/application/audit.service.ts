@@ -11,7 +11,7 @@ export class AuditService {
 
   record(input: {
     tenantId?: string;
-    actorUserId: string;
+    actorUserId?: string;
     action: AuditAction;
     entityType: string;
     entityId?: string;

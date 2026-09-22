@@ -1,6 +1,6 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { PaginationQueryDto, PlatformPermission, RequirePermissions } from '@app/common';
+import { PlatformPermission, RequirePermissions } from '@app/common';
 import { AuditQueryService } from '../application/audit-query.service.js';
 import {
   AuditEventListResponseDto,
@@ -18,11 +18,11 @@ export class AuditEventController {
   @RequirePermissions(PlatformPermission.AUDIT_READ)
   @ApiOperation({ summary: 'Search platform audit events' })
   @ApiOkResponse({ type: AuditEventListResponseDto })
-  search(@Query() filters: AuditEventQueryDto, @Query() pagination: PaginationQueryDto) {
+  search(@Query() query: AuditEventQueryDto) {
     return this.auditQuery.search(
-      AuditEventSearchInput.fromQuery(filters),
-      pagination.page ?? 1,
-      pagination.limit ?? 20,
+      AuditEventSearchInput.fromQuery(query),
+      query.page ?? 1,
+      query.limit ?? 20,
     );
   }
 }

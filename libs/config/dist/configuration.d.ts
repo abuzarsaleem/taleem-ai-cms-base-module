@@ -40,6 +40,7 @@ declare const _default: () => {
         passwordResetTokenTtlHours: number;
         emailVerificationUrlBase: string;
         passwordResetUrlBase: string;
+        publicRegistrationApiKey: string;
         social: {
             google: {
                 clientId: string;
@@ -74,6 +75,10 @@ declare const _default: () => {
     invitation: {
         ttlHours: number;
         acceptUrlBase: string;
+    };
+    subscription: {
+        expiryWarningDays: number[];
+        lifecycleJobsEnabled: boolean;
     };
 };
 export default _default;

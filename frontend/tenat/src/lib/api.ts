@@ -1,6 +1,8 @@
 import type { AuthTokenResponse, Session } from '@/lib/types'
 
-const API_BASE = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:3000/api/v1'
+const API_BASE =
+  (import.meta.env.VITE_API_URL as string | undefined)?.trim() ||
+  'http://localhost:3010/api/v1'
 const SESSION_KEY = 'taleem.tenant.session'
 const SESSION_EVENT = 'taleem:tenant-session'
 const UNAUTHORIZED_EVENT = 'taleem:unauthorized'

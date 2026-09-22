@@ -179,7 +179,8 @@ export class EntitlementPolicyService {
         applicationId: application.id!,
         applicationCode: application.applicationCode,
         name: application.name,
-        launchUrl: application.launchUrl,
+        launchUrl: entitlement.launchUrl ?? application.launchUrl,
+        maxUsers: entitlement.maxUsers ?? null,
         logoUrl: application.logoUrl
           ? await this.storage.resolveUrl(application.logoUrl)
           : undefined,

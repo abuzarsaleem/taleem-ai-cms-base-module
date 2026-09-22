@@ -5,6 +5,7 @@ import { DATABASE_SCHEMA } from '@app/common';
 import { MembershipRole, MembershipStatus } from '../../domain/membership.types.js';
 import {
   ITenantMembershipRepository,
+  type TenantAdminDirectoryProps,
   type TenantMembershipDetailProps,
   type TenantMembershipProps,
   type UserTenantMembershipProps,
@@ -145,6 +146,104 @@ export class TypeOrmTenantMembershipRepository implements ITenantMembershipRepos
     };
   }
 
+  async findTenantAdmins(
+    page: number,
+    limit: number,
+    filters?: {
+      tenantId?: string;
+      applicationId?: string;
+      status?: string;
+      search?: string;
+    },
+  ) {
+    const params: unknown[] = [];
+    const where: string[] = [`m.role = '${MembershipRole.ADMIN}'`];
+
+    if (filters?.tenantId) {
+      params.push(filters.tenantId);
+      where.push(`m.tenant_id = $${params.length}`);
+    }
+    if (filters?.status) {
+      params.push(filters.status);
+      where.push(`m.status = $${params.length}`);
+    }
+    if (filters?.applicationId) {
+      params.push(filters.applicationId);
+      where.push(`EXISTS (
+        SELECT 1
+        FROM ${SCHEMA}.application_access_assignments aaa
+        WHERE aaa.tenant_id = m.tenant_id
+          AND aaa.identity_id = m.identity_id
+          AND aaa.application_id = $${params.length}
+          AND aaa.status = 'ACTIVE'
+      )`);
+    }
+    if (filters?.search?.trim()) {
+      params.push(`%${filters.search.trim().toLowerCase()}%`);
+      where.push(`(
+        em.identifier_value ILIKE $${params.length}
+        OR p.display_name ILIKE $${params.length}
+        OR t.tenant_code ILIKE $${params.length}
+        OR t.display_name ILIKE $${params.length}
+      )`);
+    }
+
+    const whereSql = `WHERE ${where.join(' AND ')}`;
+    params.push(limit, (page - 1) * limit);
+
+    const rows = await this.repo.manager.query(
+      `
+      SELECT
+        m.id,
+        m.tenant_id,
+        m.identity_id,
+        m.status,
+        m.role,
+        m.joined_at,
+        m.created_at,
+        m.updated_at,
+        em.identifier_value AS user_email,
+        p.display_name AS user_full_name,
+        t.tenant_code,
+        t.display_name AS tenant_display_name
+      FROM ${SCHEMA}.tenant_memberships m
+      INNER JOIN ${SCHEMA}.tenants t ON t.id = m.tenant_id
+      INNER JOIN ${SCHEMA}.identities i ON i.id = m.identity_id
+      LEFT JOIN ${SCHEMA}.identity_profiles p ON p.identity_id = m.identity_id
+      LEFT JOIN ${SCHEMA}.identity_identifiers em
+        ON em.identity_id = m.identity_id
+       AND em.identifier_type = 'EMAIL'
+       AND em.is_primary = TRUE
+      ${whereSql}
+      ORDER BY m.created_at DESC
+      LIMIT $${params.length - 1} OFFSET $${params.length}
+      `,
+      params,
+    );
+
+    const countParams = params.slice(0, -2);
+    const [{ count }] = await this.repo.manager.query(
+      `
+      SELECT COUNT(*)::int AS count
+      FROM ${SCHEMA}.tenant_memberships m
+      INNER JOIN ${SCHEMA}.tenants t ON t.id = m.tenant_id
+      INNER JOIN ${SCHEMA}.identities i ON i.id = m.identity_id
+      LEFT JOIN ${SCHEMA}.identity_profiles p ON p.identity_id = m.identity_id
+      LEFT JOIN ${SCHEMA}.identity_identifiers em
+        ON em.identity_id = m.identity_id
+       AND em.identifier_type = 'EMAIL'
+       AND em.is_primary = TRUE
+      ${whereSql}
+      `,
+      countParams,
+    );
+
+    return {
+      data: rows.map((row: Record<string, unknown>) => this.mapAdminDirectoryRow(row)),
+      total: Number(count),
+    };
+  }
+
   async findById(tenantId: string, id: string) {
     const rows = await this.repo.manager.query(
       `
@@ -274,6 +373,14 @@ export class TypeOrmTenantMembershipRepository implements ITenantMembershipRepos
       userEmail: String(row.user_email ?? ''),
       userFullName: String(row.user_full_name ?? ''),
       isTenantAdmin: isAdminRole(role),
+    };
+  }
+
+  private mapAdminDirectoryRow(row: Record<string, unknown>): TenantAdminDirectoryProps {
+    return {
+      ...this.mapDetailRow(row),
+      tenantCode: String(row.tenant_code ?? ''),
+      tenantDisplayName: String(row.tenant_display_name ?? ''),
     };
   }
 

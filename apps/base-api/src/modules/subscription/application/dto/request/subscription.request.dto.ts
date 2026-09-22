@@ -1,15 +1,21 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 import {
   ArrayNotEmpty,
+  ArrayUnique,
   IsArray,
   IsDateString,
   IsEnum,
+  IsInt,
   IsOptional,
   IsString,
   IsUrl,
   IsUUID,
   MaxLength,
+  Min,
   MinLength,
+  ValidateIf,
+  ValidateNested,
 } from 'class-validator';
 import {
   BillingCycle,
@@ -59,6 +65,32 @@ export class UpdateApplicationDto {
   logoUrl?: string;
 }
 
+export class SubscriptionApplicationItemDto {
+  @ApiProperty({ example: 'ALUMNI' })
+  @IsString()
+  @MinLength(2)
+  @MaxLength(50)
+  applicationCode!: string;
+
+  @ApiPropertyOptional({
+    example: 'https://alumni.pu.edu.pk',
+    description: 'Tenant-specific launch URL for this application',
+  })
+  @IsOptional()
+  @IsUrl({ require_tld: false })
+  @MaxLength(500)
+  launchUrl?: string;
+
+  @ApiPropertyOptional({
+    example: 5000,
+    description: 'Licensed user seats for this application; omit for unlimited',
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  maxUsers?: number;
+}
+
 export class CreateTenantSubscriptionDto {
   @ApiProperty({ example: '2026-09-01', description: 'Inclusive start date (YYYY-MM-DD)' })
   @IsDateString()
@@ -76,9 +108,29 @@ export class CreateTenantSubscriptionDto {
   @IsOptional() @IsEnum(BillingCycle)
   billingCycle?: BillingCycle;
 
-  @ApiProperty({ type: [String], example: ['ALUMNI', 'ADMISSIONS'] })
-  @IsArray() @ArrayNotEmpty() @IsString({ each: true }) @MaxLength(50, { each: true })
-  applicationCodes!: string[];
+  @ApiPropertyOptional({
+    type: [SubscriptionApplicationItemDto],
+    description: 'Preferred: apps with optional tenant launchUrl and maxUsers',
+  })
+  @ValidateIf((o: CreateTenantSubscriptionDto) => !o.applicationCodes?.length)
+  @IsArray()
+  @ArrayNotEmpty()
+  @ArrayUnique((item: SubscriptionApplicationItemDto) => item.applicationCode)
+  @ValidateNested({ each: true })
+  @Type(() => SubscriptionApplicationItemDto)
+  applications?: SubscriptionApplicationItemDto[];
+
+  @ApiPropertyOptional({
+    type: [String],
+    example: ['ALUMNI', 'ADMISSIONS'],
+    description: 'Legacy: application codes only (no launchUrl/maxUsers). Prefer applications.',
+  })
+  @ValidateIf((o: CreateTenantSubscriptionDto) => !o.applications?.length)
+  @IsArray()
+  @ArrayNotEmpty()
+  @IsString({ each: true })
+  @MaxLength(50, { each: true })
+  applicationCodes?: string[];
 }
 
 export class UpdateTenantSubscriptionDto {
@@ -98,8 +150,25 @@ export class UpdateTenantSubscriptionDto {
   @IsOptional() @IsEnum(BillingCycle)
   billingCycle?: BillingCycle;
 
-  @ApiPropertyOptional({ type: [String], example: ['ALUMNI'] })
-  @IsOptional() @IsArray() @ArrayNotEmpty() @IsString({ each: true }) @MaxLength(50, { each: true })
+  @ApiPropertyOptional({ type: [SubscriptionApplicationItemDto] })
+  @IsOptional()
+  @IsArray()
+  @ArrayNotEmpty()
+  @ArrayUnique((item: SubscriptionApplicationItemDto) => item.applicationCode)
+  @ValidateNested({ each: true })
+  @Type(() => SubscriptionApplicationItemDto)
+  applications?: SubscriptionApplicationItemDto[];
+
+  @ApiPropertyOptional({
+    type: [String],
+    example: ['ALUMNI'],
+    description: 'Legacy codes-only update. Prefer applications.',
+  })
+  @IsOptional()
+  @IsArray()
+  @ArrayNotEmpty()
+  @IsString({ each: true })
+  @MaxLength(50, { each: true })
   applicationCodes?: string[];
 
   @ApiPropertyOptional({ enum: SubscriptionStatus })
@@ -123,6 +192,18 @@ export class CreateTenantEntitlementDto {
   @ApiPropertyOptional()
   @IsOptional() @IsDateString()
   effectiveUntil?: string;
+
+  @ApiPropertyOptional({ example: 'https://alumni.pu.edu.pk' })
+  @IsOptional()
+  @IsUrl({ require_tld: false })
+  @MaxLength(500)
+  launchUrl?: string;
+
+  @ApiPropertyOptional({ example: 5000 })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  maxUsers?: number;
 }
 
 export class UpdateTenantEntitlementDto {
@@ -133,4 +214,21 @@ export class UpdateTenantEntitlementDto {
   @ApiPropertyOptional({ format: 'uuid' }) @IsOptional() @IsUUID() subscriptionId?: string;
   @ApiPropertyOptional() @IsOptional() @IsDateString() effectiveFrom?: string;
   @ApiPropertyOptional() @IsOptional() @IsDateString() effectiveUntil?: string;
+
+  @ApiPropertyOptional({ example: 'https://alumni.pu.edu.pk' })
+  @IsOptional()
+  @IsUrl({ require_tld: false })
+  @MaxLength(500)
+  launchUrl?: string;
+
+  @ApiPropertyOptional({
+    example: 5000,
+    description: 'Set to null to clear (unlimited)',
+    nullable: true,
+  })
+  @IsOptional()
+  @ValidateIf((_, value) => value !== null)
+  @IsInt()
+  @Min(1)
+  maxUsers?: number | null;
 }

@@ -121,6 +121,12 @@ export class TenantEntitlementEntity {
   @Column({ type: 'varchar', length: 500, nullable: true })
   notes?: string;
 
+  @Column({ name: 'launch_url', type: 'varchar', length: 500, nullable: true })
+  launchUrl?: string | null;
+
+  @Column({ name: 'max_users', type: 'int', nullable: true })
+  maxUsers?: number | null;
+
   @Column({ name: 'created_by', type: 'uuid', nullable: true })
   createdBy?: string;
 

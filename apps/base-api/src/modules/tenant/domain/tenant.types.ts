@@ -5,6 +5,13 @@ export enum TenantStatus {
   RETIRED = 'RETIRED',
 }
 
+/** Setup checklist progress for platform configuration screens (4 required items). */
+export enum TenantSetupProgressStatus {
+  NOT_STARTED = 'NOT_STARTED',
+  IN_PROGRESS = 'IN_PROGRESS',
+  COMPLETE = 'COMPLETE',
+}
+
 export enum DeploymentModel {
   SAAS = 'SAAS',
   ON_PREMISES = 'ON_PREMISES',

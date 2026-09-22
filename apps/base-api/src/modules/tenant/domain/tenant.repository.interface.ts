@@ -21,6 +21,20 @@ export interface ITenantRepository {
   create(props: TenantProps): Promise<TenantProps>;
   update(id: string, props: Partial<TenantProps>): Promise<TenantProps>;
   delete(id: string): Promise<void>;
+  countByStatus(): Promise<{
+    total: number;
+    active: number;
+    onboarding: number;
+    suspended: number;
+    retired: number;
+  }>;
+  countCreatedBefore(date: Date): Promise<{
+    total: number;
+    active: number;
+    onboarding: number;
+    suspended: number;
+    retired: number;
+  }>;
 }
 
 export const TENANT_CONTACT_REPOSITORY = Symbol('TENANT_CONTACT_REPOSITORY');

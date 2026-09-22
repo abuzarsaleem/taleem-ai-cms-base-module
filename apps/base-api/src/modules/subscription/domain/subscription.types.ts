@@ -30,6 +30,8 @@ export enum AuditAction {
   APPLICATION_DEACTIVATED = 'APPLICATION_DEACTIVATED',
   SUBSCRIPTION_CREATED = 'SUBSCRIPTION_CREATED',
   SUBSCRIPTION_UPDATED = 'SUBSCRIPTION_UPDATED',
+  SUBSCRIPTION_EXPIRED = 'SUBSCRIPTION_EXPIRED',
+  SUBSCRIPTION_EXPIRY_WARNING = 'SUBSCRIPTION_EXPIRY_WARNING',
   ENTITLEMENT_CREATED = 'ENTITLEMENT_CREATED',
   ENTITLEMENT_UPDATED = 'ENTITLEMENT_UPDATED',
 }
@@ -74,6 +76,10 @@ export interface TenantEntitlementProps {
   effectiveUntil?: Date;
   commercialReference?: string;
   notes?: string;
+  /** Tenant-specific launch URL; NULL falls back to catalog application.launchUrl */
+  launchUrl?: string | null;
+  /** Licensed seats; NULL means unlimited */
+  maxUsers?: number | null;
   createdBy?: string;
   createdAt?: Date;
   updatedAt?: Date;

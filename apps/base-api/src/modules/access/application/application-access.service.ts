@@ -105,6 +105,74 @@ export class ApplicationAccessService {
     });
   }
 
+  /**
+   * Batch summary of application assignments for directory rows.
+   * Key: `${tenantId}:${userId}`
+   */
+  async listSummariesForMembers(
+    keys: Array<{ tenantId: string; userId: string }>,
+  ): Promise<
+    Map<
+      string,
+      Array<{
+        applicationId: string;
+        applicationCode: string;
+        applicationName: string;
+        roleCode?: string;
+        roleName?: string;
+        status: string;
+      }>
+    >
+  > {
+    const result = new Map<
+      string,
+      Array<{
+        applicationId: string;
+        applicationCode: string;
+        applicationName: string;
+        roleCode?: string;
+        roleName?: string;
+        status: string;
+      }>
+    >();
+    if (!keys.length) return result;
+
+    for (const key of keys) {
+      result.set(`${key.tenantId}:${key.userId}`, []);
+    }
+
+    const tenantIds = [...new Set(keys.map((k) => k.tenantId))];
+    const userIds = [...new Set(keys.map((k) => k.userId))];
+
+    const rows = await this.assignments
+      .createQueryBuilder('a')
+      .where('a.tenant_id IN (:...tenantIds)', { tenantIds })
+      .andWhere('a.identity_id IN (:...userIds)', { userIds })
+      .andWhere('a.status = :status', { status: ApplicationAccessStatus.ACTIVE })
+      .orderBy('a.created_at', 'DESC')
+      .getMany();
+
+    const wanted = new Set(keys.map((k) => `${k.tenantId}:${k.userId}`));
+    for (const row of rows) {
+      const key = `${row.tenantId}:${row.identityId}`;
+      if (!wanted.has(key)) continue;
+      const [application, role] = await Promise.all([
+        this.applications.findById(row.applicationId),
+        this.roles.findOne({ where: { id: row.roleId } }),
+      ]);
+      result.get(key)!.push({
+        applicationId: row.applicationId,
+        applicationCode: application?.applicationCode ?? '',
+        applicationName: application?.name ?? '',
+        roleCode: role?.roleCode,
+        roleName: role?.roleName,
+        status: row.status,
+      });
+    }
+
+    return result;
+  }
+
   async get(tenantId: string, id: string) {
     const row = await this.requireAssignment(tenantId, id);
     return this.toResponse(row);

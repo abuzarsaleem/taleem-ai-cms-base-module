@@ -7,6 +7,7 @@ import {
   ContactType,
   DeploymentModel,
   SmtpEncryption,
+  TenantSetupProgressStatus,
   TenantStatus,
 } from '../../../domain/tenant.types.js';
 import { AvailableApplicationResponseDto } from '../../../../subscription/application/dto/response/subscription.response.dto.js';
@@ -26,15 +27,40 @@ export class TenantResponseDto {
   @ApiPropertyOptional() activatedAt?: Date;
   @ApiPropertyOptional() suspendedAt?: Date;
   @ApiPropertyOptional() retiredAt?: Date;
+  @ApiProperty({
+    description: 'Distinct commercially usable applications entitled to this tenant',
+    example: 4,
+  })
+  applicationCount!: number;
   @ApiProperty() createdAt!: Date;
   @ApiProperty() updatedAt!: Date;
   @ApiPropertyOptional({ type: [AvailableApplicationResponseDto] })
   applications?: AvailableApplicationResponseDto[];
 }
 
+export class TenantCatalogueVsPreviousMonthDto {
+  @ApiProperty() total!: number;
+  @ApiProperty() active!: number;
+  @ApiProperty() onboarding!: number;
+  @ApiProperty() suspended!: number;
+  @ApiProperty() retired!: number;
+}
+
+export class TenantCatalogueStatsDto {
+  @ApiProperty() total!: number;
+  @ApiProperty() active!: number;
+  @ApiProperty() onboarding!: number;
+  @ApiProperty() suspended!: number;
+  @ApiProperty() retired!: number;
+  @ApiProperty({ type: TenantCatalogueVsPreviousMonthDto })
+  vsPreviousMonth!: TenantCatalogueVsPreviousMonthDto;
+}
+
 export class TenantListResponseDto {
   @ApiProperty({ type: [TenantResponseDto] }) data!: TenantResponseDto[];
   @ApiProperty({ type: PaginationMetaDto }) meta!: PaginationMetaDto;
+  @ApiProperty({ type: TenantCatalogueStatsDto })
+  stats!: TenantCatalogueStatsDto;
 }
 
 export class TenantContactResponseDto {
@@ -104,13 +130,25 @@ export class TenantIdentifierListResponseDto {
   @ApiProperty({ type: PaginationMetaDto }) meta!: PaginationMetaDto;
 }
 
+export class TenantConfigurationChecklistDto {
+  @ApiProperty() identifier!: boolean;
+  @ApiProperty() primaryContact!: boolean;
+  @ApiProperty() smtp!: boolean;
+  @ApiProperty() address!: boolean;
+}
+
 export class TenantConfigurationResponseDto {
-  @ApiProperty({ format: 'uuid' }) id!: string;
+  @ApiPropertyOptional({ format: 'uuid', description: 'Absent when the tenant has no configuration row yet' })
+  id?: string;
   @ApiProperty({ format: 'uuid' }) tenantId!: string;
-  @ApiProperty() timezone!: string;
-  @ApiProperty() locale!: string;
+  @ApiPropertyOptional() tenantCode?: string;
+  @ApiPropertyOptional() displayName?: string;
+  @ApiPropertyOptional() websiteUrl?: string;
+  @ApiPropertyOptional({ enum: TenantStatus }) tenantStatus?: string;
+  @ApiPropertyOptional() timezone?: string;
+  @ApiPropertyOptional() locale?: string;
   @ApiPropertyOptional() dateFormat?: string;
-  @ApiProperty() currencyCode!: string;
+  @ApiPropertyOptional() currencyCode?: string;
   @ApiPropertyOptional() brandingName?: string;
   @ApiPropertyOptional() logoAssetId?: string;
   @ApiPropertyOptional() logoDarkAssetId?: string;
@@ -122,8 +160,20 @@ export class TenantConfigurationResponseDto {
   @ApiPropertyOptional() emailFromName?: string;
   @ApiPropertyOptional() emailFromAddress?: string;
   @ApiPropertyOptional() supportEmail?: string;
-  @ApiProperty() createdAt!: Date;
-  @ApiProperty() updatedAt!: Date;
+  @ApiPropertyOptional({ type: TenantConfigurationChecklistDto })
+  checklist?: TenantConfigurationChecklistDto;
+  @ApiPropertyOptional({ example: 3 }) completedCount?: number;
+  @ApiPropertyOptional({ example: 4 }) requiredCount?: number;
+  @ApiPropertyOptional({ example: 75 }) percent?: number;
+  @ApiPropertyOptional({ enum: TenantSetupProgressStatus })
+  progressStatus?: TenantSetupProgressStatus;
+  @ApiPropertyOptional({
+    type: [String],
+    example: ['smtp', 'address'],
+  })
+  missing?: Array<'identifier' | 'primaryContact' | 'smtp' | 'address'>;
+  @ApiPropertyOptional() createdAt?: Date;
+  @ApiPropertyOptional() updatedAt?: Date;
 }
 
 export class TenantConfigurationListResponseDto {

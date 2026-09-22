@@ -18,13 +18,45 @@ export class ApplicationResponseDto {
   @ApiPropertyOptional() launchUrl?: string;
   @ApiPropertyOptional({ description: 'Resolved public or signed logo URL' })
   logoUrl?: string;
+  @ApiProperty({
+    description: 'Distinct tenants with commercially usable ACTIVE entitlement to this application',
+    example: 3,
+  })
+  tenantCount!: number;
   @ApiProperty() createdAt!: Date;
   @ApiProperty() updatedAt!: Date;
+}
+
+export class ApplicationCatalogueVsPreviousMonthDto {
+  @ApiProperty({ description: 'Net change in total applications since start of month' })
+  total!: number;
+  @ApiProperty({ description: 'Net change in ACTIVE applications since start of month' })
+  active!: number;
+  @ApiProperty({ description: 'Net change in INACTIVE applications since start of month' })
+  inactive!: number;
+}
+
+export class ApplicationCatalogueLatestVersionDto {
+  @ApiProperty() name!: string;
+  @ApiProperty() applicationCode!: string;
+  @ApiProperty() version!: string;
+}
+
+export class ApplicationCatalogueStatsDto {
+  @ApiProperty() total!: number;
+  @ApiProperty() active!: number;
+  @ApiProperty() inactive!: number;
+  @ApiProperty({ type: ApplicationCatalogueVsPreviousMonthDto })
+  vsPreviousMonth!: ApplicationCatalogueVsPreviousMonthDto;
+  @ApiPropertyOptional({ type: ApplicationCatalogueLatestVersionDto })
+  latestVersion?: ApplicationCatalogueLatestVersionDto;
 }
 
 export class ApplicationListResponseDto {
   @ApiProperty({ type: [ApplicationResponseDto] }) data!: ApplicationResponseDto[];
   @ApiProperty({ type: PaginationMetaDto }) meta!: PaginationMetaDto;
+  @ApiProperty({ type: ApplicationCatalogueStatsDto })
+  stats!: ApplicationCatalogueStatsDto;
 }
 
 export class SubscriptionResponseDto {
@@ -55,6 +87,12 @@ export class EntitlementResponseDto {
   @ApiPropertyOptional() applicationName?: string;
   @ApiPropertyOptional({ format: 'uuid' }) subscriptionId?: string;
   @ApiProperty({ enum: EntitlementStatus }) status!: EntitlementStatus;
+  @ApiPropertyOptional({
+    description: 'Tenant-specific launch URL (falls back to catalog URL when omitted)',
+  })
+  launchUrl?: string;
+  @ApiPropertyOptional({ description: 'Licensed user seats; omitted/null means unlimited' })
+  maxUsers?: number | null;
   @ApiProperty() effectiveFrom!: Date;
   @ApiPropertyOptional() effectiveUntil?: Date;
   @ApiProperty() createdAt!: Date;
@@ -70,7 +108,10 @@ export class AvailableApplicationResponseDto {
   @ApiProperty({ format: 'uuid' }) applicationId!: string;
   @ApiProperty() applicationCode!: string;
   @ApiProperty() name!: string;
-  @ApiPropertyOptional() launchUrl?: string;
+  @ApiPropertyOptional({ description: 'Resolved launch URL (tenant override or catalog default)' })
+  launchUrl?: string;
+  @ApiPropertyOptional({ description: 'Licensed user seats; omitted/null means unlimited' })
+  maxUsers?: number | null;
   @ApiPropertyOptional({ description: 'Resolved public or signed logo URL' })
   logoUrl?: string;
   @ApiProperty({ format: 'uuid' }) entitlementId!: string;

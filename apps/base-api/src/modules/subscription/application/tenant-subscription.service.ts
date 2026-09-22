@@ -21,6 +21,7 @@ import { TenantEntitlementService } from './tenant-entitlement.service.js';
 import {
   CreateTenantSubscriptionDto,
   UpdateTenantSubscriptionDto,
+  type SubscriptionApplicationItemDto,
 } from './dto/request/subscription.request.dto.js';
 import { toSubscriptionResponse } from './mappers/subscription.mapper.js';
 
@@ -67,9 +68,11 @@ export class TenantSubscriptionService {
     const tenant = await this.tenants.findById(tenantId);
     if (!tenant) throw new NotFoundException(`Tenant '${tenantId}' not found`);
 
+    const apps = this.resolveApplicationItems(dto);
     this.assertDateRange(dto.startDate, dto.endDate);
-    await this.assertApplicationsExist(dto.applicationCodes);
+    await this.assertApplicationsExist(apps.map((app) => app.applicationCode));
 
+    const applicationCodes = apps.map((app) => app.applicationCode);
     const startDate = dto.startDate.slice(0, 10);
     const endDate = dto.endDate.slice(0, 10);
     const created = await this.subscriptions.create({
@@ -78,7 +81,7 @@ export class TenantSubscriptionService {
       status: SubscriptionStatus.ACTIVE,
       planType: dto.planType,
       billingCycle: dto.billingCycle,
-      applicationCodes: dto.applicationCodes,
+      applicationCodes,
       startDate,
       endDate,
       createdBy: actorUserId,
@@ -90,13 +93,18 @@ export class TenantSubscriptionService {
       action: AuditAction.SUBSCRIPTION_CREATED,
       entityType: 'subscription',
       entityId: created.id,
-      newValue: { planType: dto.planType, applicationCodes: dto.applicationCodes },
+      newValue: this.auditSnapshot(created),
     });
 
-    for (const applicationCode of dto.applicationCodes) {
+    for (const app of apps) {
       await this.entitlementService.establish(
         tenantId,
-        { applicationCode, subscriptionId: created.id },
+        {
+          applicationCode: app.applicationCode,
+          subscriptionId: created.id,
+          launchUrl: app.launchUrl,
+          maxUsers: app.maxUsers,
+        },
         actorUserId,
       );
     }
@@ -117,8 +125,13 @@ export class TenantSubscriptionService {
     const endDate = (dto.endDate ?? subscription.endDate ?? '').slice(0, 10);
     if (endDate) this.assertDateRange(startDate, endDate);
 
-    if (dto.applicationCodes) {
-      await this.assertApplicationsExist(dto.applicationCodes);
+    const apps =
+      dto.applications?.length || dto.applicationCodes?.length
+        ? this.resolveApplicationItems(dto)
+        : null;
+
+    if (apps) {
+      await this.assertApplicationsExist(apps.map((app) => app.applicationCode));
     }
 
     if (dto.status === SubscriptionStatus.ACTIVE && endDate && this.policy.hasPeriodEnded({
@@ -130,17 +143,18 @@ export class TenantSubscriptionService {
       );
     }
 
+    const applicationCodes = apps?.map((app) => app.applicationCode);
     const updated = await this.subscriptions.update(tenantId, id, {
       startDate: dto.startDate ? startDate : undefined,
       endDate: dto.endDate ? endDate : undefined,
       status: dto.status,
       planType: dto.planType,
       billingCycle: dto.billingCycle,
-      applicationCodes: dto.applicationCodes,
+      applicationCodes,
     });
 
-    if (dto.applicationCodes && updated.id) {
-      await this.syncEntitlements(tenantId, updated.id, dto.applicationCodes, actorUserId);
+    if (apps && updated.id) {
+      await this.syncEntitlements(tenantId, updated.id, apps, actorUserId);
     }
 
     if (dto.status === SubscriptionStatus.INACTIVE && updated.id) {
@@ -156,23 +170,55 @@ export class TenantSubscriptionService {
       action: AuditAction.SUBSCRIPTION_UPDATED,
       entityType: 'subscription',
       entityId: id,
-      oldValue: { status: subscription.status, endDate: subscription.endDate },
-      newValue: { status: updated.status, endDate: updated.endDate, applicationCodes: dto.applicationCodes },
+      oldValue: this.auditSnapshot(subscription),
+      newValue: this.auditSnapshot(updated),
     });
 
     return toSubscriptionResponse(updated);
   }
 
+  private auditSnapshot(subscription: {
+    subscriptionCode: string;
+    status?: string;
+    planType: string;
+    billingCycle?: string;
+    applicationCodes?: string[];
+    startDate: string;
+    endDate?: string;
+  }) {
+    return {
+      subscriptionCode: subscription.subscriptionCode,
+      status: subscription.status,
+      planType: subscription.planType,
+      billingCycle: subscription.billingCycle,
+      applicationCodes: subscription.applicationCodes ?? [],
+      startDate: subscription.startDate,
+      endDate: subscription.endDate,
+    };
+  }
+
+  private resolveApplicationItems(
+    dto: Pick<CreateTenantSubscriptionDto, 'applications' | 'applicationCodes'>,
+  ): SubscriptionApplicationItemDto[] {
+    if (dto.applications?.length) {
+      return dto.applications;
+    }
+    if (dto.applicationCodes?.length) {
+      return dto.applicationCodes.map((applicationCode) => ({ applicationCode }));
+    }
+    throw new BadRequestException('Provide applications or applicationCodes');
+  }
+
   private async syncEntitlements(
     tenantId: string,
     subscriptionId: string,
-    applicationCodes: string[],
+    apps: SubscriptionApplicationItemDto[],
     actorUserId: string,
   ) {
-    const wanted = new Set(applicationCodes);
+    const wanted = new Set(apps.map((app) => app.applicationCode));
     const linked = await this.entitlements.findBySubscription(subscriptionId);
-    const apps = await this.applications.findByIds(linked.map((row) => row.applicationId));
-    const appById = new Map(apps.map((app) => [app.id!, app]));
+    const linkedApps = await this.applications.findByIds(linked.map((row) => row.applicationId));
+    const appById = new Map(linkedApps.map((app) => [app.id!, app]));
 
     for (const row of linked) {
       const code = appById.get(row.applicationId)?.applicationCode;
@@ -181,15 +227,32 @@ export class TenantSubscriptionService {
       }
     }
 
-    for (const applicationCode of applicationCodes) {
-      const application = await this.applications.findByCode(applicationCode);
+    for (const item of apps) {
+      const application = await this.applications.findByCode(item.applicationCode);
       const existing = application?.id
         ? await this.entitlements.findByTenantAndApplication(tenantId, application.id)
         : null;
-      if (existing?.status === EntitlementStatus.ACTIVE) continue;
+
+      if (existing?.status === EntitlementStatus.ACTIVE) {
+        const patch: {
+          subscriptionId: string;
+          launchUrl?: string;
+          maxUsers?: number;
+        } = { subscriptionId };
+        if (item.launchUrl !== undefined) patch.launchUrl = item.launchUrl;
+        if (item.maxUsers !== undefined) patch.maxUsers = item.maxUsers;
+        await this.entitlements.update(tenantId, existing.id!, patch);
+        continue;
+      }
+
       await this.entitlementService.establish(
         tenantId,
-        { applicationCode, subscriptionId },
+        {
+          applicationCode: item.applicationCode,
+          subscriptionId,
+          launchUrl: item.launchUrl,
+          maxUsers: item.maxUsers,
+        },
         actorUserId,
       );
     }

@@ -56,7 +56,11 @@ export class ApplicationCatalogController {
 
   @Get()
   @RequirePermissions(PlatformPermission.TENANT_READ)
-  @ApiOperation({ summary: 'List registered applications' })
+  @ApiOperation({
+    summary: 'List registered applications',
+    description:
+      'Includes per-application tenantCount and catalogue stats (total/active/inactive with month-over-month deltas).',
+  })
   @ApiOkResponse({ type: ApplicationListResponseDto })
   findAll(@Query() query: PaginationQueryDto) {
     return this.service.findAll(query.page ?? 1, query.limit ?? 20);

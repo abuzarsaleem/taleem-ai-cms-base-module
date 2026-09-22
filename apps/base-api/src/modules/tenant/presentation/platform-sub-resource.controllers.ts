@@ -87,7 +87,11 @@ export class PlatformConfigurationController {
 
   @Get()
   @RequirePermissions(PlatformPermission.TENANT_READ)
-  @ApiOperation({ summary: 'List configurations across all tenants (platform admin)' })
+  @ApiOperation({
+    summary: 'List tenant configurations with setup progress',
+    description:
+      'One row per tenant (excludes RETIRED). Includes timezone/locale config when present, plus progress over identifier, primary contact, SMTP, and address (4/4).',
+  })
   @ApiOkResponse({ type: TenantConfigurationListResponseDto })
   listAll(@Query() q: PlatformConfigurationQueryDto) {
     const { page, limit, ...filters } = q;

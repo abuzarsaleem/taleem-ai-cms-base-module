@@ -19,8 +19,11 @@ import type {
   TenantSmtpResponseDto,
 } from '../dto/response/tenant.response.dto.js';
 
-export function toTenantResponse(props: TenantProps): TenantResponseDto {
-  return { ...props } as TenantResponseDto;
+export function toTenantResponse(
+  props: TenantProps,
+  applicationCount = 0,
+): TenantResponseDto {
+  return { ...props, applicationCount } as TenantResponseDto;
 }
 
 export function toContactResponse(props: TenantContactProps): TenantContactResponseDto {

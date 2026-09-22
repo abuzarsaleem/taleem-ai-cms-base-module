@@ -1,7 +1,9 @@
 import { Module, forwardRef } from '@nestjs/common';
+import { ScheduleModule } from '@nestjs/schedule';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { StorageModule } from '../storage/storage.module.js';
 import { TenantModule } from '../tenant/tenant.module.js';
+import { NotificationModule } from '../notification/notification.module.js';
 import {
   APPLICATION_REPOSITORY,
   AUDIT_EVENT_REPOSITORY,
@@ -14,6 +16,7 @@ import {
   SubscriptionEntity,
   TenantEntitlementEntity,
 } from './infrastructure/persistence/subscription.entities.js';
+import { SubscriptionLifecycleEventEntity } from './infrastructure/persistence/subscription-lifecycle.entity.js';
 import {
   TypeOrmApplicationRepository,
   TypeOrmAuditEventRepository,
@@ -27,6 +30,9 @@ import { EntitlementPolicyService } from './application/entitlement-policy.servi
 import { TenantAvailabilityService } from './application/tenant-availability.service.js';
 import { TenantEntitlementService } from './application/tenant-entitlement.service.js';
 import { TenantSubscriptionService } from './application/tenant-subscription.service.js';
+import { SubscriptionEmailService } from './application/subscription-email.service.js';
+import { SubscriptionLifecycleService } from './application/subscription-lifecycle.service.js';
+import { SubscriptionLifecycleScheduler } from './application/subscription-lifecycle.scheduler.js';
 import {
   ApplicationCatalogController,
   TenantAvailabilityController,
@@ -47,6 +53,7 @@ const entities = [
   SubscriptionEntity,
   TenantEntitlementEntity,
   AuditEventEntity,
+  SubscriptionLifecycleEventEntity,
 ];
 
 const repositories = [
@@ -58,8 +65,10 @@ const repositories = [
 
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
     TypeOrmModule.forFeature(entities),
     StorageModule,
+    NotificationModule,
     forwardRef(() => TenantModule),
   ],
   controllers: [
@@ -81,11 +90,16 @@ const repositories = [
     TenantSubscriptionService,
     TenantAvailabilityService,
     RegistrationTenantsService,
+    SubscriptionEmailService,
+    SubscriptionLifecycleService,
+    SubscriptionLifecycleScheduler,
     ApiKeyGuard,
     ...repositories,
   ],
   exports: [
     EntitlementPolicyService,
+    ApplicationCatalogService,
+    AuditQueryService,
     APPLICATION_REPOSITORY,
     SUBSCRIPTION_REPOSITORY,
     TENANT_ENTITLEMENT_REPOSITORY,

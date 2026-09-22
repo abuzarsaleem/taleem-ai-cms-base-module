@@ -90,12 +90,17 @@ export class TenantEntitlementService {
     }
 
     const period = this.parsePeriod(dto.effectiveFrom, dto.effectiveUntil);
+    const overrides: Partial<TenantEntitlementProps> = {};
+    if (dto.launchUrl !== undefined) overrides.launchUrl = dto.launchUrl;
+    if (dto.maxUsers !== undefined) overrides.maxUsers = dto.maxUsers;
+
     const saved = existing
       ? await this.entitlements.update(tenantId, existing.id!, {
           subscriptionId: dto.subscriptionId ?? existing.subscriptionId,
           status: EntitlementStatus.ACTIVE,
           effectiveFrom: period.effectiveFrom,
           effectiveUntil: period.effectiveUntil,
+          ...overrides,
         })
       : await this.entitlements.create({
           tenantId,
@@ -104,6 +109,8 @@ export class TenantEntitlementService {
           status: EntitlementStatus.ACTIVE,
           effectiveFrom: period.effectiveFrom,
           effectiveUntil: period.effectiveUntil,
+          launchUrl: dto.launchUrl,
+          maxUsers: dto.maxUsers,
           createdBy: actorUserId,
         });
 
@@ -114,7 +121,12 @@ export class TenantEntitlementService {
       entityType: 'tenant_entitlement',
       entityId: saved.id,
       oldValue: existing ? { status: existing.status } : null,
-      newValue: { status: saved.status, applicationCode: application.applicationCode },
+      newValue: {
+        status: saved.status,
+        applicationCode: application.applicationCode,
+        launchUrl: saved.launchUrl,
+        maxUsers: saved.maxUsers,
+      },
     });
 
     return toEntitlementResponse(saved, application);
@@ -143,6 +155,8 @@ export class TenantEntitlementService {
     if (dto.subscriptionId) patch.subscriptionId = dto.subscriptionId;
     if (dto.effectiveFrom) patch.effectiveFrom = period.effectiveFrom;
     if (dto.effectiveUntil !== undefined) patch.effectiveUntil = period.effectiveUntil;
+    if (dto.launchUrl !== undefined) patch.launchUrl = dto.launchUrl;
+    if (dto.maxUsers !== undefined) patch.maxUsers = dto.maxUsers;
     const updated = await this.entitlements.update(tenantId, id, patch);
     await this.audit.record({
       tenantId,
@@ -150,8 +164,16 @@ export class TenantEntitlementService {
       action: AuditAction.ENTITLEMENT_UPDATED,
       entityType: 'tenant_entitlement',
       entityId: id,
-      oldValue: { status: entitlement.status },
-      newValue: { status: updated.status },
+      oldValue: {
+        status: entitlement.status,
+        launchUrl: entitlement.launchUrl,
+        maxUsers: entitlement.maxUsers,
+      },
+      newValue: {
+        status: updated.status,
+        launchUrl: updated.launchUrl,
+        maxUsers: updated.maxUsers,
+      },
     });
     return toEntitlementResponse(updated, application);
   }

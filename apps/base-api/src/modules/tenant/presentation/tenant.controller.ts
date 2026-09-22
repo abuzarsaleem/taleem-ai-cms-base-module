@@ -45,7 +45,11 @@ export class TenantController {
 
   @Get()
   @RequirePermissions(PlatformPermission.TENANT_READ)
-  @ApiOperation({ summary: 'List all tenants (platform admin)' })
+  @ApiOperation({
+    summary: 'List all tenants (platform admin)',
+    description:
+      'Includes per-tenant applicationCount and catalogue stats (total/active/onboarding/suspended/retired with month-over-month deltas).',
+  })
   @ApiOkResponse({ type: TenantListResponseDto })
   findAll(@Query() query: PlatformTenantQueryDto) {
     const { page, limit, ...filters } = query;

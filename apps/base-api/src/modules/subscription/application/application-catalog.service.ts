@@ -16,11 +16,19 @@ import {
   extensionForMimeType,
 } from '../../tenant/application/asset-upload.validation.js';
 import type { UploadedAssetFile } from '../../tenant/application/uploaded-asset-file.js';
-import { APPLICATION_REPOSITORY, type IApplicationRepository } from '../domain/subscription.repository.interface.js';
+import {
+  APPLICATION_REPOSITORY,
+  TENANT_ENTITLEMENT_REPOSITORY,
+  type IApplicationRepository,
+  type ITenantEntitlementRepository,
+} from '../domain/subscription.repository.interface.js';
 import { ApplicationStatus, AuditAction, type ApplicationProps } from '../domain/subscription.types.js';
 import { AuditService } from './audit.service.js';
 import { CreateApplicationDto, UpdateApplicationDto } from './dto/request/subscription.request.dto.js';
-import type { ApplicationResponseDto } from './dto/response/subscription.response.dto.js';
+import type {
+  ApplicationCatalogueStatsDto,
+  ApplicationResponseDto,
+} from './dto/response/subscription.response.dto.js';
 import { toApplicationResponse } from './mappers/subscription.mapper.js';
 
 const LOGO_MIME_TYPES = new Set([
@@ -36,6 +44,8 @@ export class ApplicationCatalogService {
   constructor(
     @Inject(APPLICATION_REPOSITORY)
     private readonly applications: IApplicationRepository,
+    @Inject(TENANT_ENTITLEMENT_REPOSITORY)
+    private readonly entitlements: ITenantEntitlementRepository,
     private readonly audit: AuditService,
     private readonly config: ConfigService,
     @Inject(FILE_STORAGE) private readonly storage: IFileStorageService,
@@ -58,17 +68,33 @@ export class ApplicationCatalogService {
       entityId: created.id,
       newValue: { applicationCode: created.applicationCode, status: created.status },
     });
-    return this.toResolvedResponse(created);
+    return this.toResolvedResponse(created, 0);
   }
 
   async findAll(page = 1, limit = 20) {
-    const { data, total } = await this.applications.findAll(page, limit);
-    const resolved = await Promise.all(data.map((row) => this.toResolvedResponse(row)));
-    return paginatedResponse(resolved, total, page, limit);
+    const [{ data, total }, stats] = await Promise.all([
+      this.applications.findAll(page, limit),
+      this.getCatalogueStats(),
+    ]);
+
+    const tenantCounts = await this.entitlements.countDistinctTenantsByApplicationIds(
+      data.map((row) => row.id!).filter(Boolean),
+    );
+
+    const resolved = await Promise.all(
+      data.map((row) => this.toResolvedResponse(row, tenantCounts.get(row.id!) ?? 0)),
+    );
+
+    return {
+      ...paginatedResponse(resolved, total, page, limit),
+      stats,
+    };
   }
 
   async findById(id: string) {
-    return this.toResolvedResponse(await this.requireById(id));
+    const application = await this.requireById(id);
+    const tenantCounts = await this.entitlements.countDistinctTenantsByApplicationIds([id]);
+    return this.toResolvedResponse(application, tenantCounts.get(id) ?? 0);
   }
 
   async update(id: string, dto: UpdateApplicationDto, actorUserId: string) {
@@ -97,13 +123,13 @@ export class ApplicationCatalogService {
         logoUrl: updated.logoUrl,
       },
     });
-    return this.toResolvedResponse(updated);
+    return this.toResolvedResponseWithTenantCount(updated);
   }
 
   async deactivate(id: string, actorUserId: string) {
     const before = await this.requireById(id);
     if (before.status === ApplicationStatus.INACTIVE) {
-      return this.toResolvedResponse(before);
+      return this.toResolvedResponseWithTenantCount(before);
     }
     const updated = await this.applications.update(id, {
       status: ApplicationStatus.INACTIVE,
@@ -117,7 +143,7 @@ export class ApplicationCatalogService {
       oldValue: { status: before.status },
       newValue: { status: updated.status },
     });
-    return this.toResolvedResponse(updated);
+    return this.toResolvedResponseWithTenantCount(updated);
   }
 
   async uploadLogo(id: string, file: UploadedAssetFile | undefined, actorUserId: string) {
@@ -151,13 +177,13 @@ export class ApplicationCatalogService {
       newValue: { logoUrl: objectKey },
     });
 
-    return this.toResolvedResponse(updated);
+    return this.toResolvedResponseWithTenantCount(updated);
   }
 
   async removeLogo(id: string, actorUserId: string) {
     const application = await this.requireById(id);
     if (!application.logoUrl) {
-      return this.toResolvedResponse(application);
+      return this.toResolvedResponseWithTenantCount(application);
     }
 
     await this.deleteStoredLogo(application.logoUrl);
@@ -175,7 +201,7 @@ export class ApplicationCatalogService {
       newValue: { logoUrl: null },
     });
 
-    return this.toResolvedResponse(updated);
+    return this.toResolvedResponseWithTenantCount(updated);
   }
 
   private async requireById(id: string) {
@@ -184,8 +210,48 @@ export class ApplicationCatalogService {
     return application;
   }
 
-  private async toResolvedResponse(props: ApplicationProps): Promise<ApplicationResponseDto> {
-    const response = toApplicationResponse(props);
+  async getCatalogueStats(): Promise<ApplicationCatalogueStatsDto> {
+    const startOfMonth = new Date();
+    startOfMonth.setUTCDate(1);
+    startOfMonth.setUTCHours(0, 0, 0, 0);
+
+    const [current, previous, latest] = await Promise.all([
+      this.applications.countByStatus(),
+      this.applications.countCreatedBefore(startOfMonth),
+      this.applications.findLatestVersioned(),
+    ]);
+
+    return {
+      total: current.total,
+      active: current.active,
+      inactive: current.inactive,
+      vsPreviousMonth: {
+        total: current.total - previous.total,
+        active: current.active - previous.active,
+        inactive: current.inactive - previous.inactive,
+      },
+      latestVersion:
+        latest?.version && latest.version.trim()
+          ? {
+              name: latest.name,
+              applicationCode: latest.applicationCode,
+              version: latest.version,
+            }
+          : undefined,
+    };
+  }
+
+  private async toResolvedResponseWithTenantCount(props: ApplicationProps) {
+    const id = props.id!;
+    const tenantCounts = await this.entitlements.countDistinctTenantsByApplicationIds([id]);
+    return this.toResolvedResponse(props, tenantCounts.get(id) ?? 0);
+  }
+
+  private async toResolvedResponse(
+    props: ApplicationProps,
+    tenantCount = 0,
+  ): Promise<ApplicationResponseDto> {
+    const response = toApplicationResponse(props, tenantCount);
     if (props.logoUrl) {
       response.logoUrl = await this.storage.resolveUrl(props.logoUrl);
     }

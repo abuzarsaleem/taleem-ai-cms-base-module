@@ -84,4 +84,13 @@ export default () => ({
     ttlHours: parseInt(process.env.INVITATION_TTL_HOURS ?? '168', 10),
     acceptUrlBase: process.env.INVITATION_ACCEPT_URL_BASE ?? 'http://localhost:3000/accept-invite',
   },
+  subscription: {
+    /** Comma-separated day thresholds for expiry reminder emails (e.g. 30,14,7,3,1) */
+    expiryWarningDays: (process.env.SUBSCRIPTION_EXPIRY_WARNING_DAYS ?? '30,14,7,3,1')
+      .split(',')
+      .map((value) => parseInt(value.trim(), 10))
+      .filter((value) => Number.isFinite(value) && value > 0),
+    /** When false, cron jobs are registered but no-op (useful in local/dev) */
+    lifecycleJobsEnabled: process.env.SUBSCRIPTION_LIFECYCLE_JOBS_ENABLED !== 'false',
+  },
 });

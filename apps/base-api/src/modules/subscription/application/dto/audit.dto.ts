@@ -1,8 +1,8 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsDateString, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
-import { PaginationMetaDto } from '@app/common';
+import { PaginationMetaDto, PaginationQueryDto } from '@app/common';
 
-export class AuditEventQueryDto {
+export class AuditEventQueryDto extends PaginationQueryDto {
   @ApiPropertyOptional({ format: 'uuid' })
   @IsOptional()
   @IsUUID()
@@ -13,7 +13,7 @@ export class AuditEventQueryDto {
   @IsUUID()
   actorUserId?: string;
 
-  @ApiPropertyOptional({ example: 'OAUTH_TOKEN_ISSUED' })
+  @ApiPropertyOptional({ example: 'SUBSCRIPTION_CREATED' })
   @IsOptional()
   @IsString()
   @MaxLength(50)

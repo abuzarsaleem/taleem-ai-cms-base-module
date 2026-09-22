@@ -14,6 +14,7 @@ import type {
   SubscriptionProps,
   TenantEntitlementProps,
 } from '../../domain/subscription.types.js';
+import { ApplicationStatus, EntitlementStatus, SubscriptionStatus } from '../../domain/subscription.types.js';
 import {
   ApplicationEntity,
   AuditEventEntity,
@@ -118,6 +119,59 @@ export class TypeOrmApplicationRepository implements IApplicationRepository {
     return this.map(await this.repo.findOneOrFail({ where: { id } }));
   }
 
+  async countByStatus() {
+    const rows = await this.repo
+      .createQueryBuilder('a')
+      .select('a.status', 'status')
+      .addSelect('COUNT(*)', 'count')
+      .groupBy('a.status')
+      .getRawMany<{ status: string; count: string }>();
+
+    let active = 0;
+    let inactive = 0;
+    for (const row of rows) {
+      const count = Number(row.count) || 0;
+      if (row.status === ApplicationStatus.ACTIVE) active = count;
+      if (row.status === ApplicationStatus.INACTIVE) inactive = count;
+    }
+    return { total: active + inactive, active, inactive };
+  }
+
+  async countCreatedBefore(date: Date) {
+    const rows = await this.repo
+      .createQueryBuilder('a')
+      .select('a.status', 'status')
+      .addSelect('COUNT(*)', 'count')
+      .where('a.created_at < :date', { date })
+      .groupBy('a.status')
+      .getRawMany<{ status: string; count: string }>();
+
+    let active = 0;
+    let inactive = 0;
+    for (const row of rows) {
+      const count = Number(row.count) || 0;
+      if (row.status === ApplicationStatus.ACTIVE) active = count;
+      if (row.status === ApplicationStatus.INACTIVE) inactive = count;
+    }
+    return { total: active + inactive, active, inactive };
+  }
+
+  async findLatestVersioned() {
+    const withVersion = await this.repo
+      .createQueryBuilder('a')
+      .where('a.version IS NOT NULL')
+      .andWhere("TRIM(a.version) <> ''")
+      .orderBy('a.updated_at', 'DESC')
+      .getOne();
+    if (withVersion) return this.map(withVersion);
+
+    const latest = await this.repo.find({
+      order: { updatedAt: 'DESC' },
+      take: 1,
+    });
+    return latest[0] ? this.map(latest[0]) : null;
+  }
+
   private map(e: ApplicationEntity): ApplicationProps {
     return {
       id: e.id,
@@ -198,6 +252,28 @@ export class TypeOrmSubscriptionRepository implements ISubscriptionRepository {
   async findByCode(subscriptionCode: string) {
     const row = await this.repo.findOne({ where: { subscriptionCode } });
     return row ? this.map(row) : null;
+  }
+
+  async findActiveEndingOn(endDate: string) {
+    const rows = await this.repo.find({
+      where: {
+        status: SubscriptionStatus.ACTIVE,
+        endDate,
+      },
+      order: { endDate: 'ASC' },
+    });
+    return rows.map((row) => this.map(row));
+  }
+
+  async findActiveEndedOnOrBefore(endDate: string) {
+    const rows = await this.repo
+      .createQueryBuilder('s')
+      .where('s.status = :status', { status: SubscriptionStatus.ACTIVE })
+      .andWhere('s.end_date IS NOT NULL')
+      .andWhere('s.end_date <= :endDate', { endDate })
+      .orderBy('s.end_date', 'ASC')
+      .getMany();
+    return rows.map((row) => this.map(row));
   }
 
   async create(props: SubscriptionProps) {
@@ -324,6 +400,78 @@ export class TypeOrmTenantEntitlementRepository implements ITenantEntitlementRep
     return this.map(await this.repo.findOneOrFail({ where: { id, tenantId } }));
   }
 
+  async countDistinctTenantsByApplicationIds(applicationIds: string[]) {
+    const result = new Map<string, number>();
+    if (!applicationIds.length) return result;
+
+    const rows = await this.repo
+      .createQueryBuilder('e')
+      .leftJoin(SubscriptionEntity, 's', 's.id = e.subscription_id')
+      .select('e.application_id', 'applicationId')
+      .addSelect('COUNT(DISTINCT e.tenant_id)', 'tenantCount')
+      .where('e.application_id IN (:...applicationIds)', { applicationIds })
+      .andWhere('e.status = :entitlementStatus', {
+        entitlementStatus: EntitlementStatus.ACTIVE,
+      })
+      .andWhere('e.effective_from <= NOW()')
+      .andWhere('(e.effective_until IS NULL OR e.effective_until > NOW())')
+      .andWhere(
+        `(
+          e.subscription_id IS NULL
+          OR (
+            s.status = :subscriptionStatus
+            AND s.start_date <= CURRENT_DATE
+            AND (s.end_date IS NULL OR s.end_date >= CURRENT_DATE)
+          )
+        )`,
+        { subscriptionStatus: SubscriptionStatus.ACTIVE },
+      )
+      .groupBy('e.application_id')
+      .getRawMany<{ applicationId: string; tenantCount: string }>();
+
+    for (const id of applicationIds) result.set(id, 0);
+    for (const row of rows) {
+      result.set(row.applicationId, Number(row.tenantCount) || 0);
+    }
+    return result;
+  }
+
+  async countDistinctApplicationsByTenantIds(tenantIds: string[]) {
+    const result = new Map<string, number>();
+    if (!tenantIds.length) return result;
+
+    const rows = await this.repo
+      .createQueryBuilder('e')
+      .leftJoin(SubscriptionEntity, 's', 's.id = e.subscription_id')
+      .select('e.tenant_id', 'tenantId')
+      .addSelect('COUNT(DISTINCT e.application_id)', 'applicationCount')
+      .where('e.tenant_id IN (:...tenantIds)', { tenantIds })
+      .andWhere('e.status = :entitlementStatus', {
+        entitlementStatus: EntitlementStatus.ACTIVE,
+      })
+      .andWhere('e.effective_from <= NOW()')
+      .andWhere('(e.effective_until IS NULL OR e.effective_until > NOW())')
+      .andWhere(
+        `(
+          e.subscription_id IS NULL
+          OR (
+            s.status = :subscriptionStatus
+            AND s.start_date <= CURRENT_DATE
+            AND (s.end_date IS NULL OR s.end_date >= CURRENT_DATE)
+          )
+        )`,
+        { subscriptionStatus: SubscriptionStatus.ACTIVE },
+      )
+      .groupBy('e.tenant_id')
+      .getRawMany<{ tenantId: string; applicationCount: string }>();
+
+    for (const id of tenantIds) result.set(id, 0);
+    for (const row of rows) {
+      result.set(row.tenantId, Number(row.applicationCount) || 0);
+    }
+    return result;
+  }
+
   private map(e: TenantEntitlementEntity): TenantEntitlementProps {
     return {
       id: e.id,
@@ -335,6 +483,8 @@ export class TypeOrmTenantEntitlementRepository implements ITenantEntitlementRep
       effectiveUntil: e.effectiveUntil,
       commercialReference: e.commercialReference,
       notes: e.notes,
+      launchUrl: e.launchUrl,
+      maxUsers: e.maxUsers,
       createdBy: e.createdBy,
       createdAt: e.createdAt,
       updatedAt: e.updatedAt,

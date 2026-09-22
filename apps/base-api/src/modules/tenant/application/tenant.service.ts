@@ -7,11 +7,16 @@ import {
 } from '@nestjs/common';
 import { paginatedResponse } from '@app/common';
 import { EntitlementPolicyService } from '../../subscription/application/entitlement-policy.service.js';
+import {
+  TENANT_ENTITLEMENT_REPOSITORY,
+  type ITenantEntitlementRepository,
+} from '../../subscription/domain/subscription.repository.interface.js';
 import type { ITenantRepository } from '../domain/tenant.repository.interface.js';
 import { TENANT_REPOSITORY } from '../domain/tenant.repository.interface.js';
 import { TenantStatus, type TenantProps } from '../domain/tenant.types.js';
 import { CreateTenantDto, UpdateTenantDto } from './dto/request/tenant.request.dto.js';
-import {
+import type {
+  TenantCatalogueStatsDto,
   TenantListResponseDto,
   TenantResponseDto,
 } from './dto/response/tenant.response.dto.js';
@@ -22,6 +27,8 @@ export class TenantService {
   constructor(
     @Inject(TENANT_REPOSITORY)
     private readonly tenantRepository: ITenantRepository,
+    @Inject(TENANT_ENTITLEMENT_REPOSITORY)
+    private readonly entitlements: ITenantEntitlementRepository,
     private readonly entitlementPolicy: EntitlementPolicyService,
   ) {}
 
@@ -32,7 +39,7 @@ export class TenantService {
       tenantCode,
       status: TenantStatus.ONBOARDING,
     });
-    return toTenantResponse(tenant);
+    return toTenantResponse(tenant, 0);
   }
 
   async findAll(
@@ -48,26 +55,45 @@ export class TenantService {
       city?: string;
     },
   ): Promise<TenantListResponseDto> {
-    const { data, total } = await this.tenantRepository.findAll(page, limit, filters);
-    return paginatedResponse(data.map(toTenantResponse), total, page, limit);
+    const [{ data, total }, stats] = await Promise.all([
+      this.tenantRepository.findAll(page, limit, filters),
+      this.getCatalogueStats(),
+    ]);
+
+    const applicationCounts = await this.entitlements.countDistinctApplicationsByTenantIds(
+      data.map((row) => row.id!).filter(Boolean),
+    );
+
+    return {
+      ...paginatedResponse(
+        data.map((row) => toTenantResponse(row, applicationCounts.get(row.id!) ?? 0)),
+        total,
+        page,
+        limit,
+      ),
+      stats,
+    };
   }
 
   async findById(id: string): Promise<TenantResponseDto> {
     const tenant = await this.tenantRepository.findById(id);
     if (!tenant) throw new NotFoundException(`Tenant '${id}' not found`);
+    const applications = await this.entitlementPolicy.listAvailable(id);
     return {
-      ...toTenantResponse(tenant),
-      applications: await this.entitlementPolicy.listAvailable(id),
+      ...toTenantResponse(tenant, applications.length),
+      applications,
     };
   }
 
   async update(id: string, dto: UpdateTenantDto): Promise<TenantResponseDto> {
-    await this.findById(id);
+    const existing = await this.requireTenant(id);
     const updates: Partial<TenantProps> = { ...dto };
     if (dto.status === TenantStatus.ACTIVE) updates.activatedAt = new Date();
     if (dto.status === TenantStatus.SUSPENDED) updates.suspendedAt = new Date();
     if (dto.status === TenantStatus.RETIRED) updates.retiredAt = new Date();
-    return toTenantResponse(await this.tenantRepository.update(id, updates));
+    const updated = await this.tenantRepository.update(id, updates);
+    const applicationCounts = await this.entitlements.countDistinctApplicationsByTenantIds([id]);
+    return toTenantResponse(updated, applicationCounts.get(id) ?? 0);
   }
 
   async delete(_id: string): Promise<void> {
@@ -86,6 +112,38 @@ export class TenantService {
 
   async retire(id: string): Promise<TenantResponseDto> {
     return this.update(id, { status: TenantStatus.RETIRED });
+  }
+
+  private async requireTenant(id: string) {
+    const tenant = await this.tenantRepository.findById(id);
+    if (!tenant) throw new NotFoundException(`Tenant '${id}' not found`);
+    return tenant;
+  }
+
+  async getCatalogueStats(): Promise<TenantCatalogueStatsDto> {
+    const startOfMonth = new Date();
+    startOfMonth.setUTCDate(1);
+    startOfMonth.setUTCHours(0, 0, 0, 0);
+
+    const [current, previous] = await Promise.all([
+      this.tenantRepository.countByStatus(),
+      this.tenantRepository.countCreatedBefore(startOfMonth),
+    ]);
+
+    return {
+      total: current.total,
+      active: current.active,
+      onboarding: current.onboarding,
+      suspended: current.suspended,
+      retired: current.retired,
+      vsPreviousMonth: {
+        total: current.total - previous.total,
+        active: current.active - previous.active,
+        onboarding: current.onboarding - previous.onboarding,
+        suspended: current.suspended - previous.suspended,
+        retired: current.retired - previous.retired,
+      },
+    };
   }
 
   private async resolveTenantCode(dto: CreateTenantDto): Promise<string> {

@@ -15,16 +15,21 @@ import {
 import { MembershipRole } from '../domain/membership.types.js';
 import { TenantInvitationService } from '../application/tenant-invitation.service.js';
 import { TenantMembershipService } from '../application/tenant-membership.service.js';
+import { PlatformTenantAdminService } from '../application/platform-tenant-admin.service.js';
 import {
   PlatformInvitationQueryDto,
   PlatformMembershipQueryDto,
 } from '../application/dto/request/platform-list.query.dto.js';
-import { CreateTenantMembershipDto } from '../application/dto/request/membership.request.dto.js';
-import { TenantInvitationListResponseDto } from '../application/dto/response/invitation.response.dto.js';
 import {
-  TenantMembershipListResponseDto,
-  TenantMembershipResponseDto,
-} from '../application/dto/response/membership.response.dto.js';
+  PlatformTenantAdminQueryDto,
+  ProvisionTenantAdminDto,
+} from '../application/dto/request/tenant-admin.request.dto.js';
+import { TenantInvitationListResponseDto } from '../application/dto/response/invitation.response.dto.js';
+import { TenantMembershipListResponseDto } from '../application/dto/response/membership.response.dto.js';
+import {
+  PlatformTenantAdminListResponseDto,
+  ProvisionTenantAdminResponseDto,
+} from '../application/dto/response/tenant-admin.response.dto.js';
 
 @ApiTags('Tenant Admin Invitations')
 @ApiBearerAuth()
@@ -74,25 +79,44 @@ export class PlatformMembershipController {
   }
 }
 
-@ApiTags('Tenant Memberships')
+@ApiTags('Platform Tenant Admins')
+@ApiBearerAuth()
+@Controller('platform/tenant-admin')
+export class PlatformTenantAdminDirectoryController {
+  constructor(private readonly service: PlatformTenantAdminService) {}
+
+  @Get()
+  @RequirePermissions(PlatformPermission.TENANT_READ)
+  @ApiOperation({
+    summary: 'List tenant administrators across institutions',
+    description:
+      'Users with TENANT_ADMIN membership, including tenant details and assigned application access.',
+  })
+  @ApiOkResponse({ type: PlatformTenantAdminListResponseDto })
+  list(@Query() query: PlatformTenantAdminQueryDto) {
+    return this.service.list(query);
+  }
+}
+
+@ApiTags('Platform Tenant Admins')
 @ApiBearerAuth()
 @Controller('platform/tenant/:tenantId/admin')
 export class PlatformTenantAdminController {
-  constructor(private readonly service: TenantMembershipService) {}
+  constructor(private readonly service: PlatformTenantAdminService) {}
 
   @Post()
   @RequirePermissions(PlatformPermission.TENANT_UPDATE)
   @ApiOperation({
-    summary: 'Create a tenant administrator with credentials (Platform Admin)',
+    summary: 'Invite or create a tenant administrator (Platform Admin)',
     description:
-      'Directly provisions the identity and ACTIVE TENANT_ADMIN membership. Invitation APIs remain available as an alternative.',
+      'mode=INVITE sends a base invitation email and queues application access until accept. mode=CREATE provisions credentials immediately and assigns application access now.',
   })
-  @ApiCreatedResponse({ type: TenantMembershipResponseDto })
-  create(
+  @ApiCreatedResponse({ type: ProvisionTenantAdminResponseDto })
+  provision(
     @Param('tenantId', ParseUUIDPipe) tenantId: string,
-    @Body() dto: CreateTenantMembershipDto,
+    @Body() dto: ProvisionTenantAdminDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.service.createDirect(tenantId, dto, MembershipRole.ADMIN, user.userId);
+    return this.service.provision(tenantId, dto, user.userId);
   }
 }
