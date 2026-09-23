@@ -40,6 +40,10 @@ export const AlumniRole = {
     MEMBER: 'ALUMNI_MEMBER',
     ADMIN: 'ALUMNI_ADMIN',
 };
+export const AdmissionsRole = {
+    APPLICANT: 'ADMISSIONS_APPLICANT',
+    ADMIN: 'ADMISSIONS_ADMIN',
+};
 export const AlumniPermission = {
     PORTAL_ACCESS: 'alumni.portal.access',
     PROFILE_READ: 'alumni.profile.read',

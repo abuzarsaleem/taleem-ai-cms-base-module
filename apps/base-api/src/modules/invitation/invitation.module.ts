@@ -13,6 +13,7 @@ import { TENANT_MEMBERSHIP_REPOSITORY } from './domain/invitation.repository.int
 import { TenantMembershipEntity } from './infrastructure/persistence/invitation.entities.js';
 import { TypeOrmTenantMembershipRepository } from './infrastructure/persistence/typeorm-invitation.repositories.js';
 import { AlumniMemberOnboardService } from './application/alumni-member-onboard.service.js';
+import { ApplicantMemberOnboardService } from './application/applicant-member-onboard.service.js';
 import { InvitationAcceptService } from './application/invitation-accept.service.js';
 import { MembershipProvisionService } from './application/membership-provision.service.js';
 import { PlatformTenantAdminService } from './application/platform-tenant-admin.service.js';
@@ -20,6 +21,7 @@ import { TenantInvitationService } from './application/tenant-invitation.service
 import { TenantMembershipService } from './application/tenant-membership.service.js';
 import { InvitationEmailService } from './application/invitation-email.service.js';
 import { AlumniMemberOnboardController } from './presentation/alumni-member-onboard.controller.js';
+import { ApplicantMemberOnboardController } from './presentation/applicant-member-onboard.controller.js';
 import {
   InvitationAcceptController,
   TenantAdminInvitationController,
@@ -58,6 +60,7 @@ const repositories = [
   ],
   controllers: [
     AlumniMemberOnboardController,
+    ApplicantMemberOnboardController,
     TenantAdminInvitationController,
     TenantMemberInvitationController,
     InvitationAcceptController,
@@ -71,6 +74,7 @@ const repositories = [
   ],
   providers: [
     AlumniMemberOnboardService,
+    ApplicantMemberOnboardService,
     InvitationAcceptService,
     MembershipProvisionService,
     TenantInvitationService,

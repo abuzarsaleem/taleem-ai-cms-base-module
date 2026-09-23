@@ -63,6 +63,15 @@ export const AlumniRole = {
 
 export type AlumniRoleCode = (typeof AlumniRole)[keyof typeof AlumniRole];
 
+/** Admissions application system roles (applicant portal). */
+export const AdmissionsRole = {
+  APPLICANT: 'ADMISSIONS_APPLICANT',
+  ADMIN: 'ADMISSIONS_ADMIN',
+} as const;
+
+export type AdmissionsRoleCode =
+  (typeof AdmissionsRole)[keyof typeof AdmissionsRole];
+
 /** Alumni application permission codes (seeded in application_permissions). */
 export const AlumniPermission = {
   PORTAL_ACCESS: 'alumni.portal.access',

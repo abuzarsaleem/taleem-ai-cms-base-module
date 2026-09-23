@@ -38,6 +38,11 @@ export declare const AlumniRole: {
     readonly ADMIN: "ALUMNI_ADMIN";
 };
 export type AlumniRoleCode = (typeof AlumniRole)[keyof typeof AlumniRole];
+export declare const AdmissionsRole: {
+    readonly APPLICANT: "ADMISSIONS_APPLICANT";
+    readonly ADMIN: "ADMISSIONS_ADMIN";
+};
+export type AdmissionsRoleCode = (typeof AdmissionsRole)[keyof typeof AdmissionsRole];
 export declare const AlumniPermission: {
     readonly PORTAL_ACCESS: "alumni.portal.access";
     readonly PROFILE_READ: "alumni.profile.read";
