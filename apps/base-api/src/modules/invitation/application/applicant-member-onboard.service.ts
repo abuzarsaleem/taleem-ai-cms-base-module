@@ -29,7 +29,7 @@ import {
   ApplicantMemberOnboardStatus,
 } from './dto/request/applicant-member-onboard.dto.js';
 
-const ADMISSIONS_APPLICATION_CODE = 'ADMISSIONS';
+const ADMISSIONS_APPLICATION_CODE = 'ADM-AS-1122';
 
 @Injectable()
 export class ApplicantMemberOnboardService {
