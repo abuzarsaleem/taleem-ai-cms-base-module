@@ -78,8 +78,8 @@ export function PlatformIdentifierFormPage() {
       <TenantPicker tenants={tenants} value={formTenantId} onChange={setFormTenantId} disabled={isEdit} />
       <IdentifierFields value={draft} onChange={setDraft} showVerified={isEdit} />
       <div className="flex justify-end">
-        <Button disabled={busy || Boolean(validationError)} onClick={() => void submit()}>
-          {busy ? 'Saving…' : isEdit ? 'Save identifier' : 'Add identifier'}
+        <Button loading={busy} disabled={ Boolean(validationError)} onClick={() => void submit()}>
+          {isEdit ? 'Save identifier' : 'Add identifier'}
         </Button>
       </div>
     </ResourceFormLayout>

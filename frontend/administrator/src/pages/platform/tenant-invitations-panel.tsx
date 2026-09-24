@@ -26,7 +26,7 @@ import {
 } from '@/lib/invitation'
 import { InvitationStatus, type AdminInvitation } from '@/lib/types'
 import { CreateMembershipDialog } from '@/components/create-membership-dialog'
-import { invitationService, membershipService } from '@/services/platform'
+import { invitationService, platformTenantAdminService } from '@/services/platform'
 
 type InvitationApi = {
   create: (tenantId: string, email: string) => Promise<AdminInvitation & { invitationToken: string }>
@@ -63,6 +63,7 @@ export function TenantInvitationsPanel({
   const [createOpen, setCreateOpen] = useState(false)
   const [email, setEmail] = useState('')
   const [busy, setBusy] = useState(false)
+  const [resendId, setResendId] = useState<string | null>(null)
   const [issued, setIssued] = useState<{ email: string; token: string; expiresAt: string } | null>(null)
   const [cancelId, setCancelId] = useState<string | null>(null)
   const [cancelling, setCancelling] = useState(false)
@@ -102,6 +103,7 @@ export function TenantInvitationsPanel({
   }
 
   async function resend(id: string) {
+    setResendId(id)
     try {
       const next = await service.resend(tenantId, id)
       setIssued({ email: next.email, token: next.invitationToken, expiresAt: String(next.expiresAt) })
@@ -109,6 +111,8 @@ export function TenantInvitationsPanel({
       await onReload()
     } catch (error) {
       toast.error(errorMessage(error))
+    } finally {
+      setResendId(null)
     }
   }
 
@@ -145,7 +149,12 @@ export function TenantInvitationsPanel({
         description="Provisions the account and adds an active tenant administrator membership. The person can sign in immediately with these credentials."
         submitLabel="Create administrator"
         onSubmit={async (body) => {
-          await membershipService.createTenantAdmin(tenantId, body)
+          await platformTenantAdminService.provision(tenantId, {
+            mode: 'CREATE',
+            email: body.email,
+            fullName: body.fullName,
+            password: body.password,
+          })
           toast.success('Tenant administrator created')
           await onReload()
         }}
@@ -176,9 +185,7 @@ export function TenantInvitationsPanel({
             />
           </Field>
           <DialogFooter>
-            <Button disabled={busy || !email.trim()} onClick={() => void save()}>
-              {busy ? 'Sending…' : 'Send invite'}
-            </Button>
+            <Button loading={busy} disabled={ !email.trim()} onClick={() => void save()}>Send invite</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -219,7 +226,7 @@ export function TenantInvitationsPanel({
             formatInvitationInstant(row.expiresAt),
             pending ? (
               <div key={`${row.id}-inv`} className="flex justify-end gap-2">
-                <Button size="sm" variant="outline" onClick={() => void resend(row.id)}>
+                <Button size="sm" variant="outline" loading={resendId === row.id} onClick={() => void resend(row.id)}>
                   Resend
                 </Button>
                 <Button size="sm" variant="outline" onClick={() => setCancelId(row.id)}>

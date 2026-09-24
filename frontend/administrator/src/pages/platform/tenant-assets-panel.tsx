@@ -146,9 +146,7 @@ export function TenantAssetsPanel({
             </Field>
           ) : null}
           <DialogFooter>
-            <Button disabled={busy} onClick={() => void save()}>
-              {busy ? 'Saving…' : 'Save asset'}
-            </Button>
+            <Button loading={busy} onClick={() => void save()}>Save asset</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

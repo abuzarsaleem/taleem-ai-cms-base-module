@@ -1,6 +1,6 @@
 import { ApplicationIcon } from '@/components/application-icon'
 import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { SearchableSelect } from '@/components/ui/searchable-select'
 import { Field, FieldGrid } from '@/components/field'
 import { defaultSubscriptionEnd, type SubscriptionDraft } from '@/lib/subscription'
 import { ApplicationStatus, BillingCycle, PlanType, type CatalogApplication } from '@/lib/types'
@@ -10,19 +10,39 @@ export function SubscriptionFields({
   value,
   onChange,
   applications,
+  errors = {},
+  showTenantPicker,
+  tenantOptions,
 }: {
   value: SubscriptionDraft
   onChange: (next: SubscriptionDraft) => void
   applications: CatalogApplication[]
+  errors?: Partial<Record<'tenantId' | 'planType' | 'billingCycle' | 'startDate' | 'endDate' | 'applications', string>>
+  showTenantPicker?: boolean
+  tenantOptions?: Array<{ value: string; label: string; description?: string }>
 }) {
   const active = applications.filter((app) => app.status === ApplicationStatus.ACTIVE)
   const patch = (partial: Partial<SubscriptionDraft>) => onChange({ ...value, ...partial })
+  const selectedCodes = new Set(value.applications.map((app) => app.applicationCode))
 
   return (
     <div className="space-y-5">
       <FieldGrid>
-        <Field label="Plan type" required>
-          <Select
+        {showTenantPicker ? (
+          <Field label="Tenant" required className="sm:col-span-2" error={errors.tenantId}>
+            <SearchableSelect
+              value={value.tenantId || '__none__'}
+              onValueChange={(tenantId) => patch({ tenantId: tenantId === '__none__' ? '' : tenantId })}
+              options={[
+                { value: '__none__', label: 'Select tenant' },
+                ...(tenantOptions ?? []),
+              ]}
+              placeholder="Select tenant"
+            />
+          </Field>
+        ) : null}
+        <Field label="Plan type" required error={errors.planType}>
+          <SearchableSelect
             value={value.planType}
             onValueChange={(planType) => {
               const nextType = planType as PlanType
@@ -34,19 +54,16 @@ export function SubscriptionFields({
                 endDate: defaultSubscriptionEnd(value.startDate, nextType, billingCycle),
               })
             }}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={PlanType.TRIAL}>Trial</SelectItem>
-              <SelectItem value={PlanType.FREE}>Free</SelectItem>
-              <SelectItem value={PlanType.PAID}>Paid</SelectItem>
-            </SelectContent>
-          </Select>
+            options={[
+              { value: PlanType.TRIAL, label: 'Trial' },
+              { value: PlanType.FREE, label: 'Free' },
+              { value: PlanType.PAID, label: 'Paid' },
+            ]}
+            placeholder="Select plan type"
+          />
         </Field>
-        <Field label="Billing cycle" required={value.planType === PlanType.PAID}>
-          <Select
+        <Field label="Billing cycle" required={value.planType === PlanType.PAID} error={errors.billingCycle}>
+          <SearchableSelect
             value={value.billingCycle ?? 'NONE'}
             onValueChange={(cycle) => {
               const billingCycle = cycle === 'NONE' ? undefined : (cycle as BillingCycle)
@@ -55,18 +72,15 @@ export function SubscriptionFields({
                 endDate: defaultSubscriptionEnd(value.startDate, value.planType, billingCycle),
               })
             }}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {value.planType !== PlanType.PAID ? <SelectItem value="NONE">Not billed</SelectItem> : null}
-              <SelectItem value={BillingCycle.MONTHLY}>Monthly</SelectItem>
-              <SelectItem value={BillingCycle.YEARLY}>Yearly</SelectItem>
-            </SelectContent>
-          </Select>
+            options={[
+              ...(value.planType !== PlanType.PAID ? [{ value: 'NONE', label: 'Not billed' }] : []),
+              { value: BillingCycle.MONTHLY, label: 'Monthly' },
+              { value: BillingCycle.YEARLY, label: 'Yearly' },
+            ]}
+            placeholder="Select billing cycle"
+          />
         </Field>
-        <Field label="Start date" required>
+        <Field label="Start date" required error={errors.startDate}>
           <Input
             type="date"
             value={value.startDate}
@@ -78,47 +92,96 @@ export function SubscriptionFields({
             }
           />
         </Field>
-        <Field label="End date" required>
+        <Field label="End date" required error={errors.endDate}>
           <Input type="date" value={value.endDate} onChange={(e) => patch({ endDate: e.target.value })} />
         </Field>
       </FieldGrid>
+
       <div className="grid gap-2">
         <p className="text-sm font-medium">
           Assign applications <span className="text-destructive">*</span>
         </p>
         <p className="text-xs text-muted-foreground">
-          Required. Selected applications are entitled for this subscription period.
+          Required. Selected applications are entitled for this subscription period. Optionally set launch URL and max users.
         </p>
+        {errors.applications ? <p className="text-xs text-destructive">{errors.applications}</p> : null}
         {active.length ? (
-          <div className="grid gap-2 sm:grid-cols-2">
+          <div className="grid gap-3">
             {active.map((app) => {
-              const checked = value.applicationCodes.includes(app.applicationCode)
+              const checked = selectedCodes.has(app.applicationCode)
+              const current = value.applications.find((item) => item.applicationCode === app.applicationCode)
               return (
-                <button
+                <div
                   key={app.id}
-                  type="button"
-                  onClick={() =>
-                    patch({
-                      applicationCodes: checked
-                        ? value.applicationCodes.filter((code) => code !== app.applicationCode)
-                        : [...value.applicationCodes, app.applicationCode],
-                    })
-                  }
                   className={cn(
-                    'flex items-center gap-3 rounded-xl border px-3 py-3 text-left transition-colors',
-                    checked
-                      ? 'border-[#00c2b2] bg-[#00c2b2]/10'
-                      : 'border-border hover:border-[#00c2b2]/40 hover:bg-[#00c2b2]/5',
+                    'rounded-xl border px-3 py-3 transition-colors',
+                    checked ? 'border-[#00c2b2] bg-[#00c2b2]/10' : 'border-border',
                   )}
                 >
-                  <ApplicationIcon code={app.applicationCode} logoUrl={app.logoUrl} size="sm" />
-                  <span className="min-w-0">
-                    <span className="block truncate text-sm font-medium">{app.name}</span>
-                    <span className="mt-0.5 block truncate font-mono text-[11px] text-muted-foreground">
-                      {app.applicationCode}
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-3 text-left"
+                    onClick={() =>
+                      patch({
+                        applications: checked
+                          ? value.applications.filter((item) => item.applicationCode !== app.applicationCode)
+                          : [
+                              ...value.applications,
+                              {
+                                applicationCode: app.applicationCode,
+                                launchUrl: app.launchUrl ?? '',
+                                maxUsers: '',
+                              },
+                            ],
+                      })
+                    }
+                  >
+                    <ApplicationIcon code={app.applicationCode} logoUrl={app.logoUrl} size="sm" />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-medium">{app.name}</span>
+                      <span className="mt-0.5 block truncate font-mono text-[11px] text-muted-foreground">
+                        {app.applicationCode}
+                      </span>
                     </span>
-                  </span>
-                </button>
+                    <span className="text-xs text-muted-foreground">{checked ? 'Selected' : 'Select'}</span>
+                  </button>
+                  {checked ? (
+                    <div className="mt-3 grid gap-3 sm:grid-cols-2" onClick={(event) => event.stopPropagation()}>
+                      <Field label="Launch URL">
+                        <Input
+                          value={current?.launchUrl ?? ''}
+                          placeholder="https://app.example.edu"
+                          onChange={(e) =>
+                            patch({
+                              applications: value.applications.map((item) =>
+                                item.applicationCode === app.applicationCode
+                                  ? { ...item, launchUrl: e.target.value }
+                                  : item,
+                              ),
+                            })
+                          }
+                        />
+                      </Field>
+                      <Field label="Max users">
+                        <Input
+                          type="number"
+                          min={1}
+                          value={current?.maxUsers ?? ''}
+                          placeholder="Unlimited"
+                          onChange={(e) =>
+                            patch({
+                              applications: value.applications.map((item) =>
+                                item.applicationCode === app.applicationCode
+                                  ? { ...item, maxUsers: e.target.value }
+                                  : item,
+                              ),
+                            })
+                          }
+                        />
+                      </Field>
+                    </div>
+                  ) : null}
+                </div>
               )
             })}
           </div>

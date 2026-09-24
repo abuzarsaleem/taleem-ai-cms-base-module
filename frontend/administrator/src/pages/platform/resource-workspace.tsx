@@ -4,7 +4,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { ArrowLeft, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { SearchableSelect } from '@/components/ui/searchable-select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { PageHeader } from '@/components/page-header'
 import { Field } from '@/components/field'
@@ -67,21 +67,20 @@ export function ResourceWorkspace({
               onChange={(e) => onQuery(e.target.value)}
             />
             {showTenantFilter && tenantId && onTenantId && tenants ? (
-              <Select value={tenantId} onValueChange={onTenantId}>
-                <SelectTrigger className="w-full sm:w-64">
-                  <SelectValue placeholder="All tenants">
-                    {tenantId === 'all' ? 'All tenants' : tenantLabel(tenants, tenantId) || 'All tenants'}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All tenants</SelectItem>
-                  {tenants.map((tenant) => (
-                    <SelectItem key={tenant.id} value={tenant.id}>
-                      {tenant.displayName}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <SearchableSelect
+                value={tenantId}
+                onValueChange={onTenantId}
+                className="w-full sm:w-64"
+                placeholder="All tenants"
+                options={[
+                  { value: 'all', label: 'All tenants' },
+                  ...tenants.map((tenant) => ({
+                    value: tenant.id,
+                    label: tenant.displayName,
+                    description: tenant.tenantCode,
+                  })),
+                ]}
+              />
             ) : null}
           </>
         }
@@ -154,18 +153,17 @@ export function TenantPicker({
 }) {
   return (
     <Field label="Tenant" required>
-      <Select value={value || undefined} onValueChange={onChange} disabled={disabled}>
-        <SelectTrigger className="w-full">
-          <SelectValue placeholder="Select tenant">{tenantLabel(tenants, value) || undefined}</SelectValue>
-        </SelectTrigger>
-        <SelectContent>
-          {tenants.map((tenant) => (
-            <SelectItem key={tenant.id} value={tenant.id}>
-              {tenant.displayName}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <SearchableSelect
+        value={value || undefined}
+        onValueChange={onChange}
+        disabled={disabled}
+        placeholder="Select tenant"
+        options={tenants.map((tenant) => ({
+          value: tenant.id,
+          label: tenant.displayName,
+          description: tenant.tenantCode,
+        }))}
+      />
     </Field>
   )
 }

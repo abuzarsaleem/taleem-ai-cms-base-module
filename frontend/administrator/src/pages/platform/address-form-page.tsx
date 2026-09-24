@@ -6,7 +6,13 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { AddressFields } from '@/components/address-fields'
 import { errorMessage } from '@/lib/auth'
 import { ApiError } from '@/lib/api'
-import { addressDraftFrom, addressPayload, emptyAddressDraft, validateAddress } from '@/lib/address'
+import {
+  addressDraftFrom,
+  addressFieldErrors,
+  addressPayload,
+  emptyAddressDraft,
+  type AddressDraft,
+} from '@/lib/address'
 import { usePlatformTenants } from '@/lib/use-platform-tenants'
 import { tenantAddressService } from '@/services/platform'
 import { ResourceFormLayout, TenantPicker } from '@/pages/platform/resource-workspace'
@@ -19,6 +25,8 @@ export function PlatformAddressFormPage() {
   const isEdit = Boolean(routeTenantId && id)
   const [formTenantId, setFormTenantId] = useState(routeTenantId || searchParams.get('tenantId') || '')
   const [draft, setDraft] = useState(emptyAddressDraft())
+  const [errors, setErrors] = useState<Partial<Record<keyof AddressDraft, string>>>({})
+  const [tenantError, setTenantError] = useState<string | null>(null)
   const [loading, setLoading] = useState(isEdit)
   const [busy, setBusy] = useState(false)
 
@@ -39,14 +47,13 @@ export function PlatformAddressFormPage() {
 
   async function submit() {
     if (!formTenantId) {
-      toast.error('Select a tenant')
+      setTenantError('Select a tenant')
       return
     }
-    const error = validateAddress(draft)
-    if (error) {
-      toast.error(error)
-      return
-    }
+    setTenantError(null)
+    const nextErrors = addressFieldErrors(draft)
+    setErrors(nextErrors)
+    if (Object.keys(nextErrors).length) return
     setBusy(true)
     try {
       const body = addressPayload(draft)
@@ -73,11 +80,29 @@ export function PlatformAddressFormPage() {
       backTo="/platform/addresses"
       backLabel="Back to addresses"
     >
-      <TenantPicker tenants={tenants} value={formTenantId} onChange={setFormTenantId} disabled={isEdit} />
-      <AddressFields value={draft} onChange={setDraft} />
+      <div className="space-y-1.5">
+        <TenantPicker
+          tenants={tenants}
+          value={formTenantId}
+          onChange={(value) => {
+            setFormTenantId(value)
+            setTenantError(null)
+          }}
+          disabled={isEdit}
+        />
+        {tenantError ? <p className="text-xs text-destructive">{tenantError}</p> : null}
+      </div>
+      <AddressFields
+        value={draft}
+        errors={errors}
+        onChange={(next) => {
+          setDraft(next)
+          if (Object.keys(errors).length) setErrors(addressFieldErrors(next))
+        }}
+      />
       <div className="flex justify-end">
-        <Button disabled={busy} onClick={() => void submit()}>
-          {busy ? 'Saving…' : isEdit ? 'Save address' : 'Add address'}
+        <Button loading={busy} onClick={() => void submit()}>
+          {isEdit ? 'Save address' : 'Add address'}
         </Button>
       </div>
     </ResourceFormLayout>

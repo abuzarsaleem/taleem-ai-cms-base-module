@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { toast } from 'sonner'
 import { ApplicationIcon } from '@/components/application-icon'
 import { Button } from '@/components/ui/button'
@@ -27,6 +28,8 @@ export function TenantEntitlementsPanel({
   subscriptions: Subscription[]
   onReload: () => Promise<void>
 }) {
+  const [actionKey, setActionKey] = useState<string | null>(null)
+
   function matchingSubscription(applicationCode: string) {
     return subscriptions.find(
       (row) => subscriptionIsInForce(row) && row.applicationCodes.includes(applicationCode),
@@ -39,6 +42,7 @@ export function TenantEntitlementsPanel({
       toast.error('Include this application on an in-force subscription first')
       return
     }
+    setActionKey(`grant:${applicationCode}`)
     try {
       await entitlementService.create(tenantId, {
         applicationCode,
@@ -48,16 +52,21 @@ export function TenantEntitlementsPanel({
       await onReload()
     } catch (error) {
       toast.error(errorMessage(error))
+    } finally {
+      setActionKey(null)
     }
   }
 
   async function setInactive(entitlementId: string, name: string) {
+    setActionKey(`inactive:${entitlementId}`)
     try {
       await entitlementService.update(tenantId, entitlementId, { status: EntitlementStatus.INACTIVE })
       toast.success(`${name} set inactive`)
       await onReload()
     } catch (error) {
       toast.error(errorMessage(error))
+    } finally {
+      setActionKey(null)
     }
   }
 
@@ -91,13 +100,19 @@ export function TenantEntitlementsPanel({
                 <div className="flex flex-wrap items-center gap-2">
                   <StatusBadge value={entitlement?.status ?? 'NOT_ENTITLED'} />
                   {active ? (
-                    <Button size="sm" variant="outline" onClick={() => void setInactive(entitlement.id, app.name)}>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      loading={actionKey === `inactive:${entitlement.id}`}
+                      onClick={() => void setInactive(entitlement.id, app.name)}
+                    >
                       Inactive
                     </Button>
                   ) : (
                     <Button
                       size="sm"
                       disabled={!catalogueActive || !covered}
+                      loading={actionKey === `grant:${app.applicationCode}`}
                       onClick={() => void grant(app.applicationCode)}
                     >
                       Grant

@@ -67,7 +67,7 @@ export function TenantConfigurationPanel({
               </Button>
             ) : null}
             <Button disabled={busy || Boolean(validationError)} onClick={() => void save()}>
-              {busy ? 'Saving…' : configuration ? 'Update configuration' : 'Add configuration'}
+              {configuration ? 'Update configuration' : 'Add configuration'}
             </Button>
           </div>
         }

@@ -1,16 +1,17 @@
 import { useEffect, useState } from 'react'
+import { ArrowRight, Lock } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { SearchableSelect } from '@/components/ui/searchable-select'
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet'
 import { Textarea } from '@/components/ui/textarea'
 import { Field } from '@/components/field'
 import { PasswordInput } from '@/components/password-input'
@@ -26,6 +27,8 @@ type Draft = {
   redirectUris: string
   clientSecret: string
 }
+
+type FieldErrors = Partial<Record<keyof Draft, string>>
 
 function emptyDraft(applications: CatalogApplication[]): Draft {
   return {
@@ -45,16 +48,18 @@ function parseRedirectUris(value: string) {
     .filter(Boolean)
 }
 
-function validateDraft(draft: Draft) {
-  if (!draft.applicationId) return 'Select an application'
-  if (!draft.clientId.trim()) return 'Client ID is required'
-  if (!draft.clientName.trim()) return 'Client name is required'
-  const redirectUris = parseRedirectUris(draft.redirectUris)
-  if (!redirectUris.length) return 'Add at least one redirect URI'
-  if (draft.clientType === OAuthClientType.CONFIDENTIAL && draft.clientSecret.trim().length < 16) {
-    return 'Client secret must be at least 16 characters for confidential clients'
+function validateDraft(draft: Draft): FieldErrors {
+  const errors: FieldErrors = {}
+  if (!draft.applicationId) errors.applicationId = 'Select an application'
+  if (!draft.clientId.trim()) errors.clientId = 'Client ID is required'
+  if (!draft.clientName.trim()) errors.clientName = 'Client name is required'
+  if (!parseRedirectUris(draft.redirectUris).length) {
+    errors.redirectUris = 'Add at least one redirect URI'
   }
-  return null
+  if (draft.clientType === OAuthClientType.CONFIDENTIAL && draft.clientSecret.trim().length < 16) {
+    errors.clientSecret = 'Client secret must be at least 16 characters'
+  }
+  return errors
 }
 
 function randomSecret(length = 24) {
@@ -79,12 +84,14 @@ export function CreateOAuthClientDialog({
   onCreated: (client: CreateOAuthClientResponse) => void
 }) {
   const [draft, setDraft] = useState<Draft>(() => emptyDraft(applications))
+  const [errors, setErrors] = useState<FieldErrors>({})
   const [busy, setBusy] = useState(false)
 
   useEffect(() => {
     if (!open) return
     const applicationId = defaultApplicationId ?? applications[0]?.id ?? ''
     const app = applications.find((item) => item.id === applicationId)
+    setErrors({})
     setDraft({
       ...emptyDraft(applications),
       applicationId,
@@ -93,12 +100,20 @@ export function CreateOAuthClientDialog({
     })
   }, [applications, defaultApplicationId, open])
 
+  function patch<K extends keyof Draft>(key: K, value: Draft[K]) {
+    setDraft((current) => ({ ...current, [key]: value }))
+    setErrors((current) => {
+      if (!current[key]) return current
+      const next = { ...current }
+      delete next[key]
+      return next
+    })
+  }
+
   async function save() {
-    const error = validateDraft(draft)
-    if (error) {
-      toast.error(error)
-      return
-    }
+    const nextErrors = validateDraft(draft)
+    setErrors(nextErrors)
+    if (Object.keys(nextErrors).length) return
 
     setBusy(true)
     try {
@@ -124,83 +139,81 @@ export function CreateOAuthClientDialog({
   const selectedApp = applications.find((app) => app.id === draft.applicationId)
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Register OAuth client</DialogTitle>
-          <DialogDescription>
-            Register a client{selectedApp ? ` for ${selectedApp.applicationCode}` : ''}. The client secret is only
-            returned once at creation.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="grid gap-5 py-1">
-          <Field label="Application" required>
-            <Select
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right" className="w-full gap-0 p-0 data-[side=right]:sm:max-w-xl" showCloseButton>
+        <SheetHeader className="border-b border-border pr-12">
+          <div className="flex items-start gap-3">
+            <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <Lock className="size-4" />
+            </span>
+            <div className="min-w-0">
+              <SheetTitle className="text-base font-semibold">Register OAuth client</SheetTitle>
+              <SheetDescription>
+                Register a client{selectedApp ? ` for ${selectedApp.applicationCode}` : ''}. The client
+                secret is only returned once at creation.
+              </SheetDescription>
+            </div>
+          </div>
+        </SheetHeader>
+
+        <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
+          <Field label="Application" required error={errors.applicationId}>
+            <SearchableSelect
               value={draft.applicationId || undefined}
-              onValueChange={(value) => setDraft((current) => ({ ...current, applicationId: value }))}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select application" />
-              </SelectTrigger>
-              <SelectContent>
-                {applications.map((app) => (
-                  <SelectItem key={app.id} value={app.id}>
-                    {app.name} ({app.applicationCode})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              onValueChange={(value) => patch('applicationId', value)}
+              placeholder="Select application"
+              options={applications.map((app) => ({
+                value: app.id,
+                label: app.name,
+                description: app.applicationCode,
+              }))}
+            />
           </Field>
-          <Field label="Client ID" required>
+          <Field label="Client ID" required error={errors.clientId}>
             <Input
               value={draft.clientId}
               placeholder="alumni-web"
-              onChange={(e) => setDraft((current) => ({ ...current, clientId: e.target.value }))}
+              onChange={(e) => patch('clientId', e.target.value)}
             />
           </Field>
-          <Field label="Client name" required>
+          <Field label="Client name" required error={errors.clientName}>
             <Input
               value={draft.clientName}
               placeholder="Alumni Web App"
-              onChange={(e) => setDraft((current) => ({ ...current, clientName: e.target.value }))}
+              onChange={(e) => patch('clientName', e.target.value)}
             />
           </Field>
           <Field label="Client type" required>
-            <Select
+            <SearchableSelect
               value={draft.clientType}
-              onValueChange={(value) =>
-                setDraft((current) => ({ ...current, clientType: value as OAuthClientType }))
-              }
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={OAuthClientType.CONFIDENTIAL}>Confidential</SelectItem>
-                <SelectItem value={OAuthClientType.PUBLIC}>Public</SelectItem>
-              </SelectContent>
-            </Select>
+              onValueChange={(value) => patch('clientType', value as OAuthClientType)}
+              options={[
+                { value: OAuthClientType.CONFIDENTIAL, label: 'Confidential' },
+                { value: OAuthClientType.PUBLIC, label: 'Public' },
+              ]}
+              placeholder="Select client type"
+            />
           </Field>
-          <Field label="Redirect URIs" required hint="One URI per line">
+          <Field label="Redirect URIs" required hint="One URI per line" error={errors.redirectUris}>
             <Textarea
               value={draft.redirectUris}
               rows={4}
               placeholder={'http://localhost:3001/callback\nhttps://app.example.edu/callback'}
-              onChange={(e) => setDraft((current) => ({ ...current, redirectUris: e.target.value }))}
+              onChange={(e) => patch('redirectUris', e.target.value)}
             />
           </Field>
           {draft.clientType === OAuthClientType.CONFIDENTIAL ? (
-            <Field label="Client secret" required hint="Minimum 16 characters">
+            <Field label="Client secret" required hint="Minimum 16 characters" error={errors.clientSecret}>
               <div className="flex gap-2">
                 <PasswordInput
                   className="flex-1"
                   value={draft.clientSecret}
-                  onChange={(e) => setDraft((current) => ({ ...current, clientSecret: e.target.value }))}
+                  onChange={(e) => patch('clientSecret', e.target.value)}
                 />
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => setDraft((current) => ({ ...current, clientSecret: randomSecret() }))}
+                  onClick={() => patch('clientSecret', randomSecret())}
                 >
                   Generate
                 </Button>
@@ -208,12 +221,17 @@ export function CreateOAuthClientDialog({
             </Field>
           ) : null}
         </div>
-        <DialogFooter>
-          <Button disabled={busy || !applications.length} onClick={() => void save()}>
-            {busy ? 'Registering…' : 'Register client'}
+
+        <SheetFooter className="flex-row items-center justify-between gap-2 border-t border-border sm:flex-row">
+          <Button type="button" variant="outline" loading={busy} onClick={() => onOpenChange(false)}>
+            Cancel
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          <Button loading={busy} disabled={!applications.length} onClick={() => void save()}>
+            Register client
+            {!busy ? <ArrowRight className="size-4" /> : null}
+          </Button>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
   )
 }

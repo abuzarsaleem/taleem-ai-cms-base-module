@@ -6,7 +6,13 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { ContactFields } from '@/components/contact-fields'
 import { errorMessage } from '@/lib/auth'
 import { ApiError } from '@/lib/api'
-import { contactDraftFrom, contactPayload, emptyContactDraft, validateContact } from '@/lib/contact'
+import {
+  contactDraftFrom,
+  contactFieldErrors,
+  contactPayload,
+  emptyContactDraft,
+  type ContactDraft,
+} from '@/lib/contact'
 import { usePlatformTenants } from '@/lib/use-platform-tenants'
 import { tenantContactService } from '@/services/platform'
 import { ResourceFormLayout, TenantPicker } from '@/pages/platform/resource-workspace'
@@ -19,6 +25,8 @@ export function PlatformContactFormPage() {
   const isEdit = Boolean(routeTenantId && id)
   const [formTenantId, setFormTenantId] = useState(routeTenantId || searchParams.get('tenantId') || '')
   const [draft, setDraft] = useState(emptyContactDraft())
+  const [errors, setErrors] = useState<Partial<Record<keyof ContactDraft, string>>>({})
+  const [tenantError, setTenantError] = useState<string | null>(null)
   const [loading, setLoading] = useState(isEdit)
   const [busy, setBusy] = useState(false)
 
@@ -37,18 +45,15 @@ export function PlatformContactFormPage() {
       .finally(() => setLoading(false))
   }, [id, isEdit, navigate, routeTenantId])
 
-  const validationError = validateContact(draft)
-
   async function submit() {
     if (!formTenantId) {
-      toast.error('Select a tenant')
+      setTenantError('Select a tenant')
       return
     }
-    const error = validateContact(draft)
-    if (error) {
-      toast.error(error)
-      return
-    }
+    setTenantError(null)
+    const nextErrors = contactFieldErrors(draft)
+    setErrors(nextErrors)
+    if (Object.keys(nextErrors).length) return
     setBusy(true)
     try {
       const body = contactPayload(draft)
@@ -75,11 +80,29 @@ export function PlatformContactFormPage() {
       backTo="/platform/contacts"
       backLabel="Back to contacts"
     >
-      <TenantPicker tenants={tenants} value={formTenantId} onChange={setFormTenantId} disabled={isEdit} />
-      <ContactFields value={draft} onChange={setDraft} />
+      <div className="space-y-1.5">
+        <TenantPicker
+          tenants={tenants}
+          value={formTenantId}
+          onChange={(value) => {
+            setFormTenantId(value)
+            setTenantError(null)
+          }}
+          disabled={isEdit}
+        />
+        {tenantError ? <p className="text-xs text-destructive">{tenantError}</p> : null}
+      </div>
+      <ContactFields
+        value={draft}
+        errors={errors}
+        onChange={(next) => {
+          setDraft(next)
+          if (Object.keys(errors).length) setErrors(contactFieldErrors(next))
+        }}
+      />
       <div className="flex justify-end">
-        <Button disabled={busy || Boolean(validationError)} onClick={() => void submit()}>
-          {busy ? 'Saving…' : isEdit ? 'Save contact' : 'Add contact'}
+        <Button loading={busy} onClick={() => void submit()}>
+          {isEdit ? 'Save contact' : 'Add contact'}
         </Button>
       </div>
     </ResourceFormLayout>

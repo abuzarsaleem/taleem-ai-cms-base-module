@@ -47,7 +47,7 @@ export function TenantLifecycleMenu({
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" aria-label={`Actions for ${tenant.displayName}`}>
+          <Button variant="ghost" size="icon" loading={pending} aria-label={`Actions for ${tenant.displayName}`}>
             <MoreHorizontal />
           </Button>
         </DropdownMenuTrigger>
@@ -57,7 +57,15 @@ export function TenantLifecycleMenu({
           </DropdownMenuItem>
           {actions.canActivate || actions.canSuspend || actions.canRetire ? <DropdownMenuSeparator /> : null}
           {actions.canActivate ? (
-            <DropdownMenuItem onClick={() => void run(() => tenantService.activate(tenant.id), 'Tenant activated')}>
+            <DropdownMenuItem
+              disabled={pending}
+              onClick={() => {
+                setPending(true)
+                void run(() => tenantService.activate(tenant.id), 'Tenant activated').finally(() =>
+                  setPending(false),
+                )
+              }}
+            >
               Activate
             </DropdownMenuItem>
           ) : null}

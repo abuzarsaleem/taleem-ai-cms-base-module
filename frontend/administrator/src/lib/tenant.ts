@@ -72,22 +72,30 @@ export function websiteOrUndefined(value: string) {
 }
 
 export function validateTenantDraft(draft: TenantDraft, mode: 'create' | 'update') {
-  if (!draft.legalName.trim() || !draft.displayName.trim()) {
-    return 'Legal name and display name are required'
-  }
-  if (draft.legalName.trim().length > 255) return 'Legal name must be 255 characters or fewer'
-  if (draft.displayName.trim().length > 255) return 'Display name must be 255 characters or fewer'
+  const errors = tenantFieldErrors(draft, mode)
+  return Object.values(errors)[0] ?? null
+}
+
+export function tenantFieldErrors(draft: TenantDraft, mode: 'create' | 'update') {
+  const errors: Partial<Record<keyof TenantDraft, string>> = {}
+  if (!draft.legalName.trim()) errors.legalName = 'Legal name is required'
+  else if (draft.legalName.trim().length > 255) errors.legalName = 'Legal name must be 255 characters or fewer'
+  if (!draft.displayName.trim()) errors.displayName = 'Display name is required'
+  else if (draft.displayName.trim().length > 255) errors.displayName = 'Display name must be 255 characters or fewer'
   if (mode === 'create') {
-    if (!draft.institutionType.trim()) return 'Institution type is required'
-    if (draft.institutionType.trim().length > 50) return 'Institution type must be 50 characters or fewer'
-    if (draft.countryCode.trim() && draft.countryCode.trim().length > 2) {
-      return 'Country code must be 2 characters (for example PK)'
+    if (!draft.institutionType.trim()) errors.institutionType = 'Institution type is required'
+    else if (draft.institutionType.trim().length > 50) {
+      errors.institutionType = 'Institution type must be 50 characters or fewer'
+    }
+    if (!draft.countryCode.trim()) errors.countryCode = 'Please select a country'
+    else if (draft.countryCode.trim().length > 2) {
+      errors.countryCode = 'Country code must be 2 characters (for example PK)'
     }
   }
-  if (draft.websiteUrl.trim().length > 500) return 'Website must be 500 characters or fewer'
-  if (draft.provinceCode.trim().length > 20) return 'Province must be 20 characters or fewer'
-  if (draft.city.trim().length > 100) return 'City must be 100 characters or fewer'
-  return null
+  if (draft.websiteUrl.trim().length > 500) errors.websiteUrl = 'Website must be 500 characters or fewer'
+  if (draft.provinceCode.trim().length > 20) errors.provinceCode = 'Province must be 20 characters or fewer'
+  if (draft.city.trim().length > 100) errors.city = 'City must be 100 characters or fewer'
+  return errors
 }
 
 export function createTenantPayload(draft: TenantDraft): CreateTenantBody {

@@ -203,9 +203,43 @@ export type Tenant = {
   activatedAt?: string
   suspendedAt?: string
   retiredAt?: string
+  applicationCount?: number
+  logoUrl?: string
+  logoDarkUrl?: string
   createdAt: string
   updatedAt: string
   applications?: AvailableApplication[]
+}
+
+export type TenantCatalogueStats = {
+  total: number
+  active: number
+  onboarding: number
+  suspended: number
+  retired: number
+  vsPreviousMonth: {
+    total: number
+    active: number
+    onboarding: number
+    suspended: number
+    retired: number
+  }
+}
+
+export type TenantListResponse = Paginated<Tenant> & {
+  stats: TenantCatalogueStats
+}
+
+export type TenantListQuery = {
+  page?: number
+  limit?: number
+  search?: string
+  status?: TenantStatus
+  institutionType?: string
+  deploymentModel?: DeploymentModel
+  tenantCode?: string
+  countryCode?: string
+  city?: string
 }
 
 export type InstitutionProfile = {
@@ -300,6 +334,53 @@ export type TenantConfiguration = {
   updatedAt: string
 }
 
+export const TenantSetupProgressStatus = {
+  NOT_STARTED: 'NOT_STARTED',
+  IN_PROGRESS: 'IN_PROGRESS',
+  COMPLETE: 'COMPLETE',
+} as const
+export type TenantSetupProgressStatus =
+  (typeof TenantSetupProgressStatus)[keyof typeof TenantSetupProgressStatus]
+
+export type TenantConfigurationChecklist = {
+  identifier: boolean
+  primaryContact: boolean
+  smtp: boolean
+  address: boolean
+}
+
+export type PlatformConfigurationRow = {
+  id?: string
+  tenantId: string
+  tenantCode?: string
+  displayName?: string
+  websiteUrl?: string
+  tenantStatus?: TenantStatus | string
+  timezone?: string
+  locale?: string
+  dateFormat?: string
+  currencyCode?: string
+  brandingName?: string
+  logoAssetId?: string
+  logoDarkAssetId?: string
+  faviconAssetId?: string
+  primaryColor?: string
+  secondaryColor?: string
+  accentColor?: string
+  fontFamily?: string
+  emailFromName?: string
+  emailFromAddress?: string
+  supportEmail?: string
+  checklist?: TenantConfigurationChecklist
+  completedCount?: number
+  requiredCount?: number
+  percent?: number
+  progressStatus?: TenantSetupProgressStatus | string
+  missing?: Array<'identifier' | 'primaryContact' | 'smtp' | 'address'>
+  createdAt?: string
+  updatedAt?: string
+}
+
 export type TenantSmtp = {
   id: string
   tenantId: string
@@ -344,6 +425,29 @@ export type CatalogApplication = {
   status: ApplicationStatus
   launchUrl?: string
   logoUrl?: string
+  tenantCount?: number
+  createdAt?: string
+  updatedAt?: string
+}
+
+export type ApplicationCatalogueStats = {
+  total: number
+  active: number
+  inactive: number
+  vsPreviousMonth: {
+    total: number
+    active: number
+    inactive: number
+  }
+  latestVersion?: {
+    name: string
+    applicationCode: string
+    version: string
+  }
+}
+
+export type ApplicationListResponse = Paginated<CatalogApplication> & {
+  stats: ApplicationCatalogueStats
 }
 
 export type ApplicationRole = {
@@ -384,6 +488,12 @@ export type CreateOAuthClientResponse = OAuthClient & {
   clientSecret?: string
 }
 
+export type SubscriptionApplicationItem = {
+  applicationCode: string
+  launchUrl?: string
+  maxUsers?: number
+}
+
 export type Subscription = {
   id: string
   tenantId: string
@@ -406,6 +516,8 @@ export type Entitlement = {
   applicationName?: string
   subscriptionId?: string
   status: EntitlementStatus
+  launchUrl?: string
+  maxUsers?: number | null
   effectiveFrom: string
   effectiveUntil?: string
   createdAt?: string
@@ -452,6 +564,62 @@ export type AdminInvitation = {
   invitationToken?: string
 }
 
+export type PlatformTenantAdminApplication = {
+  applicationId: string
+  applicationCode: string
+  applicationName: string
+  roleCode?: string
+  roleName?: string
+  status: string
+}
+
+export type PlatformTenantAdmin = {
+  id: string
+  tenantId: string
+  tenantCode: string
+  tenantDisplayName: string
+  userId: string
+  userEmail: string
+  userFullName: string
+  status: MembershipStatus | string
+  role: MembershipRole | string
+  isTenantAdmin: boolean
+  createdAt: string
+  joinedAt: string
+  applications: PlatformTenantAdminApplication[]
+}
+
+export type ProvisionTenantAdminMode = 'INVITE' | 'CREATE'
+
+export type ProvisionTenantAdminApplication = {
+  applicationId: string
+  roleId: string
+  isDefault?: boolean
+}
+
+export type ProvisionTenantAdminBody = {
+  mode: ProvisionTenantAdminMode
+  email: string
+  fullName?: string
+  password?: string
+  applications?: ProvisionTenantAdminApplication[]
+}
+
+export type ProvisionTenantAdminResult = {
+  status: 'INVITED' | 'CREATED'
+  invitation?: AdminInvitation & { invitationToken?: string }
+  membership?: TenantMembership
+  applicationAccess?: Array<{
+    id: string
+    applicationId: string
+    applicationCode?: string
+    applicationName?: string
+    roleId: string
+    roleCode?: string
+    roleName?: string
+  }>
+}
+
 export type TenantUser = {
   id: string
   tenantId: string
@@ -481,4 +649,70 @@ export type AvailableApplication = {
   effectiveFrom: string
   effectiveUntil?: string
   subscriptionId?: string
+}
+
+export type PlatformDashboardCountMetric = {
+  value: number
+  vsPreviousMonth: number
+}
+
+export type PlatformDashboardCounts = {
+  tenants: PlatformDashboardCountMetric
+  activeTenants: PlatformDashboardCountMetric
+  onboarding: PlatformDashboardCountMetric
+  applications: PlatformDashboardCountMetric
+}
+
+export type PlatformDashboardAttentionItem = {
+  key: string
+  label: string
+  count: number
+}
+
+export type PlatformDashboardAttention = {
+  items: PlatformDashboardAttentionItem[]
+  total: number
+}
+
+export type PlatformDashboardRecentTenant = {
+  id: string
+  displayName: string
+  tenantCode: string
+  status: TenantStatus | string
+  joinedAt: string
+  logoUrl?: string
+  logoDarkUrl?: string
+}
+
+export type PlatformDashboardActivityItem = {
+  id: string
+  action: string
+  summary: string
+  tenantId?: string
+  actorUserId?: string
+  entityType?: string
+  entityId?: string
+  createdAt: string
+}
+
+export const PlatformComponentStatus = {
+  OPERATIONAL: 'OPERATIONAL',
+  DEGRADED: 'DEGRADED',
+  DOWN: 'DOWN',
+  UNKNOWN: 'UNKNOWN',
+} as const
+export type PlatformComponentStatus =
+  (typeof PlatformComponentStatus)[keyof typeof PlatformComponentStatus]
+
+export type PlatformDashboardSystemComponent = {
+  key: string
+  label: string
+  status: PlatformComponentStatus
+  detail?: string
+}
+
+export type PlatformDashboardSystemStatus = {
+  overall: PlatformComponentStatus
+  components: PlatformDashboardSystemComponent[]
+  checkedAt: string
 }

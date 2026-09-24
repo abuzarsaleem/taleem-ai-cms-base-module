@@ -1,14 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { SearchableSelect } from '@/components/ui/searchable-select'
 import { Field, FieldGrid } from '@/components/field'
-import {
-  identifierDateRangeError,
-  maxIssueDate,
-  minExpiryDate,
-  type IdentifierDraft,
-} from '@/lib/identifier'
+import { maxIssueDate, minExpiryDate, type IdentifierDraft } from '@/lib/identifier'
 import { IdentifierType } from '@/lib/types'
 import { catalogService, type CatalogItem } from '@/services/platform'
 
@@ -23,14 +18,15 @@ export function IdentifierFields({
   value,
   onChange,
   showVerified = false,
+  errors = {},
 }: {
   value: IdentifierDraft
   onChange: (next: IdentifierDraft) => void
   showVerified?: boolean
+  errors?: Partial<Record<keyof IdentifierDraft, string>>
 }) {
   const [types, setTypes] = useState<CatalogItem[]>(FALLBACK_TYPES)
   const patch = (partial: Partial<IdentifierDraft>) => onChange({ ...value, ...partial })
-  const dateRangeError = identifierDateRangeError(value)
 
   useEffect(() => {
     void catalogService
@@ -42,32 +38,33 @@ export function IdentifierFields({
       .catch(() => setTypes(FALLBACK_TYPES))
   }, [])
 
+  const typeOptions = [
+    ...types.map((item) => ({
+      value: item.code,
+      label: `${item.name} (${item.code})`,
+    })),
+    ...(value.identifierType && !types.some((item) => item.code === value.identifierType)
+      ? [{ value: value.identifierType, label: value.identifierType }]
+      : []),
+  ]
+
   return (
     <FieldGrid>
-      <Field label="Type" required hint="Choose an active identifier type from the catalogue.">
-        <Select value={value.identifierType} onValueChange={(identifierType) => patch({ identifierType })}>
-          <SelectTrigger className="w-full">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {types.map((item) => (
-              <SelectItem key={item.id} value={item.code}>
-                {item.name} ({item.code})
-              </SelectItem>
-            ))}
-            {value.identifierType && !types.some((item) => item.code === value.identifierType) ? (
-              <SelectItem value={value.identifierType}>{value.identifierType}</SelectItem>
-            ) : null}
-          </SelectContent>
-        </Select>
+      <Field label="Type" required error={errors.identifierType}>
+        <SearchableSelect
+          value={value.identifierType}
+          onValueChange={(identifierType) => patch({ identifierType })}
+          options={typeOptions}
+          placeholder="Select identifier type"
+        />
       </Field>
-      <Field label="Value" required>
+      <Field label="Value" required error={errors.identifierValue}>
         <Input value={value.identifierValue} maxLength={150} onChange={(e) => patch({ identifierValue: e.target.value })} />
       </Field>
-      <Field label="Issuing authority">
+      <Field label="Issuing authority" error={errors.issuingAuthority}>
         <Input value={value.issuingAuthority} maxLength={150} onChange={(e) => patch({ issuingAuthority: e.target.value })} />
       </Field>
-      <Field label="Issue date">
+      <Field label="Issue date" error={errors.issueDate}>
         <Input
           type="date"
           value={value.issueDate}
@@ -75,12 +72,11 @@ export function IdentifierFields({
           onChange={(e) => patch({ issueDate: e.target.value })}
         />
       </Field>
-      <Field label="Expiry date" error={dateRangeError ?? undefined}>
+      <Field label="Expiry date" error={errors.expiryDate}>
         <Input
           type="date"
           value={value.expiryDate}
           min={minExpiryDate(value.issueDate)}
-          aria-invalid={Boolean(dateRangeError)}
           onChange={(e) => patch({ expiryDate: e.target.value })}
         />
       </Field>

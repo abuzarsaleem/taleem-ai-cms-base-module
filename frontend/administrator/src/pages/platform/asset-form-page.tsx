@@ -127,8 +127,8 @@ export function PlatformAssetFormPage() {
         </Field>
       ) : null}
       <div className="flex justify-end">
-        <Button disabled={busy} onClick={() => void submit()}>
-          {busy ? 'Saving…' : isEdit ? 'Save asset' : mode === 'upload' ? 'Upload asset' : 'Add asset'}
+        <Button loading={busy} onClick={() => void submit()}>
+          {isEdit ? 'Save asset' : mode === 'upload' ? 'Upload asset' : 'Add asset'}
         </Button>
       </div>
     </ResourceFormLayout>

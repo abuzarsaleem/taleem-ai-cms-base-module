@@ -15,12 +15,12 @@ import { StatusBadge } from '@/components/status-badge'
 import { SubscriptionFields } from '@/components/subscription-fields'
 import { errorMessage } from '@/lib/auth'
 import {
-  createSubscriptionPayload,
   emptySubscriptionDraft,
+  subscriptionDisplayStatus,
   subscriptionDraftFrom,
+  subscriptionFieldErrors,
   subscriptionPeriodEnded,
   updateSubscriptionPayload,
-  validateSubscription,
 } from '@/lib/subscription'
 import { SubscriptionStatus, type CatalogApplication, type Subscription } from '@/lib/types'
 import { labelize } from '@/lib/utils'
@@ -39,12 +39,15 @@ export function TenantSubscriptionsPanel({
 }) {
   const [open, setOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
-  const [draft, setDraft] = useState(emptySubscriptionDraft())
+  const [draft, setDraft] = useState(emptySubscriptionDraft(tenantId))
+  const [errors, setErrors] = useState<ReturnType<typeof subscriptionFieldErrors>>({})
   const [busy, setBusy] = useState(false)
+  const [actionId, setActionId] = useState<string | null>(null)
 
   function openCreate() {
     setEditingId(null)
-    setDraft(emptySubscriptionDraft())
+    setDraft(emptySubscriptionDraft(tenantId))
+    setErrors({})
     setOpen(true)
   }
 
@@ -52,7 +55,8 @@ export function TenantSubscriptionsPanel({
     try {
       const row = await subscriptionService.get(tenantId, id)
       setEditingId(id)
-      setDraft(subscriptionDraftFrom(row))
+      setDraft(subscriptionDraftFrom(row, tenantId))
+      setErrors({})
       setOpen(true)
     } catch (error) {
       toast.error(errorMessage(error))
@@ -60,15 +64,13 @@ export function TenantSubscriptionsPanel({
   }
 
   async function save() {
-    const error = validateSubscription(draft)
-    if (error) {
-      toast.error(error)
-      return
-    }
+    const nextErrors = subscriptionFieldErrors({ ...draft, tenantId })
+    setErrors(nextErrors)
+    if (Object.keys(nextErrors).length) return
     setBusy(true)
     try {
       if (editingId) await subscriptionService.update(tenantId, editingId, updateSubscriptionPayload(draft))
-      else await subscriptionService.create(tenantId, createSubscriptionPayload(draft))
+      else await subscriptionService.create(tenantId, { ...draft, tenantId })
       toast.success(editingId ? 'Subscription updated' : 'Subscription created')
       setOpen(false)
       await onReload()
@@ -80,12 +82,15 @@ export function TenantSubscriptionsPanel({
   }
 
   async function setStatus(id: string, status: SubscriptionStatus) {
+    setActionId(id)
     try {
       await subscriptionService.update(tenantId, id, { status })
       toast.success(status === SubscriptionStatus.ACTIVE ? 'Subscription activated' : 'Subscription set inactive')
       await onReload()
     } catch (error) {
       toast.error(errorMessage(error))
+    } finally {
+      setActionId(null)
     }
   }
 
@@ -105,10 +110,18 @@ export function TenantSubscriptionsPanel({
               continue.
             </DialogDescription>
           </DialogHeader>
-          <SubscriptionFields value={draft} onChange={setDraft} applications={applications} />
+          <SubscriptionFields
+            value={draft}
+            errors={errors}
+            applications={applications}
+            onChange={(next) => {
+              setDraft(next)
+              if (Object.keys(errors).length) setErrors(subscriptionFieldErrors({ ...next, tenantId }))
+            }}
+          />
           <DialogFooter>
-            <Button disabled={busy || !draft.applicationCodes.length} onClick={() => void save()}>
-              {busy ? 'Saving…' : 'Save subscription'}
+            <Button loading={busy} disabled={!draft.applications.length} onClick={() => void save()}>
+              Save subscription
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -118,25 +131,24 @@ export function TenantSubscriptionsPanel({
         empty="No subscriptions yet. Assign a plan and applications before inviting a tenant administrator."
         rows={subscriptions.map((row) => [
           row.subscriptionCode,
-          `${labelize(row.planType)}${row.billingCycle ? ` · ${labelize(row.billingCycle)}` : ''}`,
-          `${row.startDate} → ${row.endDate}`,
-          row.applicationCodes.length ? row.applicationCodes.join(', ') : '—',
-          <StatusBadge key={row.id} value={row.status} />,
+          labelize(row.planType),
+          `${row.startDate.slice(0, 10)} → ${row.endDate.slice(0, 10)}`,
+          row.applicationCodes.join(', ') || '—',
+          <StatusBadge key={`${row.id}-status`} value={subscriptionDisplayStatus(row)} />,
           <div key={`${row.id}-actions`} className="flex justify-end gap-2">
             <Button size="sm" variant="outline" onClick={() => void openEdit(row.id)}>
               Edit
             </Button>
-            {row.status === SubscriptionStatus.ACTIVE ? (
-              <Button size="sm" variant="outline" onClick={() => void setStatus(row.id, SubscriptionStatus.INACTIVE)}>
-                Inactive
+            {row.status === SubscriptionStatus.ACTIVE && !subscriptionPeriodEnded(row.endDate) ? (
+              <Button
+                size="sm"
+                variant="outline"
+                loading={actionId === row.id}
+                onClick={() => void setStatus(row.id, SubscriptionStatus.INACTIVE)}
+              >
+                Deactivate
               </Button>
-            ) : subscriptionPeriodEnded(row.endDate) ? (
-              <span className="text-xs text-muted-foreground">Ended</span>
-            ) : (
-              <Button size="sm" variant="outline" onClick={() => void setStatus(row.id, SubscriptionStatus.ACTIVE)}>
-                Activate
-              </Button>
-            )}
+            ) : null}
           </div>,
         ])}
       />

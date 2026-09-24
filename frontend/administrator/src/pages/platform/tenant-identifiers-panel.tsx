@@ -89,7 +89,7 @@ export function TenantIdentifiersPanel({
           <IdentifierFields value={draft} onChange={setDraft} showVerified={Boolean(editingId)} />
           <DialogFooter>
             <Button disabled={busy || Boolean(validationError)} onClick={() => void save()}>
-              {busy ? 'Saving…' : 'Save identifier'}
+              Save identifier
             </Button>
           </DialogFooter>
         </DialogContent>

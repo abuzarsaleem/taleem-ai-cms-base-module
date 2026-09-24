@@ -1,5 +1,5 @@
 import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { SearchableSelect } from '@/components/ui/searchable-select'
 import { Field, FieldGrid } from '@/components/field'
 import type { AssetDraft } from '@/lib/asset'
 import { AssetType } from '@/lib/types'
@@ -21,18 +21,15 @@ export function AssetFields({
   return (
     <FieldGrid>
       <Field label="Type" required>
-        <Select value={value.assetType} onValueChange={(assetType) => patch({ assetType: assetType as AssetType })}>
-          <SelectTrigger className="w-full">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {Object.values(AssetType).map((type) => (
-              <SelectItem key={type} value={type}>
-                {labelize(type)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <SearchableSelect
+          value={value.assetType}
+          onValueChange={(assetType) => patch({ assetType: assetType as AssetType })}
+          options={Object.values(AssetType).map((type) => ({
+            value: type,
+            label: labelize(type),
+          }))}
+          placeholder="Select asset type"
+        />
       </Field>
       {showUrl ? (
         <Field label="File URL" required>

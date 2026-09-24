@@ -70,23 +70,40 @@ export function contactEmailError(draft: ContactDraft): string | null {
 }
 
 export function validateContact(draft: ContactDraft): string | null {
-  if (!draft.contactType) return 'Contact type is required'
-  if (!Object.values(ContactType).includes(draft.contactType)) return 'Contact type is invalid'
-  if (!draft.firstName.trim()) return 'First name is required'
-  if (draft.firstName.trim().length > 100) return 'First name must be 100 characters or fewer'
-  if (draft.middleName.trim().length > 100) return 'Middle name must be 100 characters or fewer'
-  if (draft.lastName.trim().length > 100) return 'Last name must be 100 characters or fewer'
-  if (draft.designation.trim().length > 150) return 'Designation must be 150 characters or fewer'
-  if (draft.department.trim().length > 150) return 'Department must be 150 characters or fewer'
-  if (draft.responsibility.trim().length > 500) return 'Responsibility must be 500 characters or fewer'
+  const errors = contactFieldErrors(draft)
+  return Object.values(errors)[0] ?? null
+}
+
+export function contactFieldErrors(draft: ContactDraft) {
+  const errors: Partial<Record<keyof ContactDraft, string>> = {}
+  if (!draft.contactType) errors.contactType = 'Contact type is required'
+  else if (!Object.values(ContactType).includes(draft.contactType)) {
+    errors.contactType = 'Contact type is invalid'
+  }
+  if (!draft.firstName.trim()) errors.firstName = 'First name is required'
+  else if (draft.firstName.trim().length > 100) errors.firstName = 'First name must be 100 characters or fewer'
+  if (draft.middleName.trim().length > 100) errors.middleName = 'Middle name must be 100 characters or fewer'
+  if (draft.lastName.trim().length > 100) errors.lastName = 'Last name must be 100 characters or fewer'
+  if (draft.designation.trim().length > 150) errors.designation = 'Designation must be 150 characters or fewer'
+  if (draft.department.trim().length > 150) errors.department = 'Department must be 150 characters or fewer'
+  if (draft.responsibility.trim().length > 500) {
+    errors.responsibility = 'Responsibility must be 500 characters or fewer'
+  }
   const emailError = contactEmailError(draft)
-  if (emailError) return emailError
-  if (draft.mobilePhone.trim().length > 30) return 'Mobile phone must be 30 characters or fewer'
-  const mobilePhoneError = contactMobilePhoneError(draft)
-  if (mobilePhoneError) return mobilePhoneError
-  if (draft.landlinePhone.trim().length > 30) return 'Landline must be 30 characters or fewer'
-  if (draft.whatsappNumber.trim().length > 30) return 'WhatsApp number must be 30 characters or fewer'
-  return contactWhatsappNumberError(draft)
+  if (emailError) errors.email = emailError
+  if (draft.mobilePhone.trim().length > 30) errors.mobilePhone = 'Mobile phone must be 30 characters or fewer'
+  else {
+    const mobilePhoneError = contactMobilePhoneError(draft)
+    if (mobilePhoneError) errors.mobilePhone = mobilePhoneError
+  }
+  if (draft.landlinePhone.trim().length > 30) errors.landlinePhone = 'Landline must be 30 characters or fewer'
+  if (draft.whatsappNumber.trim().length > 30) {
+    errors.whatsappNumber = 'WhatsApp number must be 30 characters or fewer'
+  } else {
+    const whatsappNumberError = contactWhatsappNumberError(draft)
+    if (whatsappNumberError) errors.whatsappNumber = whatsappNumberError
+  }
+  return errors
 }
 
 export function contactDraftFrom(contact: TenantContact): ContactDraft {

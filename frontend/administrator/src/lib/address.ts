@@ -48,21 +48,33 @@ export function addressDraftFrom(address: TenantAddress): AddressDraft {
 }
 
 export function validateAddress(draft: AddressDraft) {
-  if (!draft.addressType) return 'Address type is required'
-  if (!Object.values(AddressType).includes(draft.addressType)) return 'Address type is invalid'
-  if (!draft.addressLine1.trim()) return 'Address line 1 is required'
-  if (draft.addressLine1.trim().length > 255) return 'Address line 1 must be 255 characters or fewer'
-  if (draft.addressLine2.trim().length > 255) return 'Address line 2 must be 255 characters or fewer'
-  if (draft.area.trim().length > 150) return 'Area must be 150 characters or fewer'
-  if (!draft.city.trim()) return 'City is required'
-  if (draft.city.trim().length > 100) return 'City must be 100 characters or fewer'
-  if (draft.district.trim().length > 100) return 'District must be 100 characters or fewer'
-  if (draft.provinceCode.trim().length > 20) return 'Province must be 20 characters or fewer'
-  if (draft.postalCode.trim().length > 20) return 'Postal code must be 20 characters or fewer'
-  if (draft.countryCode.trim() && draft.countryCode.trim().length > 2) {
-    return 'Country code must be 2 characters'
+  const errors = addressFieldErrors(draft)
+  return Object.values(errors)[0] ?? null
+}
+
+export function addressFieldErrors(draft: AddressDraft) {
+  const errors: Partial<Record<keyof AddressDraft, string>> = {}
+  if (!draft.addressType) errors.addressType = 'Address type is required'
+  else if (!Object.values(AddressType).includes(draft.addressType)) {
+    errors.addressType = 'Address type is invalid'
   }
-  return null
+  if (!draft.addressLine1.trim()) errors.addressLine1 = 'Address line 1 is required'
+  else if (draft.addressLine1.trim().length > 255) {
+    errors.addressLine1 = 'Address line 1 must be 255 characters or fewer'
+  }
+  if (draft.addressLine2.trim().length > 255) {
+    errors.addressLine2 = 'Address line 2 must be 255 characters or fewer'
+  }
+  if (draft.area.trim().length > 150) errors.area = 'Area must be 150 characters or fewer'
+  if (!draft.city.trim()) errors.city = 'City is required'
+  else if (draft.city.trim().length > 100) errors.city = 'City must be 100 characters or fewer'
+  if (draft.district.trim().length > 100) errors.district = 'District must be 100 characters or fewer'
+  if (draft.provinceCode.trim().length > 20) errors.provinceCode = 'Province must be 20 characters or fewer'
+  if (draft.postalCode.trim().length > 20) errors.postalCode = 'Postal code must be 20 characters or fewer'
+  if (draft.countryCode.trim() && draft.countryCode.trim().length > 2) {
+    errors.countryCode = 'Country code must be 2 characters'
+  }
+  return errors
 }
 
 export function addressPayload(draft: AddressDraft) {

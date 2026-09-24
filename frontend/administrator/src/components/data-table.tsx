@@ -11,10 +11,10 @@ export function DataTable({
   empty: string
 }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-card">
+    <div className="overflow-hidden rounded-xl border border-border/70 bg-card">
       <Table>
-        <TableHeader className="bg-muted/40">
-          <TableRow>
+        <TableHeader>
+          <TableRow className="border-border hover:bg-transparent">
             {columns.map((column, index) => (
               <TableHead key={`${column}-${index}`}>{column || null}</TableHead>
             ))}
@@ -22,14 +22,14 @@ export function DataTable({
         </TableHeader>
         <TableBody>
           {rows.map((row, index) => (
-            <TableRow key={index}>
+            <TableRow key={index} className="border-border">
               {row.map((cell, cellIndex) => (
                 <TableCell key={cellIndex}>{cell}</TableCell>
               ))}
             </TableRow>
           ))}
           {!rows.length ? (
-            <TableRow>
+            <TableRow className="hover:bg-transparent">
               <TableCell colSpan={columns.length} className="py-10 text-center text-muted-foreground">
                 {empty}
               </TableCell>

@@ -3,6 +3,7 @@ import type { CreateTenantBody, UpdateTenantBody } from '@/lib/tenant'
 import { toQuery } from '@/lib/utils'
 import type {
   AdminInvitation,
+  ApplicationListResponse,
   ApplicationPermission,
   ApplicationRole,
   AssetType,
@@ -14,6 +15,15 @@ import type {
   EntitlementStatus,
   MembershipStatus,
   Paginated,
+  PlatformConfigurationRow,
+  PlatformDashboardActivityItem,
+  PlatformDashboardAttention,
+  PlatformDashboardCounts,
+  PlatformDashboardRecentTenant,
+  PlatformDashboardSystemStatus,
+  PlatformTenantAdmin,
+  ProvisionTenantAdminBody,
+  ProvisionTenantAdminResult,
   Subscription,
   Tenant,
   TenantAddress,
@@ -21,6 +31,8 @@ import type {
   TenantConfiguration,
   TenantContact,
   TenantIdentifier,
+  TenantListQuery,
+  TenantListResponse,
   TenantMembership,
   TenantSmtp,
   UserTenantMembership,
@@ -49,7 +61,7 @@ export const catalogService = {
 
 export const applicationService = {
   list(page = 1, limit = 50) {
-    return apiRequest<Paginated<CatalogApplication>>(`/application?page=${page}&limit=${limit}`)
+    return apiRequest<ApplicationListResponse>(`/application?page=${page}&limit=${limit}`)
   },
   get(applicationId: string) {
     return apiRequest<CatalogApplication>(`/application/${applicationId}`)
@@ -141,8 +153,20 @@ export const oauthClientService = {
 }
 
 export const tenantService = {
-  list(page = 1, limit = 20) {
-    return apiRequest<Paginated<Tenant>>(`/tenant?page=${page}&limit=${limit}`)
+  list(page = 1, limit = 20, filters: Omit<TenantListQuery, 'page' | 'limit'> = {}) {
+    return apiRequest<TenantListResponse>(
+      `/tenant${toQuery({
+        page,
+        limit,
+        search: filters.search,
+        status: filters.status,
+        institutionType: filters.institutionType,
+        deploymentModel: filters.deploymentModel,
+        tenantCode: filters.tenantCode,
+        countryCode: filters.countryCode,
+        city: filters.city,
+      })}`,
+    )
   },
   get(tenantId: string) {
     return apiRequest<Tenant>(`/tenant/${tenantId}`)
@@ -282,6 +306,8 @@ type PlatformListQuery = {
   limit?: number
   tenantId?: string
   search?: string
+  status?: string
+  progressStatus?: string
   contactType?: string
   email?: string
   isActive?: boolean
@@ -319,7 +345,7 @@ export const platformIdentifierService = {
 
 export const platformConfigurationService = {
   list(query: PlatformListQuery = {}) {
-    return apiRequest<Paginated<TenantConfiguration>>(`/platform/configuration${toQuery(query)}`)
+    return apiRequest<Paginated<PlatformConfigurationRow>>(`/platform/configuration${toQuery(query)}`)
   },
 }
 
@@ -350,7 +376,11 @@ export const subscriptionService = {
         endDate: draft.endDate,
         planType: draft.planType,
         billingCycle: draft.billingCycle,
-        applicationCodes: draft.applicationCodes,
+        applications: draft.applications.map((app) => ({
+          applicationCode: app.applicationCode,
+          launchUrl: app.launchUrl.trim() || undefined,
+          maxUsers: app.maxUsers.trim() ? Number(app.maxUsers) : undefined,
+        })),
       },
     })
   },
@@ -359,6 +389,33 @@ export const subscriptionService = {
       method: 'PATCH',
       body,
     })
+  },
+}
+
+export const platformSubscriptionService = {
+  list(query: {
+    page?: number
+    limit?: number
+    tenantId?: string
+    status?: string
+    planType?: string
+    billingCycle?: string
+    subscriptionCode?: string
+  } = {}) {
+    return apiRequest<Paginated<Subscription>>(`/platform/subscription${toQuery(query)}`)
+  },
+}
+
+export const platformEntitlementService = {
+  list(query: {
+    page?: number
+    limit?: number
+    tenantId?: string
+    applicationId?: string
+    subscriptionId?: string
+    status?: string
+  } = {}) {
+    return apiRequest<Paginated<Entitlement>>(`/platform/entitlement${toQuery(query)}`)
   },
 }
 
@@ -371,14 +428,28 @@ export const entitlementService = {
   },
   create(
     tenantId: string,
-    body: { applicationCode: string; subscriptionId?: string; effectiveFrom?: string; effectiveUntil?: string },
+    body: {
+      applicationCode: string
+      subscriptionId?: string
+      effectiveFrom?: string
+      effectiveUntil?: string
+      launchUrl?: string
+      maxUsers?: number
+    },
   ) {
     return apiRequest<Entitlement>(`/tenant/${tenantId}/entitlement`, { method: 'POST', body })
   },
   update(
     tenantId: string,
     entitlementId: string,
-    body: { status?: EntitlementStatus; subscriptionId?: string; effectiveFrom?: string; effectiveUntil?: string },
+    body: {
+      status?: EntitlementStatus
+      subscriptionId?: string
+      effectiveFrom?: string
+      effectiveUntil?: string
+      launchUrl?: string
+      maxUsers?: number | null
+    },
   ) {
     return apiRequest<Entitlement>(`/tenant/${tenantId}/entitlement/${entitlementId}`, {
       method: 'PATCH',
@@ -414,11 +485,36 @@ export const membershipService = {
   ) {
     return apiRequest<TenantMembership>(`/tenant/${tenantId}/membership`, { method: 'POST', body })
   },
-  createTenantAdmin(
-    tenantId: string,
-    body: { email: string; password: string; fullName: string },
-  ) {
-    return apiRequest<TenantMembership>(`/platform/tenant/${tenantId}/admin`, { method: 'POST', body })
+}
+
+export const platformTenantAdminService = {
+  list(query: {
+    page?: number
+    limit?: number
+    tenantId?: string
+    applicationId?: string
+    status?: string
+    search?: string
+  } = {}) {
+    return apiRequest<Paginated<PlatformTenantAdmin>>(`/platform/tenant-admin${toQuery(query)}`)
+  },
+  provision(tenantId: string, body: ProvisionTenantAdminBody) {
+    return apiRequest<ProvisionTenantAdminResult>(`/platform/tenant/${tenantId}/admin`, {
+      method: 'POST',
+      body,
+    })
+  },
+}
+
+export const platformAdminInvitationService = {
+  list(query: {
+    page?: number
+    limit?: number
+    tenantId?: string
+    email?: string
+    status?: string
+  } = {}) {
+    return apiRequest<Paginated<AdminInvitation>>(`/platform/admin-invitation${toQuery(query)}`)
   },
 }
 
@@ -461,5 +557,30 @@ export const invitationService = {
   },
   cancel(tenantId: string, id: string) {
     return apiRequest<AdminInvitation>(`/tenant/${tenantId}/admin-invitation/${id}`, { method: 'DELETE' })
+  },
+}
+
+export const platformDashboardService = {
+  counts() {
+    return apiRequest<PlatformDashboardCounts>('/platform/dashboard/counts')
+  },
+  attention() {
+    return apiRequest<PlatformDashboardAttention>('/platform/dashboard/attention')
+  },
+  applications(limit = 4) {
+    return apiRequest<{ data: CatalogApplication[] }>(`/platform/dashboard/applications${toQuery({ limit })}`)
+  },
+  recentTenants(limit = 5) {
+    return apiRequest<{ data: PlatformDashboardRecentTenant[] }>(
+      `/platform/dashboard/recent-tenants${toQuery({ limit })}`,
+    )
+  },
+  activity(limit = 5) {
+    return apiRequest<{ data: PlatformDashboardActivityItem[] }>(
+      `/platform/dashboard/activity${toQuery({ limit })}`,
+    )
+  },
+  systemStatus() {
+    return apiRequest<PlatformDashboardSystemStatus>('/platform/dashboard/system-status')
   },
 }

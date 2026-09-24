@@ -75,22 +75,37 @@ export function smtpDraftFrom(row: TenantSmtp): SmtpDraft {
 }
 
 export function validateSmtp(draft: SmtpDraft) {
-  if (!draft.host.trim()) return 'SMTP host is required'
-  if (draft.host.trim().length > 255) return 'Host must be 255 characters or fewer'
-  const hostError = smtpHostError(draft)
-  if (hostError) return hostError
-  const port = Number(draft.port)
-  if (!Number.isInteger(port) || port < 1 || port > 65535) return 'Port must be between 1 and 65535'
-  if (draft.username.trim().length > 255) return 'Username must be 255 characters or fewer'
-  if (draft.passwordSecretRef.trim().length > 500) return 'Password secret reference must be 500 characters or fewer'
-  const secretRefError = smtpPasswordSecretRefError(draft)
-  if (secretRefError) return secretRefError
-  if (draft.fromName.trim().length > 255) return 'From name must be 255 characters or fewer'
-  if (draft.fromEmail.trim() && !EMAIL_PATTERN.test(draft.fromEmail.trim())) return 'From email must be a valid address'
-  if (draft.replyToEmail.trim() && !EMAIL_PATTERN.test(draft.replyToEmail.trim())) {
-    return 'Reply-to email must be a valid address'
+  const errors = smtpFieldErrors(draft)
+  return Object.values(errors)[0] ?? null
+}
+
+export function smtpFieldErrors(draft: SmtpDraft) {
+  const errors: Partial<Record<keyof SmtpDraft, string>> = {}
+  if (!draft.host.trim()) errors.host = 'SMTP host is required'
+  else if (draft.host.trim().length > 255) errors.host = 'Host must be 255 characters or fewer'
+  else {
+    const hostError = smtpHostError(draft)
+    if (hostError) errors.host = hostError
   }
-  return null
+  const port = Number(draft.port)
+  if (!Number.isInteger(port) || port < 1 || port > 65535) {
+    errors.port = 'Port must be between 1 and 65535'
+  }
+  if (draft.username.trim().length > 255) errors.username = 'Username must be 255 characters or fewer'
+  if (draft.passwordSecretRef.trim().length > 500) {
+    errors.passwordSecretRef = 'Password secret reference must be 500 characters or fewer'
+  } else {
+    const secretRefError = smtpPasswordSecretRefError(draft)
+    if (secretRefError) errors.passwordSecretRef = secretRefError
+  }
+  if (draft.fromName.trim().length > 255) errors.fromName = 'From name must be 255 characters or fewer'
+  if (draft.fromEmail.trim() && !EMAIL_PATTERN.test(draft.fromEmail.trim())) {
+    errors.fromEmail = 'From email must be a valid address'
+  }
+  if (draft.replyToEmail.trim() && !EMAIL_PATTERN.test(draft.replyToEmail.trim())) {
+    errors.replyToEmail = 'Reply-to email must be a valid address'
+  }
+  return errors
 }
 
 export function smtpPayload(draft: SmtpDraft) {

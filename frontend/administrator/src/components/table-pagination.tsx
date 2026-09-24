@@ -1,11 +1,5 @@
 import { Button } from '@/components/ui/button'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import { SearchableSelect } from '@/components/ui/searchable-select'
 
 export const PAGE_SIZE_OPTIONS = [10, 20, 25, 50] as const
 
@@ -39,18 +33,17 @@ export function TablePagination({
         {onPageSizeChange ? (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <span className="whitespace-nowrap">Rows per page</span>
-            <Select value={String(pageSize)} onValueChange={(value) => onPageSizeChange(Number(value))}>
-              <SelectTrigger size="sm" className="w-[4.5rem]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {PAGE_SIZE_OPTIONS.map((size) => (
-                  <SelectItem key={size} value={String(size)}>
-                    {size}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <SearchableSelect
+              value={String(pageSize)}
+              onValueChange={(value) => onPageSizeChange(Number(value))}
+              options={PAGE_SIZE_OPTIONS.map((size) => ({
+                value: String(size),
+                label: String(size),
+              }))}
+              className="w-[5.5rem]"
+              triggerClassName="h-8"
+              searchPlaceholder="Filter..."
+            />
           </div>
         ) : null}
         <div className="flex items-center gap-2">

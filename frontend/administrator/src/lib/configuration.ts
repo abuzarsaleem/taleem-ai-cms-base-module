@@ -81,37 +81,43 @@ export function configurationDateFormatError(draft: ConfigurationDraft): string 
 }
 
 export function validateConfiguration(draft: ConfigurationDraft) {
+  const errors = configurationFieldErrors(draft)
+  return Object.values(errors)[0] ?? null
+}
+
+export function configurationFieldErrors(draft: ConfigurationDraft) {
+  const errors: Partial<Record<keyof ConfigurationDraft, string>> = {}
   const timezoneError = configurationTimezoneError(draft)
-  if (timezoneError) return timezoneError
+  if (timezoneError) errors.timezone = timezoneError
   const localeError = configurationLocaleError(draft)
-  if (localeError) return localeError
+  if (localeError) errors.locale = localeError
   const dateFormatError = configurationDateFormatError(draft)
-  if (dateFormatError) return dateFormatError
+  if (dateFormatError) errors.dateFormat = dateFormatError
   if (draft.currencyCode.trim() && draft.currencyCode.trim().length > 3) {
-    return 'Currency code must be 3 characters'
+    errors.currencyCode = 'Currency code must be 3 characters'
   }
-  if (draft.brandingName.trim().length > 255) return 'Branding name must be 255 characters or fewer'
-  for (const [label, value] of [
-    ['Primary color', draft.primaryColor],
-    ['Secondary color', draft.secondaryColor],
-    ['Accent color', draft.accentColor],
-  ] as const) {
-    if (value.trim() && !isHexColor(value.trim())) return `${label} must be a hex color like #1A73E8`
+  if (draft.brandingName.trim().length > 255) {
+    errors.brandingName = 'Branding name must be 255 characters or fewer'
   }
-  for (const [label, value] of [
-    ['Logo', draft.logoAssetId],
-    ['Dark logo', draft.logoDarkAssetId],
-    ['Favicon', draft.faviconAssetId],
-  ] as const) {
-    if (value.trim().length > 36) return `${label} asset id is invalid`
+  if (draft.primaryColor.trim() && !isHexColor(draft.primaryColor.trim())) {
+    errors.primaryColor = 'Primary color must be a hex color like #1A73E8'
   }
+  if (draft.secondaryColor.trim() && !isHexColor(draft.secondaryColor.trim())) {
+    errors.secondaryColor = 'Secondary color must be a hex color like #1A73E8'
+  }
+  if (draft.accentColor.trim() && !isHexColor(draft.accentColor.trim())) {
+    errors.accentColor = 'Accent color must be a hex color like #1A73E8'
+  }
+  if (draft.logoAssetId.trim().length > 36) errors.logoAssetId = 'Logo asset id is invalid'
+  if (draft.logoDarkAssetId.trim().length > 36) errors.logoDarkAssetId = 'Dark logo asset id is invalid'
+  if (draft.faviconAssetId.trim().length > 36) errors.faviconAssetId = 'Favicon asset id is invalid'
   if (draft.emailFromAddress.trim() && !EMAIL_PATTERN.test(draft.emailFromAddress.trim())) {
-    return 'From email must be a valid address'
+    errors.emailFromAddress = 'From email must be a valid address'
   }
   if (draft.supportEmail.trim() && !EMAIL_PATTERN.test(draft.supportEmail.trim())) {
-    return 'Support email must be a valid address'
+    errors.supportEmail = 'Support email must be a valid address'
   }
-  return null
+  return errors
 }
 
 function uuidOrUndefined(value: string) {

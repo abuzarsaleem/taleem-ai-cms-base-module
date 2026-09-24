@@ -1,113 +1,105 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import "@fontsource-variable/inter";
 
 @custom-variant dark (&:is(.dark *));
 
+/* Taleem AI CMS — one semantic token layer for pages and shadcn controls. */
 :root {
-  --radius: 1.125rem;
-
-  /* Core — Taleem navy / paper */
-  --background: #f4f7fb;
-  --foreground: #081b45;
-
+  --background: #f8fafc;
+  --foreground: #0f1f4d;
   --card: #ffffff;
-  --card-foreground: #081b45;
-
+  --card-foreground: #0f1f4d;
   --popover: #ffffff;
-  --popover-foreground: #081b45;
-
-  --primary: #081b45;
-  --primary-foreground: #f4fbfb;
-
-  --secondary: #e8eef8;
-  --secondary-foreground: #081b45;
-
-  --muted: #eef2f8;
-  --muted-foreground: #5b6b86;
-
-  --accent: #00c2b2;
-  --accent-foreground: #042a2a;
-
-  --destructive: #d14343;
-
-  --border: #d7e0ee;
-  --input: #d7e0ee;
-  --ring: #00c2b2;
+  --popover-foreground: #0f1f4d;
+  --primary: #0c3cff;
+  --primary-foreground: #ffffff;
+  --secondary: #eef3ff;
+  --secondary-foreground: #0f1f4d;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --accent: #edf3ff;
+  --accent-foreground: #0f1f4d;
+  --destructive: #ef4444;
+  --border: #dce5f6;
+  --input: #b8c6ed;
+  --ring: #4f46e5;
+  --radius: 0.625rem;
 
   --success: #159570;
   --warning: #d58a12;
 
-  --chart-1: #081b45;
-  --chart-2: #00c2b2;
-  --chart-3: #47bfff;
-  --chart-4: #7e14ff;
-  --chart-5: #f4b942;
+  --chart-1: #0c3cff;
+  --chart-2: #4f46e5;
+  --chart-3: #7c3aed;
+  --chart-4: #06b6d4;
+  --chart-5: #f59e0b;
 
-  --sidebar: #081b45;
-  --sidebar-foreground: #cfdaed;
-  --sidebar-primary: #00c2b2;
-  --sidebar-primary-foreground: #042a2a;
-  --sidebar-accent: rgba(255, 255, 255, 0.11);
+  --sidebar: #0b1b4a;
+  --sidebar-foreground: #d7e0f7;
+  --sidebar-primary: #0c3cff;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: rgba(255, 255, 255, 0.1);
   --sidebar-accent-foreground: #ffffff;
   --sidebar-border: rgba(255, 255, 255, 0.08);
-  --sidebar-ring: #00c2b2;
+  --sidebar-ring: #4f46e5;
 
-  --portal-shadow: 0 12px 35px rgba(8, 27, 69, 0.08);
-  --portal-hero: linear-gradient(120deg, #081b45 0%, #173b79 62%, #1e8f97 140%);
+  --portal-shadow: 0 1px 2px rgb(15 31 77 / 0.025);
+  --portal-hero: linear-gradient(120deg, #eef4ff 0%, #e4eeff 42%, #f5f8ff 100%);
+  --login-continue: #0f1f4d;
+  --login-continue-foreground: #ffffff;
+  --feature-glow: rgb(12 60 255 / 0.08);
 }
 
 .dark {
-  --background: #061433;
-  --foreground: #eef4ff;
-
-  --card: #0b204c;
-  --card-foreground: #eef4ff;
-
-  --popover: #0b204c;
-  --popover-foreground: #eef4ff;
-
-  --primary: #00c2b2;
-  --primary-foreground: #042a2a;
-
-  --secondary: #12305f;
-  --secondary-foreground: #e8eef8;
-
-  --muted: #10284f;
-  --muted-foreground: #9aabc8;
-
-  --accent: #47bfff;
-  --accent-foreground: #041828;
-
+  --background: #070f24;
+  --foreground: #e8eefc;
+  --card: #0e1833;
+  --card-foreground: #e8eefc;
+  --popover: #0e1833;
+  --popover-foreground: #e8eefc;
+  --primary: #4f6fff;
+  --primary-foreground: #ffffff;
+  --secondary: #162447;
+  --secondary-foreground: #e8eefc;
+  --muted: #121c38;
+  --muted-foreground: #93a4c7;
+  --accent: #162447;
+  --accent-foreground: #e8eefc;
   --destructive: #f07171;
-
   --border: rgb(255 255 255 / 10%);
-  --input: rgb(255 255 255 / 12%);
-  --ring: #00c2b2;
+  --input: rgb(255 255 255 / 14%);
+  --ring: #818cf8;
 
-  --chart-1: #00c2b2;
-  --chart-2: #47bfff;
-  --chart-3: #7e14ff;
-  --chart-4: #f4b942;
-  --chart-5: #e8eef8;
+  --chart-1: #4f6fff;
+  --chart-2: #818cf8;
+  --chart-3: #a78bfa;
+  --chart-4: #22d3ee;
+  --chart-5: #fbbf24;
 
-  --sidebar: #05122c;
-  --sidebar-foreground: #cfdaed;
-  --sidebar-primary: #00c2b2;
-  --sidebar-primary-foreground: #042a2a;
+  --sidebar: #050b1a;
+  --sidebar-foreground: #d7e0f7;
+  --sidebar-primary: #4f6fff;
+  --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: rgba(255, 255, 255, 0.08);
   --sidebar-accent-foreground: #ffffff;
   --sidebar-border: rgba(255, 255, 255, 0.06);
-  --sidebar-ring: #00c2b2;
+  --sidebar-ring: #818cf8;
 
-  --portal-hero: linear-gradient(120deg, #05122c 0%, #0b204c 62%, #0e6b72 140%);
-  --portal-shadow: 0 12px 35px rgba(0, 0, 0, 0.28);
+  --portal-shadow: 0 12px 35px rgba(0, 0, 0, 0.35);
+  --portal-hero: linear-gradient(160deg, #050b1a 0%, #0a1430 50%, #070f24 100%);
+  --login-continue: linear-gradient(90deg, #4f46e5 0%, #0c3cff 55%, #6366f1 100%);
+  --login-continue-foreground: #ffffff;
+  --feature-glow: rgb(99 102 241 / 0.18);
 }
 
 @theme inline {
-  --radius-sm: calc(var(--radius) - 6px);
-  --radius-md: calc(var(--radius) - 4px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --font-sans: "Inter Variable", Inter, ui-sans-serif, system-ui, sans-serif;
+  --font-heading: "Inter Variable", Inter, ui-sans-serif, system-ui, sans-serif;
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 4px);
+  --radius-xl: calc(var(--radius) + 8px);
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -147,26 +139,151 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    box-sizing: border-box;
+  }
+
+  html {
+    font-family: var(--font-sans);
   }
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: "Source Sans 3", ui-sans-serif, system-ui, sans-serif;
-    font-feature-settings: "rlig" 1, "calt" 1;
+    margin: 0;
+    min-width: 320px;
+    min-height: 100vh;
+    font-size: 14px;
+    line-height: 1.45;
+  }
+
+  button,
+  input,
+  textarea {
+    font: inherit;
+  }
+
+  button,
+  a,
+  [role="button"],
+  [data-slot="button"],
+  summary {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  [role="button"][aria-disabled="true"],
+  [data-slot="button"][disabled],
+  [data-slot="button"][aria-disabled="true"] {
+    cursor: not-allowed;
   }
 
   h1,
   h2,
   .font-display,
-  .font-serif {
-    font-family: "Fraunces", "Source Sans 3", ui-serif, Georgia, serif;
+  .font-heading {
+    font-family: var(--font-heading);
     font-optical-sizing: auto;
+  }
+}
+
+/* Clean operational tables — soft header bar, visible row dividers, no inset box. */
+main table {
+  width: 100% !important;
+  margin: 0;
+  border: 0;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+main table thead,
+main table thead th {
+  background: #f3f5f9;
+}
+main table thead th {
+  height: 42px;
+  border-bottom: 1px solid #e4e9f4;
+  color: #6b7c99;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+main table tbody tr {
+  height: 56px;
+}
+main table tbody td {
+  border-bottom: 1px solid #e4e9f4;
+  color: #19316f;
+  font-size: 13px;
+  vertical-align: middle;
+}
+main table tbody tr:last-child td {
+  border-bottom: 0;
+}
+main table tbody tr:hover td {
+  background: #f8faff;
+}
+
+.dark main table thead,
+.dark main table thead th {
+  background: rgb(255 255 255 / 6%);
+  color: #9aa8c7;
+}
+.dark main table thead th {
+  border-bottom-color: rgb(255 255 255 / 10%);
+}
+.dark main table tbody td {
+  border-bottom-color: rgb(255 255 255 / 10%);
+  color: #d7e0f7;
+}
+.dark main table tbody tr:hover td {
+  background: rgb(255 255 255 / 4%);
+}
+
+/* Reference screens use only a fine border on cards and very restrained elevation. */
+[data-slot="card"] {
+  box-shadow: 0 1px 2px rgb(15 31 77 / 0.025);
+}
+[data-slot="sheet-content"] {
+  box-shadow: -16px 0 48px rgb(15 31 77 / 0.15);
+}
+[data-slot="sheet-overlay"] {
+  background: rgb(15 31 77 / 0.28);
+  backdrop-filter: blur(1px);
+}
+
+/* The screens use sharp input geometry and calm, institution-grade contrast. */
+[data-slot="button"] {
+  border-radius: 7px;
+  font-weight: 500;
+}
+[data-slot="input"],
+[data-slot="textarea"] {
+  border-radius: 6px;
+  color: #173076;
+}
+[data-slot="input"]::placeholder,
+[data-slot="textarea"]::placeholder {
+  color: #6274ad;
+  opacity: 1;
+}
+
+.dark [data-slot="input"],
+.dark [data-slot="textarea"] {
+  color: #e8eefc;
+}
+.dark [data-slot="input"]::placeholder,
+.dark [data-slot="textarea"]::placeholder {
+  color: #93a4c7;
+}
+
+@media (min-width: 1024px) {
+  .app-topbar {
+    height: 56px;
   }
 }
 
 @layer utilities {
   .portal-card {
-    @apply rounded-[var(--radius)] shadow-[var(--portal-shadow)];
+    @apply rounded-[var(--radius)] border border-border bg-card shadow-[var(--portal-shadow)];
   }
 
   .portal-hero {
@@ -179,5 +296,48 @@
       var(--sidebar) 0%,
       color-mix(in oklab, var(--sidebar) 88%, black) 100%
     );
+  }
+
+  .portal-sidebar-nav {
+    scrollbar-gutter: stable;
+    scrollbar-width: thin;
+    scrollbar-color: rgb(255 255 255 / 28%) transparent;
+  }
+
+  .portal-sidebar-nav::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .portal-sidebar-nav::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .portal-sidebar-nav::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: rgb(255 255 255 / 28%);
+  }
+
+  .portal-sidebar-nav::-webkit-scrollbar-thumb:hover {
+    background: rgb(255 255 255 / 42%);
+  }
+
+  .text-brand-gradient {
+    background-image: linear-gradient(90deg, #0c3cff 0%, #7c3aed 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .dark .text-brand-gradient {
+    background-image: linear-gradient(90deg, #60a5fa 0%, #a78bfa 100%);
+  }
+
+  .login-continue {
+    background: var(--login-continue);
+    color: var(--login-continue-foreground);
+  }
+
+  .login-continue:hover {
+    filter: brightness(1.06);
   }
 }

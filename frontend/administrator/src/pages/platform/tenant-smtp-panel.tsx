@@ -56,8 +56,8 @@ export function TenantSmtpPanel({
                 Delete SMTP
               </Button>
             ) : null}
-            <Button disabled={busy || Boolean(validationError)} onClick={() => void save()}>
-              {busy ? 'Saving…' : smtp ? 'Update SMTP' : 'Add SMTP'}
+            <Button loading={busy} disabled={Boolean(validationError)} onClick={() => void save()}>
+              {smtp ? 'Update SMTP' : 'Add SMTP'}
             </Button>
           </div>
         }

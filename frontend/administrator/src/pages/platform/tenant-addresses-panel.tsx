@@ -1,22 +1,25 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
+import { Pencil, Plus, Search, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { SearchableSelect } from '@/components/ui/searchable-select'
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { AddressFields } from '@/components/address-fields'
-import { DataTable } from '@/components/data-table'
-import { RowActions } from '@/components/row-actions'
-import { SectionTitle } from '@/components/section-title'
-import { addressDraftFrom, addressPayload, emptyAddressDraft, validateAddress } from '@/lib/address'
+import { ConfirmDialog } from '@/components/confirm-dialog'
+import { StatusBadge } from '@/components/status-badge'
+import { addressDraftFrom, addressFieldErrors, addressPayload, emptyAddressDraft, type AddressDraft } from '@/lib/address'
 import { errorMessage } from '@/lib/auth'
 import { labelize } from '@/lib/utils'
-import type { TenantAddress } from '@/lib/types'
+import { AddressType, type TenantAddress } from '@/lib/types'
 import { tenantAddressService } from '@/services/platform'
 
 export function TenantAddressesPanel({
@@ -32,10 +35,27 @@ export function TenantAddressesPanel({
   const [editingId, setEditingId] = useState<string | null>(null)
   const [draft, setDraft] = useState(emptyAddressDraft())
   const [busy, setBusy] = useState(false)
+  const [errors, setErrors] = useState<Partial<Record<keyof AddressDraft, string>>>({})
+  const [query, setQuery] = useState('')
+  const [typeFilter, setTypeFilter] = useState<'ALL' | AddressType>('ALL')
+  const [deleteId, setDeleteId] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
-  async function openCreate() {
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    return addresses.filter((row) => {
+      if (typeFilter !== 'ALL' && row.addressType !== typeFilter) return false
+      if (!q) return true
+      return `${row.addressLine1} ${row.city} ${row.provinceCode ?? ''} ${row.countryCode}`
+        .toLowerCase()
+        .includes(q)
+    })
+  }, [addresses, query, typeFilter])
+
+  function openCreate() {
     setEditingId(null)
     setDraft({ ...emptyAddressDraft(), isPrimary: addresses.length === 0 })
+    setErrors({})
     setOpen(true)
   }
 
@@ -44,6 +64,7 @@ export function TenantAddressesPanel({
       const row = await tenantAddressService.get(tenantId, id)
       setEditingId(id)
       setDraft(addressDraftFrom(row))
+      setErrors({})
       setOpen(true)
     } catch (error) {
       toast.error(errorMessage(error))
@@ -51,11 +72,9 @@ export function TenantAddressesPanel({
   }
 
   async function save() {
-    const error = validateAddress(draft)
-    if (error) {
-      toast.error(error)
-      return
-    }
+    const nextErrors = addressFieldErrors(draft)
+    setErrors(nextErrors)
+    if (Object.keys(nextErrors).length) return
     setBusy(true)
     try {
       if (editingId) await tenantAddressService.update(tenantId, editingId, addressPayload(draft))
@@ -71,53 +90,140 @@ export function TenantAddressesPanel({
   }
 
   return (
-    <section className="py-8">
-      <SectionTitle
-        title="Addresses"
-        description="Physical locations for this institution. Type, address line 1, and city are required."
-        action={<Button onClick={() => void openCreate()}>Add address</Button>}
-      />
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-xl">
-          <DialogHeader>
-            <DialogTitle>{editingId ? 'Edit address' : 'Add address'}</DialogTitle>
-            <DialogDescription>
+    <section className="space-y-4 py-8">
+      <div>
+        <h2 className="font-display text-lg font-semibold tracking-tight">Addresses</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Physical locations for this institution. Add or edit addresses from the drawer.
+        </p>
+      </div>
+
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="relative min-w-0 flex-1">
+          <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            className="h-9 border-border bg-background pl-8"
+            placeholder="Search addresses by city, line, or province..."
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+          />
+        </div>
+        <SearchableSelect
+          value={typeFilter}
+          onValueChange={(value) => setTypeFilter(value as 'ALL' | AddressType)}
+          className="w-full sm:w-44"
+          options={[
+            { value: 'ALL', label: 'All types' },
+            ...Object.values(AddressType).map((type) => ({ value: type, label: labelize(type) })),
+          ]}
+          placeholder="Type"
+        />
+        <Button className="shrink-0 sm:ml-auto" onClick={openCreate}>
+          <Plus className="size-4" />
+          Add address
+        </Button>
+      </div>
+
+      <div className="overflow-hidden rounded-xl border border-border/70 bg-card">
+        <Table>
+          <TableHeader>
+            <TableRow className="hover:bg-transparent">
+              <TableHead>Address</TableHead>
+              <TableHead>Type</TableHead>
+              <TableHead>City</TableHead>
+              <TableHead>Country</TableHead>
+              <TableHead>Primary</TableHead>
+              <TableHead className="w-24 text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filtered.map((row) => (
+              <TableRow key={row.id}>
+                <TableCell>
+                  <p className="font-medium">{row.addressLine1}</p>
+                  <p className="text-xs text-muted-foreground">{row.addressLine2 ?? row.area ?? '—'}</p>
+                </TableCell>
+                <TableCell>
+                  <StatusBadge value={row.addressType} />
+                </TableCell>
+                <TableCell>{row.city}</TableCell>
+                <TableCell>{row.countryCode}</TableCell>
+                <TableCell>{row.isPrimary ? 'Yes' : 'No'}</TableCell>
+                <TableCell className="text-right">
+                  <div className="inline-flex gap-1">
+                    <Button size="icon" variant="ghost" onClick={() => void openEdit(row.id)}>
+                      <Pencil className="size-4" />
+                    </Button>
+                    <Button size="icon" variant="ghost" onClick={() => setDeleteId(row.id)}>
+                      <Trash2 className="size-4" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+            {!filtered.length ? (
+              <TableRow className="hover:bg-transparent">
+                <TableCell colSpan={6} className="py-10 text-center text-sm text-muted-foreground">
+                  No addresses yet. Click &quot;Add address&quot; to add one.
+                </TableCell>
+              </TableRow>
+            ) : null}
+          </TableBody>
+        </Table>
+      </div>
+
+      <Sheet open={open} onOpenChange={setOpen}>
+        <SheetContent side="right" className="w-full gap-0 p-0 data-[side=right]:sm:max-w-xl" showCloseButton>
+          <SheetHeader className="border-b border-border pr-12">
+            <SheetTitle>{editingId ? 'Edit address' : 'Add address'}</SheetTitle>
+            <SheetDescription>
               Required: address type, address line 1, and city. Country defaults to PK.
-            </DialogDescription>
-          </DialogHeader>
-          <AddressFields value={draft} onChange={setDraft} />
-          <DialogFooter>
-            <Button disabled={busy || !draft.addressLine1.trim() || !draft.city.trim()} onClick={() => void save()}>
-              {busy ? 'Saving…' : 'Save address'}
+            </SheetDescription>
+          </SheetHeader>
+          <div className="flex-1 space-y-4 overflow-y-auto p-5">
+            <AddressFields
+              value={draft}
+              errors={errors}
+              onChange={(next) => {
+                setDraft(next)
+                if (Object.keys(errors).length) setErrors(addressFieldErrors(next))
+              }}
+            />
+          </div>
+          <SheetFooter className="border-t border-border">
+            <Button variant="outline" onClick={() => setOpen(false)}>
+              Cancel
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      <DataTable
-        columns={['Address', 'City', 'Type', 'Primary', 'Active', '']}
-        empty="No addresses yet."
-        rows={addresses.map((row) => [
-          row.addressLine1,
-          row.city,
-          labelize(row.addressType),
-          row.isPrimary ? 'Yes' : 'No',
-          row.isActive ? 'Yes' : 'No',
-          <RowActions
-            key={row.id}
-            onEdit={() => void openEdit(row.id)}
-            deleteTitle="Remove this address?"
-            deleteDescription="This address will be removed from the institution."
-            onDelete={() =>
-              tenantAddressService
-                .delete(tenantId, row.id)
-                .then(() => {
-                  toast.success('Address removed')
-                  return onReload()
-                })
-                .catch((error) => toast.error(errorMessage(error)))
-            }
-          />,
-        ])}
+            <Button loading={busy} onClick={() => void save()}>
+              {editingId ? 'Save changes' : 'Add address'}
+            </Button>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
+
+      <ConfirmDialog
+        open={Boolean(deleteId)}
+        title="Remove this address?"
+        description="This address will be removed from the institution."
+        confirmLabel="Remove"
+        pending={deleting}
+        onOpenChange={(next) => {
+          if (!next) setDeleteId(null)
+        }}
+        onConfirm={async () => {
+          if (!deleteId) return
+          setDeleting(true)
+          try {
+            await tenantAddressService.delete(tenantId, deleteId)
+            toast.success('Address removed')
+            setDeleteId(null)
+            await onReload()
+          } catch (error) {
+            toast.error(errorMessage(error))
+          } finally {
+            setDeleting(false)
+          }
+        }}
       />
     </section>
   )

@@ -47,10 +47,10 @@ export function ConfirmDialog({
           </Button>
           <Button
             variant={destructive ? 'destructive' : 'default'}
-            disabled={pending}
+            loading={pending}
             onClick={() => void onConfirm()}
           >
-            {pending ? 'Working…' : confirmLabel}
+            {confirmLabel}
           </Button>
         </DialogFooter>
       </DialogContent>

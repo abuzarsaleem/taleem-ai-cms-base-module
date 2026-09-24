@@ -64,14 +64,26 @@ export function identifierDateRangeError(draft: IdentifierDraft): string | null 
 }
 
 export function validateIdentifier(draft: IdentifierDraft) {
-  if (!draft.identifierType.trim()) return 'Identifier type is required'
-  if (draft.identifierType.trim().length < 2 || draft.identifierType.trim().length > 50) {
-    return 'Identifier type must be 2 to 50 characters'
+  const errors = identifierFieldErrors(draft)
+  return Object.values(errors)[0] ?? null
+}
+
+export function identifierFieldErrors(draft: IdentifierDraft) {
+  const errors: Partial<Record<keyof IdentifierDraft, string>> = {}
+  if (!draft.identifierType.trim()) errors.identifierType = 'Identifier type is required'
+  else if (draft.identifierType.trim().length < 2 || draft.identifierType.trim().length > 50) {
+    errors.identifierType = 'Identifier type must be 2 to 50 characters'
   }
-  if (!draft.identifierValue.trim()) return 'Identifier value is required'
-  if (draft.identifierValue.trim().length > 150) return 'Identifier value must be 150 characters or fewer'
-  if (draft.issuingAuthority.trim().length > 150) return 'Issuing authority must be 150 characters or fewer'
-  return identifierDateRangeError(draft)
+  if (!draft.identifierValue.trim()) errors.identifierValue = 'Identifier value is required'
+  else if (draft.identifierValue.trim().length > 150) {
+    errors.identifierValue = 'Identifier value must be 150 characters or fewer'
+  }
+  if (draft.issuingAuthority.trim().length > 150) {
+    errors.issuingAuthority = 'Issuing authority must be 150 characters or fewer'
+  }
+  const dateError = identifierDateRangeError(draft)
+  if (dateError) errors.expiryDate = dateError
+  return errors
 }
 
 export function identifierPayload(draft: IdentifierDraft, mode: 'create' | 'update') {

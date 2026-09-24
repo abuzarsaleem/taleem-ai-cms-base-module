@@ -119,8 +119,8 @@ export function CreateMembershipDialog({
         </div>
         <DialogFooter>
           <Button
+            loading={busy}
             disabled={
-              busy ||
               !draft.fullName.trim() ||
               !draft.email.trim() ||
               !draft.password ||
@@ -128,7 +128,7 @@ export function CreateMembershipDialog({
             }
             onClick={() => void save()}
           >
-            {busy ? 'Creating…' : submitLabel}
+            {submitLabel}
           </Button>
         </DialogFooter>
       </DialogContent>

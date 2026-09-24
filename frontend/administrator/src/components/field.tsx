@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { Children, cloneElement, isValidElement, type ReactElement, type ReactNode } from 'react'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
 
@@ -17,13 +17,22 @@ export function Field({
   error?: string
   required?: boolean
 }) {
+  const invalid = Boolean(error)
+  const content = Children.map(children, (child) => {
+    if (!isValidElement(child)) return child
+    const el = child as ReactElement<{ 'aria-invalid'?: boolean | string }>
+    return cloneElement(el, {
+      'aria-invalid': invalid || el.props['aria-invalid'] || undefined,
+    })
+  })
+
   return (
     <div className={cn('grid gap-1.5', className)}>
       <Label>
         {label}
         {required ? <span className="text-destructive"> *</span> : null}
       </Label>
-      {children}
+      {content}
       {error ? (
         <p className="text-xs leading-4 text-destructive">{error}</p>
       ) : hint ? (

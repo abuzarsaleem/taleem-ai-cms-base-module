@@ -85,8 +85,8 @@ export function PlatformSmtpFormPage() {
       <TenantPicker tenants={tenants} value={formTenantId} onChange={setFormTenantId} disabled={isEdit} />
       <SmtpFields value={draft} onChange={setDraft} />
       <div className="flex justify-end">
-        <Button disabled={busy || Boolean(validationError)} onClick={() => void submit()}>
-          {busy ? 'Saving…' : exists ? 'Save SMTP' : 'Add SMTP'}
+        <Button loading={busy} disabled={ Boolean(validationError)} onClick={() => void submit()}>
+          {exists ? 'Save SMTP' : 'Add SMTP'}
         </Button>
       </div>
     </ResourceFormLayout>

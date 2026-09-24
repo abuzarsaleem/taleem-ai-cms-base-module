@@ -5,12 +5,7 @@ import { Input } from '@/components/ui/input'
 import { ColorInput } from '@/components/color-input'
 import { Field, FieldGrid } from '@/components/field'
 import { errorMessage } from '@/lib/auth'
-import {
-  configurationDateFormatError,
-  configurationLocaleError,
-  configurationTimezoneError,
-  type ConfigurationDraft,
-} from '@/lib/configuration'
+import { type ConfigurationDraft } from '@/lib/configuration'
 import { isDisplayableImageUrl } from '@/lib/utils'
 import type { TenantAsset } from '@/lib/types'
 import { AssetType } from '@/lib/types'
@@ -84,10 +79,11 @@ function BrandingAssetField({
           <Button
             type="button"
             variant="outline"
-            disabled={busy || !tenantId}
+            loading={busy}
+            disabled={!tenantId}
             onClick={() => inputRef.current?.click()}
           >
-            {busy ? 'Uploading…' : value ? 'Replace image' : 'Upload image'}
+            {value ? 'Replace image' : 'Upload image'}
           </Button>
           {value || localPreview ? (
             <Button
@@ -115,61 +111,57 @@ export function ConfigurationFields({
   assets,
   tenantId,
   onAssetUploaded,
+  errors = {},
 }: {
   value: ConfigurationDraft
   onChange: (next: ConfigurationDraft) => void
   assets: TenantAsset[]
   tenantId?: string
   onAssetUploaded?: (asset: TenantAsset) => void
+  errors?: Partial<Record<keyof ConfigurationDraft, string>>
 }) {
   const patch = (partial: Partial<ConfigurationDraft>) => onChange({ ...value, ...partial })
   const remember = (asset: TenantAsset) => onAssetUploaded?.(asset)
-  const timezoneError = configurationTimezoneError(value)
-  const localeError = configurationLocaleError(value)
-  const dateFormatError = configurationDateFormatError(value)
 
   return (
     <FieldGrid>
-      <Field label="Timezone" required error={timezoneError ?? undefined}>
+      <Field label="Timezone" required error={errors.timezone}>
         <Input
           value={value.timezone}
           maxLength={100}
-          aria-invalid={Boolean(timezoneError)}
           onChange={(e) => patch({ timezone: e.target.value })}
         />
       </Field>
-      <Field label="Locale" required error={localeError ?? undefined}>
+      <Field label="Locale" required error={errors.locale}>
         <Input
           value={value.locale}
           maxLength={20}
-          aria-invalid={Boolean(localeError)}
           onChange={(e) => patch({ locale: e.target.value })}
         />
       </Field>
-      <Field label="Date format" required error={dateFormatError ?? undefined}>
+      <Field label="Date format" required error={errors.dateFormat}>
         <Input
           value={value.dateFormat}
           maxLength={30}
-          aria-invalid={Boolean(dateFormatError)}
           onChange={(e) => patch({ dateFormat: e.target.value })}
         />
       </Field>
-      <Field label="Currency">
+      <Field label="Currency" error={errors.currencyCode}>
         <Input value={value.currencyCode} maxLength={3} onChange={(e) => patch({ currencyCode: e.target.value.toUpperCase() })} />
       </Field>
-      <Field label="Branding name">
+      <Field label="Branding name" error={errors.brandingName}>
         <Input value={value.brandingName} maxLength={255} onChange={(e) => patch({ brandingName: e.target.value })} />
       </Field>
-      <Field label="Font family">
+      <Field label="Font family" error={errors.fontFamily}>
         <Input value={value.fontFamily} onChange={(e) => patch({ fontFamily: e.target.value })} />
       </Field>
-      <Field label="Primary color">
+      <Field label="Primary color" error={errors.primaryColor}>
         <ColorInput value={value.primaryColor} placeholder="#1A73E8" onChange={(primaryColor) => patch({ primaryColor })} />
       </Field>
-      <Field label="Secondary color">
+      <Field label="Secondary color" error={errors.secondaryColor}>
         <ColorInput value={value.secondaryColor} placeholder="#FFFFFF" onChange={(secondaryColor) => patch({ secondaryColor })} />
       </Field>
-      <Field label="Accent color">
+      <Field label="Accent color" error={errors.accentColor}>
         <ColorInput value={value.accentColor} placeholder="#FF5722" onChange={(accentColor) => patch({ accentColor })} />
       </Field>
       <BrandingAssetField
@@ -199,13 +191,13 @@ export function ConfigurationFields({
         onChange={(faviconAssetId) => patch({ faviconAssetId })}
         onUploaded={remember}
       />
-      <Field label="Email from name">
+      <Field label="Email from name" error={errors.emailFromName}>
         <Input value={value.emailFromName} onChange={(e) => patch({ emailFromName: e.target.value })} />
       </Field>
-      <Field label="Email from address">
+      <Field label="Email from address" error={errors.emailFromAddress}>
         <Input type="email" value={value.emailFromAddress} onChange={(e) => patch({ emailFromAddress: e.target.value })} />
       </Field>
-      <Field label="Support email">
+      <Field label="Support email" error={errors.supportEmail}>
         <Input type="email" value={value.supportEmail} onChange={(e) => patch({ supportEmail: e.target.value })} />
       </Field>
     </FieldGrid>
