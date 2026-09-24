@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AuthModule } from '../auth/auth.module.js';
 import { InvitationModule } from '../invitation/invitation.module.js';
+import { StorageModule } from '../storage/storage.module.js';
 import { SubscriptionModule } from '../subscription/subscription.module.js';
 import { TenantModule } from '../tenant/tenant.module.js';
 import { PlatformDashboardService } from './application/platform-dashboard.service.js';
@@ -9,7 +10,7 @@ import { PlatformDashboardController } from './presentation/platform-dashboard.c
 import { TenantDashboardController } from './presentation/tenant-dashboard.controller.js';
 
 @Module({
-  imports: [TenantModule, InvitationModule, AuthModule, SubscriptionModule],
+  imports: [TenantModule, InvitationModule, AuthModule, SubscriptionModule, StorageModule],
   controllers: [TenantDashboardController, PlatformDashboardController],
   providers: [TenantDashboardService, PlatformDashboardService],
 })

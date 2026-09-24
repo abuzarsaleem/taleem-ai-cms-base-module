@@ -57,6 +57,18 @@ export class PlatformDashboardRecentTenantDto {
   @ApiProperty({ example: 'punjab-university' }) tenantCode!: string;
   @ApiProperty({ enum: TenantStatus }) status!: TenantStatus | string;
   @ApiProperty({ description: 'Joined / created timestamp' }) joinedAt!: Date;
+
+  @ApiPropertyOptional({
+    description: 'Resolved light / primary tenant logo URL (from logo asset or legacy logo_url)',
+    example: 'https://cdn.example.com/tenants/.../logo.png',
+  })
+  logoUrl?: string;
+
+  @ApiPropertyOptional({
+    description: 'Resolved dark-mode tenant logo URL',
+    example: 'https://cdn.example.com/tenants/.../logo-dark.png',
+  })
+  logoDarkUrl?: string;
 }
 
 export class PlatformDashboardRecentTenantsResponseDto {

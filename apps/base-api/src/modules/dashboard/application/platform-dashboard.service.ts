@@ -9,6 +9,10 @@ import {
 } from '../../auth/domain/user-token.repository.interface.js';
 import { UserTokenStatus } from '../../auth/domain/user-token.types.js';
 import { MembershipRole } from '../../invitation/domain/membership.types.js';
+import {
+  FILE_STORAGE,
+  type IFileStorageService,
+} from '../../storage/domain/storage.service.interface.js';
 import { ApplicationCatalogService } from '../../subscription/application/application-catalog.service.js';
 import { AuditQueryService } from '../../subscription/application/audit-query.service.js';
 import { TenantService } from '../../tenant/application/tenant.service.js';
@@ -37,6 +41,7 @@ export class PlatformDashboardService {
     private readonly config: ConfigService,
     @Inject(USER_TOKEN_REPOSITORY)
     private readonly tokens: IUserTokenRepository,
+    @Inject(FILE_STORAGE) private readonly storage: IFileStorageService,
     @InjectDataSource()
     private readonly dataSource: DataSource,
   ) {}
@@ -122,14 +127,21 @@ export class PlatformDashboardService {
   ): Promise<PlatformDashboardRecentTenantsResponseDto> {
     const limit = query.limit ?? DEFAULT_LIMIT;
     const page = await this.tenants.findAll(1, limit);
+    const logoByTenantId = await this.resolveTenantLogoUrls(page.data.map((t) => t.id));
+
     return {
-      data: page.data.map((tenant) => ({
-        id: tenant.id,
-        displayName: tenant.displayName,
-        tenantCode: tenant.tenantCode,
-        status: tenant.status,
-        joinedAt: tenant.createdAt,
-      })),
+      data: page.data.map((tenant) => {
+        const logos = logoByTenantId.get(tenant.id);
+        return {
+          id: tenant.id,
+          displayName: tenant.displayName,
+          tenantCode: tenant.tenantCode,
+          status: tenant.status,
+          joinedAt: tenant.createdAt,
+          logoUrl: logos?.logoUrl,
+          logoDarkUrl: logos?.logoDarkUrl,
+        };
+      }),
     };
   }
 
@@ -213,6 +225,49 @@ export class PlatformDashboardService {
       [status],
     );
     return Number(count);
+  }
+
+  private async resolveTenantLogoUrls(
+    tenantIds: string[],
+  ): Promise<Map<string, { logoUrl?: string; logoDarkUrl?: string }>> {
+    const result = new Map<string, { logoUrl?: string; logoDarkUrl?: string }>();
+    if (!tenantIds.length) return result;
+
+    const placeholders = tenantIds.map((_, index) => `$${index + 1}`).join(', ');
+    const rows: Array<{
+      tenantId: string;
+      legacyLogoUrl: string | null;
+      lightFileUrl: string | null;
+      darkFileUrl: string | null;
+    }> = await this.dataSource.query(
+      `
+      SELECT
+        cfg.tenant_id AS "tenantId",
+        cfg.logo_url AS "legacyLogoUrl",
+        light.file_url AS "lightFileUrl",
+        dark.file_url AS "darkFileUrl"
+      FROM "${DATABASE_SCHEMA}".tenant_configurations cfg
+      LEFT JOIN "${DATABASE_SCHEMA}".tenant_assets light
+        ON light.id = cfg.logo_asset_id
+      LEFT JOIN "${DATABASE_SCHEMA}".tenant_assets dark
+        ON dark.id = cfg.logo_dark_asset_id
+      WHERE cfg.tenant_id IN (${placeholders})
+      `,
+      tenantIds,
+    );
+
+    await Promise.all(
+      rows.map(async (row) => {
+        const lightStored = row.lightFileUrl ?? row.legacyLogoUrl ?? undefined;
+        const darkStored = row.darkFileUrl ?? undefined;
+        result.set(row.tenantId, {
+          logoUrl: lightStored ? await this.storage.resolveUrl(lightStored) : undefined,
+          logoDarkUrl: darkStored ? await this.storage.resolveUrl(darkStored) : undefined,
+        });
+      }),
+    );
+
+    return result;
   }
 
   /**
