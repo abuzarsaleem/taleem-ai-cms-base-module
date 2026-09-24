@@ -84,6 +84,9 @@ export const applicationService = {
   deactivate(applicationId: string) {
     return apiRequest<CatalogApplication>(`/application/${applicationId}/deactivate`, { method: 'POST' })
   },
+  activate(applicationId: string) {
+    return apiRequest<CatalogApplication>(`/application/${applicationId}/activate`, { method: 'POST' })
+  },
   uploadLogo(applicationId: string, file: File) {
     const form = new FormData()
     form.append('file', file)

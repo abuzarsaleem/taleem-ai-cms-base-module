@@ -488,7 +488,27 @@ export function ApplicationsPage() {
                           <XCircle className="size-3.5" />
                           Deactivate
                         </Button>
-                      ) : null}
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          loading={actionId === app.id}
+                          onClick={() => {
+                            setActionId(app.id)
+                            applicationService
+                              .activate(app.id)
+                              .then(async () => {
+                                await load()
+                                toast.success(`${app.name} activated`)
+                              })
+                              .catch((error) => toast.error(errorMessage(error)))
+                              .finally(() => setActionId(null))
+                          }}
+                        >
+                          <CheckCircle2 className="size-3.5" />
+                          Activate
+                        </Button>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
