@@ -32,6 +32,16 @@ export class TenantResponseDto {
     example: 4,
   })
   applicationCount!: number;
+  @ApiPropertyOptional({
+    description: 'Resolved light / primary tenant logo URL',
+    example: 'https://cdn.example.com/tenants/.../logo.png',
+  })
+  logoUrl?: string;
+  @ApiPropertyOptional({
+    description: 'Resolved dark-mode tenant logo URL',
+    example: 'https://cdn.example.com/tenants/.../logo-dark.png',
+  })
+  logoDarkUrl?: string;
   @ApiProperty() createdAt!: Date;
   @ApiProperty() updatedAt!: Date;
   @ApiPropertyOptional({ type: [AvailableApplicationResponseDto] })

@@ -146,6 +146,26 @@ export class ApplicationCatalogService {
     return this.toResolvedResponseWithTenantCount(updated);
   }
 
+  async activate(id: string, actorUserId: string) {
+    const before = await this.requireById(id);
+    if (before.status === ApplicationStatus.ACTIVE) {
+      return this.toResolvedResponseWithTenantCount(before);
+    }
+    const updated = await this.applications.update(id, {
+      status: ApplicationStatus.ACTIVE,
+      updatedBy: actorUserId,
+    });
+    await this.audit.record({
+      actorUserId,
+      action: AuditAction.APPLICATION_ACTIVATED,
+      entityType: 'application',
+      entityId: id,
+      oldValue: { status: before.status },
+      newValue: { status: updated.status },
+    });
+    return this.toResolvedResponseWithTenantCount(updated);
+  }
+
   async uploadLogo(id: string, file: UploadedAssetFile | undefined, actorUserId: string) {
     const application = await this.requireById(id);
     this.assertValidLogoUpload(file);

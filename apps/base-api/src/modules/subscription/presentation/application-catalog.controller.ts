@@ -125,6 +125,21 @@ export class ApplicationCatalogController {
   ) {
     return this.service.deactivate(applicationId, user.userId);
   }
+
+  @Post(':applicationId/activate')
+  @RequirePermissions(PlatformPermission.SUBSCRIPTION_MANAGE)
+  @ApiOperation({
+    summary: 'Mark application eligible again',
+    description:
+      'Sets status to ACTIVE so the application can be entitled again. Existing entitlements become available when their subscription/period still allows it.',
+  })
+  @ApiOkResponse({ type: ApplicationResponseDto })
+  activate(
+    @Param('applicationId', ParseUUIDPipe) applicationId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.service.activate(applicationId, user.userId);
+  }
 }
 
 @ApiTags('Applications')
