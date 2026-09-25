@@ -92,12 +92,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       },
       createSubscription: (tenantId, draft) => {
         const subscriptionId = createId('sub')
+        const applicationCodes = draft.applications.map((app) => app.applicationCode)
         setStore((prev) => {
           const tenant = prev.tenants.find((row) => row.id === tenantId)
           const subscriptionCode = `${tenant?.tenantCode ?? 'sub'}-${draft.startDate.replaceAll('-', '')}`
           const remaining = prev.entitlements.filter(
             (row) =>
-              !(row.tenantId === tenantId && row.applicationCode && draft.applicationCodes.includes(row.applicationCode)),
+              !(row.tenantId === tenantId && row.applicationCode && applicationCodes.includes(row.applicationCode)),
           )
           return {
             ...prev,
@@ -109,14 +110,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                 status: SubscriptionStatus.ACTIVE,
                 planType: draft.planType,
                 billingCycle: draft.billingCycle,
-                applicationCodes: draft.applicationCodes,
+                applicationCodes,
                 startDate: draft.startDate,
                 endDate: draft.endDate,
               },
               ...prev.subscriptions,
             ],
             entitlements: [
-              ...draft.applicationCodes.map((applicationCode) => ({
+              ...applicationCodes.map((applicationCode) => ({
                 id: createId('ent'),
                 tenantId,
                 applicationCode,
