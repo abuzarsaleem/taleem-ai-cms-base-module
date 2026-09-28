@@ -1,22 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import {
-  Activity,
-  BadgeCheck,
   Bell,
   Building2,
   CreditCard,
   Gauge,
-  Image,
   LayoutGrid,
   Lock,
   LogOut,
-  Mail,
-  MapPin,
   Menu,
   Search,
   Settings2,
-  ShieldCheck,
   Sparkles,
   UserRound,
   Users,
@@ -71,21 +65,21 @@ const nav: NavGroup[] = [
     label: 'Configuration',
     items: [
       { to: '/platform/configuration', label: 'Configurations', icon: Settings2 },
-      { to: '/platform/contacts', label: 'Contacts', icon: Users },
-      { to: '/platform/addresses', label: 'Addresses', icon: MapPin },
-      { to: '/platform/identifiers', label: 'Identifiers', icon: BadgeCheck },
-      { to: '/platform/smtp', label: 'SMTP', icon: Mail },
-      { to: '/platform/assets', label: 'Assets', icon: Image },
+      // { to: '/platform/contacts', label: 'Contacts', icon: Users },
+      // { to: '/platform/addresses', label: 'Addresses', icon: MapPin },
+      // { to: '/platform/identifiers', label: 'Identifiers', icon: BadgeCheck },
+      // { to: '/platform/smtp', label: 'SMTP', icon: Mail },
+      // { to: '/platform/assets', label: 'Assets', icon: Image },
     ],
   },
-  {
-    label: 'System',
-    items: [
-      { label: 'Audit Logs', icon: Activity, soon: true },
-      { label: 'Notifications', icon: Bell, soon: true },
-      { label: 'System Health', icon: ShieldCheck, soon: true },
-    ],
-  },
+  // {
+  //   label: 'System',
+  //   items: [
+  //     { label: 'Audit Logs', icon: Activity, soon: true },
+  //     { label: 'Notifications', icon: Bell, soon: true },
+  //     { label: 'System Health', icon: ShieldCheck, soon: true },
+  //   ],
+  // },
 ]
 
 function isActive(pathname: string, item: NavItem, items: NavItem[]) {

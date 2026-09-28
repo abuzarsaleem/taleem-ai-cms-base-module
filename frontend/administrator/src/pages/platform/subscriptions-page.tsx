@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import {
-  Download,
   ExternalLink,
   MoreHorizontal,
   Plus,
@@ -8,7 +7,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { ApplicationIcon } from '@/components/application-icon'
-import { PageHeader } from '@/components/page-header'
+import { PageHeader, FilterField } from '@/components/page-header'
 import { StatusBadge } from '@/components/status-badge'
 import { SubscriptionFields } from '@/components/subscription-fields'
 import { TablePagination } from '@/components/table-pagination'
@@ -336,66 +335,72 @@ export function SubscriptionsPage() {
         eyebrow="Catalogue"
         title="Subscription Management"
         description="Manage tenant subscriptions, configured applications, and access details."
+        actions={
+          <Button type="button" onClick={openCreate}>
+            <Plus className="size-4" />
+            Add subscription
+          </Button>
+        }
       />
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-        <div className="relative min-w-0 flex-1 sm:min-w-[16rem]">
-          <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            className="h-9 border-border bg-background pl-8"
-            placeholder="Search by tenant name, subscription ID, or domain..."
-            value={searchInput}
-            onChange={(event) => setSearchInput(event.target.value)}
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
+        <FilterField label="Search" className="min-w-0 flex-1 sm:min-w-[16rem]">
+          <div className="relative">
+            <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              className="h-9 border-border bg-background pl-8"
+              placeholder="Search by tenant name, subscription ID, or domain..."
+              value={searchInput}
+              onChange={(event) => setSearchInput(event.target.value)}
+            />
+          </div>
+        </FilterField>
+        <FilterField label="Status" className="w-full sm:w-36">
+          <SearchableSelect
+            value={statusFilter}
+            onValueChange={(value) => setStatusFilter(value as 'ALL' | DisplayStatus)}
+            className="w-full"
+            options={[
+              { value: 'ALL', label: 'All statuses' },
+              { value: 'ACTIVE', label: 'Active' },
+              { value: 'EXPIRED', label: 'Expired' },
+              { value: 'SUSPENDED', label: 'Suspended' },
+            ]}
+            placeholder="Status"
           />
-        </div>
-        <SearchableSelect
-          value={statusFilter}
-          onValueChange={(value) => setStatusFilter(value as 'ALL' | DisplayStatus)}
-          className="w-full sm:w-36"
-          options={[
-            { value: 'ALL', label: 'All statuses' },
-            { value: 'ACTIVE', label: 'Active' },
-            { value: 'EXPIRED', label: 'Expired' },
-            { value: 'SUSPENDED', label: 'Suspended' },
-          ]}
-          placeholder="Status"
-        />
-        <SearchableSelect
-          value={typeFilter}
-          onValueChange={(value) => setTypeFilter(value as 'ALL' | PlanType)}
-          className="w-full sm:w-36"
-          options={[
-            { value: 'ALL', label: 'All types' },
-            { value: PlanType.PAID, label: 'Paid' },
-            { value: PlanType.TRIAL, label: 'Trial' },
-            { value: PlanType.FREE, label: 'Free' },
-          ]}
-          placeholder="Type"
-        />
-        <SearchableSelect
-          value={billingFilter}
-          onValueChange={(value) => setBillingFilter(value as 'ALL' | BillingCycle)}
-          className="w-full sm:w-40"
-          options={[
-            { value: 'ALL', label: 'All cycles' },
-            { value: BillingCycle.MONTHLY, label: 'Monthly' },
-            { value: BillingCycle.YEARLY, label: 'Annual' },
-          ]}
-          placeholder="Billing cycle"
-        />
+        </FilterField>
+        <FilterField label="Type" className="w-full sm:w-36">
+          <SearchableSelect
+            value={typeFilter}
+            onValueChange={(value) => setTypeFilter(value as 'ALL' | PlanType)}
+            className="w-full"
+            options={[
+              { value: 'ALL', label: 'All types' },
+              { value: PlanType.PAID, label: 'Paid' },
+              { value: PlanType.TRIAL, label: 'Trial' },
+              { value: PlanType.FREE, label: 'Free' },
+            ]}
+            placeholder="Type"
+          />
+        </FilterField>
+        <FilterField label="Billing cycle" className="w-full sm:w-40">
+          <SearchableSelect
+            value={billingFilter}
+            onValueChange={(value) => setBillingFilter(value as 'ALL' | BillingCycle)}
+            className="w-full"
+            options={[
+              { value: 'ALL', label: 'All cycles' },
+              { value: BillingCycle.MONTHLY, label: 'Monthly' },
+              { value: BillingCycle.YEARLY, label: 'Annual' },
+            ]}
+            placeholder="Billing cycle"
+          />
+        </FilterField>
         {hasFilters ? (
           <Button type="button" variant="ghost" className="shrink-0 text-primary" onClick={clearFilters}>
             Clear filters
           </Button>
         ) : null}
-        <Button type="button" variant="outline" className="shrink-0 sm:ml-auto" disabled>
-          <Download className="size-4" />
-          Export
-        </Button>
-        <Button type="button" className="shrink-0" onClick={openCreate}>
-          <Plus className="size-4" />
-          Add subscription
-        </Button>
       </div>
 
       {loading || tenantsLoading ? (

@@ -290,6 +290,18 @@ main table tbody tr:hover td {
     background: var(--portal-hero);
   }
 
+  .login-brand-panel {
+    background:
+      radial-gradient(circle at 12% 88%, rgb(37 99 235 / 0.14), transparent 42%),
+      linear-gradient(135deg, #f7faff 0%, #eef4ff 45%, #f8fafc 100%);
+  }
+
+  .dark .login-brand-panel {
+    background:
+      radial-gradient(circle at 12% 88%, rgb(99 102 241 / 0.22), transparent 42%),
+      linear-gradient(160deg, #050b1a 0%, #0a1430 50%, #070f24 100%);
+  }
+
   .portal-sidebar {
     background: linear-gradient(
       180deg,
@@ -330,6 +342,17 @@ main table tbody tr:hover td {
 
   .dark .text-brand-gradient {
     background-image: linear-gradient(90deg, #60a5fa 0%, #a78bfa 100%);
+  }
+
+  .text-ecosystem-gradient {
+    background-image: linear-gradient(90deg, #7c3aed 0%, #db2777 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .dark .text-ecosystem-gradient {
+    background-image: linear-gradient(90deg, #a78bfa 0%, #f472b6 100%);
   }
 
   .login-continue {

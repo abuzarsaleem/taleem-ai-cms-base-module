@@ -6,12 +6,14 @@ export function PageHero({
   description,
   badge,
   media,
+  actions,
 }: {
   eyebrow: string
   title: string
   description?: string
   badge?: ReactNode
   media?: ReactNode
+  actions?: ReactNode
 }) {
   return (
     <header className="portal-hero relative overflow-hidden rounded-3xl border border-border/60 p-8 shadow-[var(--portal-shadow)] sm:p-10">
@@ -29,18 +31,17 @@ export function PageHero({
           <p className="text-[11px] font-semibold tracking-[0.18em] text-teal-500 uppercase dark:text-teal-300">
             {eyebrow}
           </p>
-          <div className="mt-3.5 min-w-0 max-w-3xl">
+          <div className="mt-1.5 min-w-0 max-w-3xl">
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="font-display text-[2.15rem] leading-[1.12] font-semibold tracking-tight text-foreground sm:text-[2.5rem]">
-                {title}
-              </h1>
+              <h1 className="text-2xl font-semibold tracking-tight text-foreground">{title}</h1>
               {badge}
             </div>
             {description ? (
-              <p className="mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground">{description}</p>
+              <p className="mt-1.5 max-w-xl text-sm leading-relaxed text-muted-foreground">{description}</p>
             ) : null}
           </div>
         </div>
+        {actions ? <div className="relative z-10 flex shrink-0 flex-wrap items-center justify-end gap-2">{actions}</div> : null}
       </div>
     </header>
   )

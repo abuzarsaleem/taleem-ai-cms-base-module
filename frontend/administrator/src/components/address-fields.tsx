@@ -2,6 +2,11 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { SearchableSelect } from '@/components/ui/searchable-select'
 import { Field, FieldGrid } from '@/components/field'
+import {
+  COUNTRY_OPTIONS,
+  cityOptionsForProvince,
+  provinceOptionsForCountry,
+} from '@/data/pakistan-locations'
 import type { AddressDraft } from '@/lib/address'
 import { AddressType } from '@/lib/types'
 import { labelize } from '@/lib/utils'
@@ -16,6 +21,8 @@ export function AddressFields({
   errors?: Partial<Record<keyof AddressDraft, string>>
 }) {
   const patch = (partial: Partial<AddressDraft>) => onChange({ ...value, ...partial })
+  const provinceOptions = provinceOptionsForCountry(value.countryCode)
+  const cityOptions = cityOptionsForProvince(value.countryCode, value.provinceCode)
 
   return (
     <FieldGrid>
@@ -47,31 +54,59 @@ export function AddressFields({
       <Field label="Area" error={errors.area}>
         <Input value={value.area} maxLength={150} onChange={(e) => patch({ area: e.target.value })} />
       </Field>
+      <Field label="Country" error={errors.countryCode}>
+        <SearchableSelect
+          value={value.countryCode}
+          onValueChange={(countryCode) =>
+            patch({
+              countryCode,
+              provinceCode: '',
+              city: '',
+            })
+          }
+          options={COUNTRY_OPTIONS}
+          placeholder="Select country"
+          searchPlaceholder="Search countries..."
+          aria-invalid={Boolean(errors.countryCode)}
+        />
+      </Field>
+      <Field label="Province" error={errors.provinceCode}>
+        <SearchableSelect
+          value={value.provinceCode}
+          onValueChange={(provinceCode) =>
+            patch({
+              provinceCode,
+              city: '',
+            })
+          }
+          options={provinceOptions}
+          placeholder={value.countryCode ? 'Select province' : 'Select country first'}
+          searchPlaceholder="Search provinces..."
+          disabled={!value.countryCode || provinceOptions.length === 0}
+          emptyMessage="No provinces for this country"
+          aria-invalid={Boolean(errors.provinceCode)}
+        />
+      </Field>
       <Field label="City" required error={errors.city}>
-        <Input value={value.city} maxLength={100} onChange={(e) => patch({ city: e.target.value })} />
+        <SearchableSelect
+          value={value.city}
+          onValueChange={(city) => patch({ city })}
+          options={cityOptions}
+          placeholder={value.provinceCode ? 'Select city' : 'Select province first'}
+          searchPlaceholder="Search cities..."
+          disabled={!value.provinceCode || cityOptions.length === 0}
+          emptyMessage="No cities for this province"
+          aria-invalid={Boolean(errors.city)}
+        />
       </Field>
       <Field label="District" error={errors.district}>
         <Input value={value.district} maxLength={100} onChange={(e) => patch({ district: e.target.value })} />
-      </Field>
-      <Field label="Province" error={errors.provinceCode}>
-        <Input
-          value={value.provinceCode}
-          maxLength={20}
-          onChange={(e) => patch({ provinceCode: e.target.value })}
-        />
       </Field>
       <Field label="Postal code" error={errors.postalCode}>
         <Input
           value={value.postalCode}
           maxLength={20}
           onChange={(e) => patch({ postalCode: e.target.value })}
-        />
-      </Field>
-      <Field label="Country" hint="ISO 2-letter code." error={errors.countryCode}>
-        <Input
-          value={value.countryCode}
-          maxLength={2}
-          onChange={(e) => patch({ countryCode: e.target.value.toUpperCase() })}
         />
       </Field>
       <div className="flex flex-col gap-3 sm:col-span-2">

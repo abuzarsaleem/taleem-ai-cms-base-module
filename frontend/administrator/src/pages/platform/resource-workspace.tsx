@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { SearchableSelect } from '@/components/ui/searchable-select'
 import { Skeleton } from '@/components/ui/skeleton'
-import { PageHeader } from '@/components/page-header'
+import { PageHeader, FilterField } from '@/components/page-header'
 import { Field } from '@/components/field'
 import { TablePagination } from '@/components/table-pagination'
 import type { Tenant } from '@/lib/types'
@@ -58,32 +58,6 @@ export function ResourceWorkspace({
         eyebrow={eyebrow}
         title={title}
         description={description}
-        toolbar={
-          <>
-            <Input
-              className="max-w-sm"
-              placeholder={queryPlaceholder}
-              value={query}
-              onChange={(e) => onQuery(e.target.value)}
-            />
-            {showTenantFilter && tenantId && onTenantId && tenants ? (
-              <SearchableSelect
-                value={tenantId}
-                onValueChange={onTenantId}
-                className="w-full sm:w-64"
-                placeholder="All tenants"
-                options={[
-                  { value: 'all', label: 'All tenants' },
-                  ...tenants.map((tenant) => ({
-                    value: tenant.id,
-                    label: tenant.displayName,
-                    description: tenant.tenantCode,
-                  })),
-                ]}
-              />
-            ) : null}
-          </>
-        }
         actions={
           <Button asChild>
             <Link to={addTo}>
@@ -91,6 +65,35 @@ export function ResourceWorkspace({
               {addLabel}
             </Link>
           </Button>
+        }
+        toolbar={
+          <>
+            <FilterField label="Search" className="min-w-[12rem] flex-1 sm:max-w-sm">
+              <Input
+                placeholder={queryPlaceholder}
+                value={query}
+                onChange={(e) => onQuery(e.target.value)}
+              />
+            </FilterField>
+            {showTenantFilter && tenantId && onTenantId && tenants ? (
+              <FilterField label="Tenant" className="w-full sm:w-64">
+                <SearchableSelect
+                  value={tenantId}
+                  onValueChange={onTenantId}
+                  className="w-full"
+                  placeholder="All tenants"
+                  options={[
+                    { value: 'all', label: 'All tenants' },
+                    ...tenants.map((tenant) => ({
+                      value: tenant.id,
+                      label: tenant.displayName,
+                      description: tenant.tenantCode,
+                    })),
+                  ]}
+                />
+              </FilterField>
+            ) : null}
+          </>
         }
       />
       {loading ? <Skeleton className="h-72 rounded-xl" /> : children}

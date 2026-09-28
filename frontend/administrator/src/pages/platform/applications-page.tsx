@@ -14,7 +14,6 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Dialog,
   DialogContent,
@@ -40,10 +39,11 @@ import { ApplicationIcon } from '@/components/application-icon'
 import { ApplicationRolesDrawer } from '@/components/application-roles-drawer'
 import { CreateOAuthClientDialog } from '@/components/create-oauth-client-dialog'
 import { Field } from '@/components/field'
-import { PageHeader } from '@/components/page-header'
+import { PageHeader, FilterField } from '@/components/page-header'
+import { StatMetricCard } from '@/components/stat-metric-card'
 import { StatusBadge } from '@/components/status-badge'
 import { errorMessage } from '@/lib/auth'
-import { cn, isDisplayableImageUrl } from '@/lib/utils'
+import { isDisplayableImageUrl } from '@/lib/utils'
 import {
   ApplicationStatus,
   type ApplicationCatalogueStats,
@@ -65,37 +65,6 @@ const emptyDraft = {
 function optional(value: string) {
   const trimmed = value.trim()
   return trimmed || undefined
-}
-
-function formatVs(delta: number) {
-  if (delta === 0) return '± 0 vs last month'
-  return `${delta > 0 ? '+' : ''}${delta} vs last month`
-}
-
-function Sparkline({ values, color }: { values: number[]; color: string }) {
-  const max = Math.max(...values)
-  const min = Math.min(...values)
-  const range = Math.max(max - min, 1)
-  const points = values
-    .map((value, index) => {
-      const x = (index / (values.length - 1)) * 100
-      const y = 24 - ((value - min) / range) * 18
-      return `${x},${y}`
-    })
-    .join(' ')
-
-  return (
-    <svg viewBox="0 0 100 28" className="h-6 w-20" aria-hidden>
-      <polyline fill="none" stroke={color} strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round" points={points} />
-    </svg>
-  )
-}
-
-function sparkFrom(value: number, delta: number) {
-  const end = Math.max(value, 1)
-  const start = Math.max(end - Math.max(Math.abs(delta), 1), 1)
-  if (delta >= 0) return [start, start + 1, start, start + 2, end - 1, end]
-  return [end + Math.abs(delta), end, end + 1, end - 1, start + 1, start]
 }
 
 export function ApplicationsPage() {
@@ -312,24 +281,21 @@ export function ApplicationsPage() {
       value: stats?.total ?? rows.length,
       delta: stats?.vsPreviousMonth.total ?? 0,
       icon: LayoutGrid,
-      tone: 'bg-violet-500/10 text-violet-600',
-      stroke: '#7c3aed',
+      tone: 'violet' as const,
     },
     {
       title: 'Active',
       value: stats?.active ?? rows.filter((r) => r.status === ApplicationStatus.ACTIVE).length,
       delta: stats?.vsPreviousMonth.active ?? 0,
       icon: CheckCircle2,
-      tone: 'bg-emerald-500/10 text-emerald-600',
-      stroke: '#10b981',
+      tone: 'green' as const,
     },
     {
       title: 'Inactive',
       value: stats?.inactive ?? rows.filter((r) => r.status === ApplicationStatus.INACTIVE).length,
       delta: stats?.vsPreviousMonth.inactive ?? 0,
       icon: XCircle,
-      tone: 'bg-amber-500/10 text-amber-700',
-      stroke: '#f59e0b',
+      tone: 'amber' as const,
     },
   ]
 
@@ -339,62 +305,61 @@ export function ApplicationsPage() {
         eyebrow="Catalogue"
         title="Application catalogue"
         description="Register independently deployable applications. The catalogue does not store application business data."
+        actions={
+          <Button onClick={openCreate}>
+            <Plus className="size-4" />
+            Register application
+          </Button>
+        }
       />
 
       {loading ? (
         <div className="grid gap-4 sm:grid-cols-3">
           {Array.from({ length: 3 }).map((_, index) => (
-            <Skeleton key={index} className="h-24 rounded-xl" />
+            <Skeleton key={index} className="h-[5.5rem] rounded-xl" />
           ))}
         </div>
       ) : (
         <section className="grid gap-4 sm:grid-cols-3">
           {statCards.map((card) => (
-            <Card key={card.title} size="sm" className="portal-card border-border">
-              <CardHeader className="flex-row items-start justify-between gap-2 space-y-0 pb-1">
-                <div>
-                  <CardDescription className="text-xs font-medium">{card.title}</CardDescription>
-                  <CardTitle className="mt-1 text-2xl font-semibold tabular-nums">{card.value}</CardTitle>
-                </div>
-                <span className={cn('inline-flex size-8 items-center justify-center rounded-md', card.tone)}>
-                  <card.icon className="size-4" />
-                </span>
-              </CardHeader>
-              <CardContent className="flex items-end justify-between gap-2 pt-0">
-                <p className="text-xs text-muted-foreground">{formatVs(card.delta)}</p>
-                <Sparkline values={sparkFrom(card.value, card.delta)} color={card.stroke} />
-              </CardContent>
-            </Card>
+            <StatMetricCard
+              key={card.title}
+              title={card.title}
+              value={card.value}
+              delta={card.delta}
+              icon={card.icon}
+              tone={card.tone}
+            />
           ))}
         </section>
       )}
 
       <div className="overflow-hidden rounded-xl border border-border/70 bg-card">
-        <div className="flex flex-col gap-3 border-b border-border p-3 sm:flex-row sm:items-center">
-          <div className="relative min-w-0 flex-1">
-            <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              className="h-9 border-border bg-background pl-8"
-              placeholder="Search applications by name or code..."
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
+        <div className="flex flex-col gap-3 border-b border-border p-3 sm:flex-row sm:items-end">
+          <FilterField label="Search" className="min-w-0 flex-1">
+            <div className="relative">
+              <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                className="h-9 border-border bg-background pl-8"
+                placeholder="Search applications by name or code..."
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+              />
+            </div>
+          </FilterField>
+          <FilterField label="Status" className="w-full sm:w-40">
+            <SearchableSelect
+              value={statusFilter}
+              onValueChange={(value) => setStatusFilter(value as 'ALL' | ApplicationStatus)}
+              className="w-full"
+              options={[
+                { value: 'ALL', label: 'All statuses' },
+                { value: ApplicationStatus.ACTIVE, label: 'Active' },
+                { value: ApplicationStatus.INACTIVE, label: 'Inactive' },
+              ]}
+              placeholder="Status"
             />
-          </div>
-          <SearchableSelect
-            value={statusFilter}
-            onValueChange={(value) => setStatusFilter(value as 'ALL' | ApplicationStatus)}
-            className="w-full sm:w-40"
-            options={[
-              { value: 'ALL', label: 'All statuses' },
-              { value: ApplicationStatus.ACTIVE, label: 'Active' },
-              { value: ApplicationStatus.INACTIVE, label: 'Inactive' },
-            ]}
-            placeholder="Status"
-          />
-          <Button className="shrink-0 sm:ml-auto" onClick={openCreate}>
-            <Plus className="size-4" />
-            Register application
-          </Button>
+          </FilterField>
         </div>
 
         {loading ? (

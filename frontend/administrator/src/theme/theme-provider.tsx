@@ -33,7 +33,11 @@ function applyTheme(theme: Theme) {
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>(() => getInitialTheme())
+  const [theme, setThemeState] = useState<Theme>(() => {
+    const initial = getInitialTheme()
+    applyTheme(initial)
+    return initial
+  })
 
   useEffect(() => {
     applyTheme(theme)
@@ -41,6 +45,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, [theme])
 
   const setTheme = useCallback((next: Theme) => {
+    applyTheme(next)
     setThemeState(next)
   }, [])
 

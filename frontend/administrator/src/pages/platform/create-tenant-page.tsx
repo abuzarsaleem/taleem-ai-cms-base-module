@@ -26,9 +26,10 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { PageHeader } from '@/components/page-header'
+import { PageHeader, FilterField } from '@/components/page-header'
 import { StatusBadge } from '@/components/status-badge'
 import { TenantFields } from '@/components/tenant-fields'
+import { COUNTRY_OPTIONS, provinceLabel } from '@/data/pakistan-locations'
 import {
   addressFieldErrors,
   addressPayload,
@@ -486,7 +487,17 @@ export function CreateTenantPage() {
                   <ReviewRow label="Display name" value={tenant.displayName} />
                   <ReviewRow label="Type" value={labelize(tenant.institutionType)} />
                   <ReviewRow label="Deployment" value={labelize(tenant.deploymentModel)} />
-                  <ReviewRow label="Country" value={tenant.countryCode || '—'} />
+                  <ReviewRow
+                    label="Country"
+                    value={
+                      COUNTRY_OPTIONS.find((row) => row.value === tenant.countryCode)?.label ??
+                      (tenant.countryCode || '—')
+                    }
+                  />
+                  <ReviewRow
+                    label="Province"
+                    value={tenant.provinceCode ? provinceLabel(tenant.provinceCode) : '—'}
+                  />
                   <ReviewRow label="City" value={tenant.city || '—'} />
                   <ReviewRow label="Website" value={tenant.websiteUrl || '—'} />
                 </ReviewCard>
@@ -641,23 +652,27 @@ function WizardListStep({
           <p className="mt-1 text-sm text-muted-foreground">{description}</p>
         </div>
       </div>
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="relative min-w-0 flex-1">
-          <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            className="h-9 border-border bg-background pl-8"
-            placeholder={queryPlaceholder}
-            value={query}
-            onChange={(event) => onQuery(event.target.value)}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+        <FilterField label="Search" className="min-w-0 flex-1">
+          <div className="relative">
+            <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              className="h-9 border-border bg-background pl-8"
+              placeholder={queryPlaceholder}
+              value={query}
+              onChange={(event) => onQuery(event.target.value)}
+            />
+          </div>
+        </FilterField>
+        <FilterField label="Type" className="w-full sm:w-40">
+          <SearchableSelect
+            value={filterValue}
+            onValueChange={onFilterChange}
+            className="w-full"
+            options={filterOptions}
+            placeholder="Type"
           />
-        </div>
-        <SearchableSelect
-          value={filterValue}
-          onValueChange={onFilterChange}
-          className="w-full sm:w-40"
-          options={filterOptions}
-          placeholder="Type"
-        />
+        </FilterField>
         <Button className="shrink-0 sm:ml-auto" onClick={onAdd}>
           <Plus className="size-4" />
           {addLabel}

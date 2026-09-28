@@ -22,6 +22,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Skeleton } from '@/components/ui/skeleton'
 import { ApplicationIcon } from '@/components/application-icon'
 import { StatusBadge } from '@/components/status-badge'
+import { StatMetricCard, type StatMetricTone } from '@/components/stat-metric-card'
 import { TenantLogo } from '@/components/tenant-logo'
 import { errorMessage, useAuth } from '@/lib/auth'
 import {
@@ -38,10 +39,10 @@ import { cn } from '@/lib/utils'
 import { platformDashboardService } from '@/services/platform'
 
 const STAT_META = [
-  { key: 'tenants' as const, title: 'Tenants', tone: 'blue' as const, icon: Building2 },
-  { key: 'activeTenants' as const, title: 'Active Tenants', tone: 'green' as const, icon: Shield },
-  { key: 'onboarding' as const, title: 'Onboarding', tone: 'amber' as const, icon: Users },
-  { key: 'applications' as const, title: 'Applications', tone: 'violet' as const, icon: LayoutGrid },
+  { key: 'tenants' as const, title: 'Tenants', tone: 'blue' as StatMetricTone, icon: Building2 },
+  { key: 'activeTenants' as const, title: 'Active Tenants', tone: 'green' as StatMetricTone, icon: Shield },
+  { key: 'onboarding' as const, title: 'Onboarding', tone: 'amber' as StatMetricTone, icon: Users },
+  { key: 'applications' as const, title: 'Applications', tone: 'violet' as StatMetricTone, icon: LayoutGrid },
 ]
 
 const ATTENTION_META: Record<string, { icon: LucideIcon; tone: string; surface: string }> = {
@@ -67,35 +68,11 @@ const ATTENTION_META: Record<string, { icon: LucideIcon; tone: string; surface: 
   },
 }
 
-const toneStyles = {
-  blue: {
-    icon: 'bg-blue-500/10 text-blue-600 dark:text-blue-300',
-    stroke: '#0c3cff',
-  },
-  green: {
-    icon: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-300',
-    stroke: '#10b981',
-  },
-  amber: {
-    icon: 'bg-amber-500/10 text-amber-700 dark:text-amber-300',
-    stroke: '#f59e0b',
-  },
-  violet: {
-    icon: 'bg-violet-500/10 text-violet-600 dark:text-violet-300',
-    stroke: '#7c3aed',
-  },
-} as const
-
 const statusTone: Record<string, string> = {
   OPERATIONAL: 'text-emerald-600 dark:text-emerald-300',
   DEGRADED: 'text-amber-600 dark:text-amber-300',
   DOWN: 'text-red-600 dark:text-red-300',
   UNKNOWN: 'text-muted-foreground',
-}
-
-function formatVsPreviousMonth(delta: number) {
-  if (delta === 0) return '± 0 vs last month'
-  return `${delta > 0 ? '+' : ''}${delta} vs last month`
 }
 
 function formatJoined(value: string) {
@@ -114,15 +91,6 @@ function formatActivityTime(value: string) {
     day: '2-digit',
     year: 'numeric',
   })
-}
-
-function sparkFromMetric(value: number, delta: number) {
-  const end = Math.max(value, 1)
-  const start = Math.max(end - Math.max(Math.abs(delta), 1), 1)
-  if (delta >= 0) {
-    return [start, start + 1, start, start + 2, start + Math.max(delta, 1), end - 1, end]
-  }
-  return [end + Math.abs(delta), end + 1, end, end + 2, end - 1, start + 1, start]
 }
 
 function activityIcon(action: string): { icon: LucideIcon; tone: string } {
@@ -155,25 +123,6 @@ function SystemStatusIcon({ status }: { status: string }) {
     return <XCircle className="size-4 text-red-500" />
   }
   return <Clock3 className="size-4 text-muted-foreground" />
-}
-
-function Sparkline({ values, color }: { values: readonly number[]; color: string }) {
-  const max = Math.max(...values)
-  const min = Math.min(...values)
-  const range = Math.max(max - min, 1)
-  const points = values
-    .map((value, index) => {
-      const x = (index / (values.length - 1)) * 100
-      const y = 24 - ((value - min) / range) * 18
-      return `${x},${y}`
-    })
-    .join(' ')
-
-  return (
-    <svg viewBox="0 0 100 28" className="h-7 w-28" aria-hidden>
-      <polyline fill="none" stroke={color} strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round" points={points} />
-    </svg>
-  )
 }
 
 function SectionLink({ to, label }: { to: string; label: string }) {
@@ -298,31 +247,17 @@ export function PlatformDashboardPage() {
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {STAT_META.map((stat) => {
           const metric = counts?.[stat.key]
-          const styles = toneStyles[stat.tone]
           const value = metric?.value ?? 0
           const delta = metric?.vsPreviousMonth ?? 0
           return (
-            <Card key={stat.key} size="sm" className="portal-card border-border">
-              <CardHeader className="gap-2.5 pb-1.5">
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <CardDescription className="text-xs font-medium text-muted-foreground">
-                      {stat.title}
-                    </CardDescription>
-                    <CardTitle className="mt-1 text-3xl font-semibold tracking-tight tabular-nums">
-                      {value}
-                    </CardTitle>
-                  </div>
-                  <span className={cn('inline-flex size-8 items-center justify-center rounded-md', styles.icon)}>
-                    <stat.icon className="size-4" />
-                  </span>
-                </div>
-              </CardHeader>
-              <CardContent className="flex items-end justify-between gap-2 pt-0">
-                <p className="text-xs text-muted-foreground">{formatVsPreviousMonth(delta)}</p>
-                <Sparkline values={sparkFromMetric(value, delta)} color={styles.stroke} />
-              </CardContent>
-            </Card>
+            <StatMetricCard
+              key={stat.key}
+              title={stat.title}
+              value={value}
+              delta={delta}
+              icon={stat.icon}
+              tone={stat.tone}
+            />
           )
         })}
       </section>

@@ -11,12 +11,12 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { SearchableSelect } from '@/components/ui/searchable-select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { PageHeader } from '@/components/page-header'
+import { PageHeader, FilterField } from '@/components/page-header'
+import { StatMetricCard, type StatMetricTone } from '@/components/stat-metric-card'
 import { StatusBadge } from '@/components/status-badge'
 import { TablePagination } from '@/components/table-pagination'
 import { TenantLifecycleMenu } from '@/components/tenant-lifecycle-menu'
@@ -28,15 +28,9 @@ import {
   type Tenant,
   type TenantCatalogueStats,
 } from '@/lib/types'
-import { cn } from '@/lib/utils'
 import { tenantService } from '@/services/platform'
 
 const INSTITUTION_TYPES = ['UNIVERSITY', 'COLLEGE', 'SCHOOL', 'INSTITUTE', 'ACADEMY', 'OTHER'] as const
-
-function formatVs(delta: number) {
-  if (delta === 0) return '± 0 vs last month'
-  return `${delta > 0 ? '+' : ''}${delta} vs last month`
-}
 
 function formatDate(value?: string) {
   if (!value) return '—'
@@ -129,41 +123,47 @@ export function TenantsPage() {
     return Array.from(new Set([...INSTITUTION_TYPES, ...fromRows])).sort()
   }, [rows])
 
-  const statCards = [
+  const statCards: Array<{
+    title: string
+    value: number
+    delta: number
+    icon: typeof Building2
+    tone: StatMetricTone
+  }> = [
     {
       title: 'Total Tenants',
       value: stats?.total ?? total,
       delta: stats?.vsPreviousMonth.total ?? 0,
       icon: Building2,
-      tone: 'bg-blue-500/10 text-blue-600',
+      tone: 'blue',
     },
     {
       title: 'Active Tenants',
       value: stats?.active ?? 0,
       delta: stats?.vsPreviousMonth.active ?? 0,
       icon: CheckCircle2,
-      tone: 'bg-emerald-500/10 text-emerald-600',
+      tone: 'green',
     },
     {
       title: 'Onboarding',
       value: stats?.onboarding ?? 0,
       delta: stats?.vsPreviousMonth.onboarding ?? 0,
       icon: CircleDashed,
-      tone: 'bg-amber-500/10 text-amber-700',
+      tone: 'amber',
     },
     {
       title: 'Suspended',
       value: stats?.suspended ?? 0,
       delta: stats?.vsPreviousMonth.suspended ?? 0,
       icon: PauseCircle,
-      tone: 'bg-rose-500/10 text-rose-600',
+      tone: 'rose',
     },
     {
       title: 'Retired',
       value: stats?.retired ?? 0,
       delta: stats?.vsPreviousMonth.retired ?? 0,
       icon: UserX,
-      tone: 'bg-slate-500/10 text-slate-600',
+      tone: 'slate',
     },
   ]
 
@@ -173,90 +173,89 @@ export function TenantsPage() {
         eyebrow="Tenants"
         title="Tenants"
         description="Manage institutions registered on the platform. Create, activate, suspend, or retire tenants."
+        actions={
+          <Button asChild>
+            <Link to="/platform/tenants/new">
+              <Plus className="size-4" />
+              Add tenant
+            </Link>
+          </Button>
+        }
       />
 
       {loading && !stats ? (
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
           {Array.from({ length: 5 }).map((_, index) => (
-            <Skeleton key={index} className="h-24 rounded-xl" />
+            <Skeleton key={index} className="h-[5.5rem] rounded-xl" />
           ))}
         </div>
       ) : (
         <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
           {statCards.map((card) => (
-            <Card key={card.title} size="sm" className="portal-card border-border">
-              <CardHeader className="flex-row items-start justify-between gap-2 space-y-0 pb-1">
-                <div>
-                  <CardDescription className="text-xs font-medium">{card.title}</CardDescription>
-                  <CardTitle className="mt-1 text-2xl font-semibold tabular-nums">{card.value}</CardTitle>
-                </div>
-                <span className={cn('inline-flex size-8 items-center justify-center rounded-md', card.tone)}>
-                  <card.icon className="size-4" />
-                </span>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <p
-                  className={cn(
-                    'text-xs',
-                    card.delta > 0
-                      ? 'text-emerald-600'
-                      : card.delta < 0
-                        ? 'text-rose-600'
-                        : 'text-muted-foreground',
-                  )}
-                >
-                  {formatVs(card.delta)}
-                </p>
-              </CardContent>
-            </Card>
+            <StatMetricCard
+              key={card.title}
+              title={card.title}
+              value={card.value}
+              delta={card.delta}
+              icon={card.icon}
+              tone={card.tone}
+            />
           ))}
         </section>
       )}
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="relative min-w-0 flex-1">
-          <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            className="h-9 border-border bg-background pl-8"
-            placeholder="Search by institution name, code, or description..."
-            value={searchInput}
-            onChange={(event) => setSearchInput(event.target.value)}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+        <FilterField label="Search" className="min-w-0 flex-1">
+          <div className="relative">
+            <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              className="h-9 border-border bg-background pl-8"
+              placeholder="Search by institution name, code, or description..."
+              value={searchInput}
+              onChange={(event) => setSearchInput(event.target.value)}
+            />
+          </div>
+        </FilterField>
+        <FilterField label="Status" className="w-full sm:w-40">
+          <SearchableSelect
+            value={statusFilter}
+            onValueChange={(value) => patchParams({ status: value })}
+            className="w-full"
+            options={[
+              { value: 'ALL', label: 'All statuses' },
+              { value: TenantStatus.ACTIVE, label: 'Active' },
+              { value: TenantStatus.ONBOARDING, label: 'Onboarding' },
+              { value: TenantStatus.SUSPENDED, label: 'Suspended' },
+              { value: TenantStatus.RETIRED, label: 'Retired' },
+            ]}
+            placeholder="Status"
           />
-        </div>
-        <SearchableSelect
-          value={statusFilter}
-          onValueChange={(value) => patchParams({ status: value })}
-          className="w-full sm:w-40"
-          options={[
-            { value: 'ALL', label: 'All statuses' },
-            { value: TenantStatus.ACTIVE, label: 'Active' },
-            { value: TenantStatus.ONBOARDING, label: 'Onboarding' },
-            { value: TenantStatus.SUSPENDED, label: 'Suspended' },
-            { value: TenantStatus.RETIRED, label: 'Retired' },
-          ]}
-          placeholder="Status"
-        />
-        <SearchableSelect
-          value={typeFilter}
-          onValueChange={(value) => patchParams({ type: value })}
-          className="w-full sm:w-44"
-          options={[
-            { value: 'ALL', label: 'All types' },
-            ...typeOptions.map((type) => ({ value: type, label: labelType(type) })),
-          ]}
-          placeholder="Type"
-        />
-        <SearchableSelect
-          value={deploymentFilter}
-          onValueChange={(value) => patchParams({ deployment: value })}
-          className="w-full sm:w-44"
-          options={[
-            { value: 'ALL', label: 'All models' },
-            { value: DeploymentModel.SAAS, label: 'SaaS' },
-            { value: DeploymentModel.ON_PREMISES, label: 'On premises' },
-          ]}
-          placeholder="Deployment"
-        />
+        </FilterField>
+        <FilterField label="Type" className="w-full sm:w-44">
+          <SearchableSelect
+            value={typeFilter}
+            onValueChange={(value) => patchParams({ type: value })}
+            className="w-full"
+            options={[
+              { value: 'ALL', label: 'All types' },
+              ...typeOptions.map((type) => ({ value: type, label: labelType(type) })),
+            ]}
+            placeholder="Type"
+          />
+        </FilterField>
+        <FilterField label="Deployment" className="w-full sm:w-44">
+          <SearchableSelect
+            value={deploymentFilter}
+            onValueChange={(value) => patchParams({ deployment: value })}
+            className="w-full"
+            options={[
+              { value: 'ALL', label: 'All models' },
+              { value: DeploymentModel.SAAS, label: 'SaaS' },
+              { value: DeploymentModel.ON_PREMISES, label: 'On premises' },
+            ]}
+            placeholder="Deployment"
+          />
+        </FilterField>
         {hasFilters ? (
           <Button
             type="button"
@@ -278,12 +277,6 @@ export function TenantsPage() {
             Clear filters
           </Button>
         ) : null}
-        <Button asChild className="shrink-0 sm:ml-auto">
-          <Link to="/platform/tenants/new">
-            <Plus className="size-4" />
-            Add tenant
-          </Link>
-        </Button>
       </div>
 
       {loading ? (

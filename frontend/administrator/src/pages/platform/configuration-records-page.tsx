@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input'
 import { SearchableSelect } from '@/components/ui/searchable-select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { PageHeader } from '@/components/page-header'
+import { PageHeader, FilterField } from '@/components/page-header'
 import { StatusBadge } from '@/components/status-badge'
 import { TablePagination } from '@/components/table-pagination'
 import { errorMessage } from '@/lib/auth'
@@ -134,51 +134,67 @@ export function PlatformConfigurationPage() {
         eyebrow="Tenant configuration"
         title="Tenant Configurations"
         description="View and manage configuration settings for all tenants across the platform."
+        actions={
+          <Button asChild>
+            <Link to="/platform/configuration/new">
+              <Plus className="size-4" />
+              Configure tenant
+            </Link>
+          </Button>
+        }
       />
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="relative min-w-0 flex-1">
-          <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            className="h-9 border-border bg-background pl-8"
-            placeholder="Search by tenant name, code, domain..."
-            value={searchInput}
-            onChange={(event) => setSearchInput(event.target.value)}
-          />
-        </div>
-        <SearchableSelect
-          value={statusFilter}
-          onValueChange={(value) => patchParams({ status: value })}
-          className="w-full sm:w-40"
-          options={[
-            { value: 'ALL', label: 'All statuses' },
-            { value: TenantStatus.ACTIVE, label: 'Active' },
-            { value: TenantStatus.ONBOARDING, label: 'Onboarding' },
-            { value: TenantStatus.SUSPENDED, label: 'Suspended' },
-            { value: TenantStatus.RETIRED, label: 'Retired' },
-          ]}
-          placeholder="Status"
-        />
-        <SearchableSelect
-          value={progressFilter}
-          onValueChange={(value) => patchParams({ progress: value })}
-          className="w-full sm:w-48"
-          options={[
-            { value: 'ALL', label: 'All progress' },
-            { value: TenantSetupProgressStatus.NOT_STARTED, label: 'Not started' },
-            { value: TenantSetupProgressStatus.IN_PROGRESS, label: 'In progress' },
-            { value: TenantSetupProgressStatus.COMPLETE, label: 'Complete' },
-          ]}
-          placeholder="Progress"
-        />
-        {timezoneOptions.length ? (
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+        <FilterField label="Search" className="min-w-0 flex-1">
+          <div className="relative">
+            <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              className="h-9 border-border bg-background pl-8"
+              placeholder="Search by tenant name, code, domain..."
+              value={searchInput}
+              onChange={(event) => setSearchInput(event.target.value)}
+            />
+          </div>
+        </FilterField>
+        <FilterField label="Status" className="w-full sm:w-40">
           <SearchableSelect
-            value="ALL"
-            onValueChange={() => undefined}
-            className="hidden w-full sm:flex sm:w-44"
-            options={[{ value: 'ALL', label: 'All timezones' }]}
-            placeholder="Timezone"
+            value={statusFilter}
+            onValueChange={(value) => patchParams({ status: value })}
+            className="w-full"
+            options={[
+              { value: 'ALL', label: 'All statuses' },
+              { value: TenantStatus.ACTIVE, label: 'Active' },
+              { value: TenantStatus.ONBOARDING, label: 'Onboarding' },
+              { value: TenantStatus.SUSPENDED, label: 'Suspended' },
+              { value: TenantStatus.RETIRED, label: 'Retired' },
+            ]}
+            placeholder="Status"
           />
+        </FilterField>
+        <FilterField label="Progress" className="w-full sm:w-48">
+          <SearchableSelect
+            value={progressFilter}
+            onValueChange={(value) => patchParams({ progress: value })}
+            className="w-full"
+            options={[
+              { value: 'ALL', label: 'All progress' },
+              { value: TenantSetupProgressStatus.NOT_STARTED, label: 'Not started' },
+              { value: TenantSetupProgressStatus.IN_PROGRESS, label: 'In progress' },
+              { value: TenantSetupProgressStatus.COMPLETE, label: 'Complete' },
+            ]}
+            placeholder="Progress"
+          />
+        </FilterField>
+        {timezoneOptions.length ? (
+          <FilterField label="Timezone" className="hidden w-full sm:grid sm:w-44">
+            <SearchableSelect
+              value="ALL"
+              onValueChange={() => undefined}
+              className="w-full"
+              options={[{ value: 'ALL', label: 'All timezones' }]}
+              placeholder="Timezone"
+            />
+          </FilterField>
         ) : null}
         {hasFilters ? (
           <Button
@@ -200,12 +216,6 @@ export function PlatformConfigurationPage() {
             Clear filters
           </Button>
         ) : null}
-        <Button asChild className="shrink-0 sm:ml-auto">
-          <Link to="/platform/configuration/new">
-            <Plus className="size-4" />
-            Configure tenant
-          </Link>
-        </Button>
       </div>
 
       {loading ? (
