@@ -6,6 +6,7 @@ import {
   IsArray,
   IsBoolean,
   IsEnum,
+  IsNotEmpty,
   IsOptional,
   IsString,
   Matches,
@@ -116,6 +117,32 @@ export class ApplicationPermissionResponseDto {
   @ApiProperty() permissionCode!: string;
   @ApiProperty() name!: string;
   @ApiPropertyOptional() description?: string;
+}
+
+export class CreateApplicationPermissionDto {
+  @ApiProperty({ example: 'alumni.courses.read', maxLength: 100 })
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(100)
+  @Matches(/^[a-z0-9]+(?:[._-][a-z0-9]+)*$/, {
+    message: 'permissionCode must use lowercase segments separated by dots, underscores, or hyphens',
+  })
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim().toLowerCase() : value))
+  permissionCode!: string;
+
+  @ApiProperty({ example: 'Read Alumni Courses', maxLength: 150 })
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(150)
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  name!: string;
+
+  @ApiPropertyOptional({ maxLength: 500 })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  description?: string;
 }
 
 export class ApplicationRoleResponseDto {

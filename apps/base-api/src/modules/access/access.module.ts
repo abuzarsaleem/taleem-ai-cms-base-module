@@ -23,6 +23,7 @@ import {
 } from './presentation/application-access.controller.js';
 import { ApplicationRegistrationController } from './presentation/application-registration.controller.js';
 import { PlatformApplicationRoleController } from './presentation/platform-application-role.controller.js';
+import { PlatformApplicationPermissionController } from './presentation/platform-application-permission.controller.js';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { PlatformApplicationRoleController } from './presentation/platform-appli
   controllers: [
     ApplicationRegistrationController,
     PlatformApplicationRoleController,
+    PlatformApplicationPermissionController,
     TenantMembershipApplicationController,
     TenantApplicationAccessController,
     ApplicationAccessCatalogController,

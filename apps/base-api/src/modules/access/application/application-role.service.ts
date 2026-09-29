@@ -23,6 +23,7 @@ import type {
   AddApplicationRolePermissionsDto,
   ApplicationRoleResponseDto,
   CreateApplicationRoleDto,
+  CreateApplicationPermissionDto,
   UpdateApplicationRoleDto,
 } from './dto/access.dto.js';
 
@@ -66,6 +67,44 @@ export class ApplicationRoleService {
       throw new ConflictException(
         `Role code(s) already exist: ${existing.map((r) => r.roleCode).join(', ')}`,
       );
+    }
+  }
+
+  async createPermission(applicationId: string, dto: CreateApplicationPermissionDto) {
+    await this.requireApplication(applicationId);
+    const permissionCode = dto.permissionCode.trim().toLowerCase();
+    const existing = await this.appPermissions.findOne({ where: { applicationId, permissionCode } });
+    if (existing) {
+      throw new ConflictException(`Permission code '${permissionCode}' already exists for this application`);
+    }
+
+    try {
+      const permission = await this.appPermissions.save(
+        this.appPermissions.create({
+          applicationId,
+          permissionCode,
+          name: dto.name.trim(),
+          description: dto.description?.trim() || undefined,
+        }),
+      );
+      return {
+        id: permission.id,
+        applicationId: permission.applicationId,
+        permissionCode: permission.permissionCode,
+        name: permission.name,
+        description: permission.description,
+      };
+    } catch (error) {
+      // The unique constraint is the final guard against concurrent duplicate requests.
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        error.code === '23505'
+      ) {
+        throw new ConflictException(`Permission code '${permissionCode}' already exists for this application`);
+      }
+      throw error;
     }
   }
 
