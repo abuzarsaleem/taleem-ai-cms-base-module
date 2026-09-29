@@ -99,7 +99,6 @@ export function PlatformAssetFormPage() {
 
   return (
     <ResourceFormLayout
-      eyebrow="Tenant configuration"
       title={isEdit ? 'Edit asset' : 'Add asset'}
       description={
         isEdit

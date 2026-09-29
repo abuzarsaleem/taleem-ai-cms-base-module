@@ -58,6 +58,7 @@ export function TenantLifecycleMenu({
           {actions.canActivate || actions.canSuspend || actions.canRetire ? <DropdownMenuSeparator /> : null}
           {actions.canActivate ? (
             <DropdownMenuItem
+              className="text-emerald-600 focus:text-emerald-700"
               disabled={pending}
               onClick={() => {
                 setPending(true)
@@ -71,6 +72,7 @@ export function TenantLifecycleMenu({
           ) : null}
           {actions.canSuspend ? (
             <DropdownMenuItem
+              className="text-amber-600 focus:text-amber-700"
               onClick={() =>
                 setConfirm({
                   title: `Suspend ${tenant.displayName}?`,

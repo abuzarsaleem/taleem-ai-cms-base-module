@@ -3,16 +3,15 @@ import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { ArrowLeft, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { SearchableSelect } from '@/components/ui/searchable-select'
 import { Skeleton } from '@/components/ui/skeleton'
-import { PageHeader, FilterField } from '@/components/page-header'
+import { FilterBar, FilterSearch, FilterSelect } from '@/components/filters'
+import { PageHeader } from '@/components/page-header'
 import { Field } from '@/components/field'
 import { TablePagination } from '@/components/table-pagination'
 import type { Tenant } from '@/lib/types'
 
 export function ResourceWorkspace({
-  eyebrow,
   title,
   description,
   addLabel,
@@ -32,7 +31,6 @@ export function ResourceWorkspace({
   onPageSizeChange,
   children,
 }: {
-  eyebrow: string
   title: string
   description: string
   addLabel: string
@@ -55,9 +53,10 @@ export function ResourceWorkspace({
   return (
     <div className="flex flex-1 flex-col gap-6">
       <PageHeader
-        eyebrow={eyebrow}
+        eyebrow="Configuration"
         title={title}
         description={description}
+        quote={['Platform resources', 'kept in sync']}
         actions={
           <Button asChild>
             <Link to={addTo}>
@@ -67,33 +66,32 @@ export function ResourceWorkspace({
           </Button>
         }
         toolbar={
-          <>
-            <FilterField label="Search" className="min-w-[12rem] flex-1 sm:max-w-sm">
-              <Input
-                placeholder={queryPlaceholder}
-                value={query}
-                onChange={(e) => onQuery(e.target.value)}
-              />
-            </FilterField>
+          <FilterBar
+            className="w-full"
+            canClear={Boolean(query) || (showTenantFilter && Boolean(tenantId) && tenantId !== 'all')}
+            onClear={() => {
+              onQuery('')
+              onTenantId?.('all')
+            }}
+          >
+            <FilterSearch value={query} onChange={onQuery} placeholder={queryPlaceholder} />
             {showTenantFilter && tenantId && onTenantId && tenants ? (
-              <FilterField label="Tenant" className="w-full sm:w-64">
-                <SearchableSelect
-                  value={tenantId}
-                  onValueChange={onTenantId}
-                  className="w-full"
-                  placeholder="All tenants"
-                  options={[
-                    { value: 'all', label: 'All tenants' },
-                    ...tenants.map((tenant) => ({
-                      value: tenant.id,
-                      label: tenant.displayName,
-                      description: tenant.tenantCode,
-                    })),
-                  ]}
-                />
-              </FilterField>
+              <FilterSelect
+                label="Tenant"
+                value={tenantId}
+                onValueChange={onTenantId}
+                className="sm:w-64"
+                options={[
+                  { value: 'all', label: 'All' },
+                  ...tenants.map((tenant) => ({
+                    value: tenant.id,
+                    label: tenant.displayName,
+                    description: tenant.tenantCode,
+                  })),
+                ]}
+              />
             ) : null}
-          </>
+          </FilterBar>
         }
       />
       {loading ? <Skeleton className="h-72 rounded-xl" /> : children}
@@ -109,14 +107,12 @@ export function ResourceWorkspace({
 }
 
 export function ResourceFormLayout({
-  eyebrow,
   title,
   description,
   backTo,
   backLabel,
   children,
 }: {
-  eyebrow: string
   title: string
   description: string
   backTo: string
@@ -126,9 +122,10 @@ export function ResourceFormLayout({
   return (
     <div className="flex flex-1 flex-col gap-6">
       <PageHeader
-        eyebrow={eyebrow}
+        eyebrow="Configuration"
         title={title}
         description={description}
+        quote={['Review carefully', 'before you save']}
         actions={
           <Button variant="outline" asChild>
             <Link to={backTo}>

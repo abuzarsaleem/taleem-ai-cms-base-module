@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import {
   AlertTriangle,
+  ArrowRight,
   ArrowUpRight,
   Building2,
   CheckCircle2,
@@ -18,9 +19,10 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ApplicationIcon } from '@/components/application-icon'
+import { PAGE_HERO_SURFACE, PageHeroGlow, PageHeroQuote } from '@/components/page-hero'
 import { StatusBadge } from '@/components/status-badge'
 import { StatMetricCard, type StatMetricTone } from '@/components/stat-metric-card'
 import { TenantLogo } from '@/components/tenant-logo'
@@ -75,25 +77,36 @@ const statusTone: Record<string, string> = {
   UNKNOWN: 'text-muted-foreground',
 }
 
+function formatDate(date: Date) {
+  return date.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })
+}
+
 function formatJoined(value: string) {
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return value
-  return date.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })
+  return formatDate(date)
 }
 
 function formatActivityTime(value: string) {
   const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return value
-  return date.toLocaleString('en-US', {
-    hour: '2-digit',
-    minute: '2-digit',
-    month: 'short',
-    day: '2-digit',
-    year: 'numeric',
-  })
+  if (Number.isNaN(date.getTime())) return { time: value, day: '' }
+
+  const startOfToday = new Date()
+  startOfToday.setHours(0, 0, 0, 0)
+  const startOfDate = new Date(date)
+  startOfDate.setHours(0, 0, 0, 0)
+  const daysAgo = Math.round((startOfToday.getTime() - startOfDate.getTime()) / 86_400_000)
+
+  return {
+    time: date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+    day: daysAgo === 0 ? 'Today' : daysAgo === 1 ? 'Yesterday' : formatDate(date),
+  }
 }
 
 function activityIcon(action: string): { icon: LucideIcon; tone: string } {
+  if (action.includes('WARN') || action.includes('SUSPEND') || action.includes('ALERT')) {
+    return { icon: AlertTriangle, tone: 'text-orange-600 bg-orange-500/10' }
+  }
   if (action.includes('TENANT') || action.includes('ACTIVAT')) {
     return { icon: CheckCircle2, tone: 'text-emerald-600 bg-emerald-500/10' }
   }
@@ -106,31 +119,65 @@ function activityIcon(action: string): { icon: LucideIcon; tone: string } {
   if (action.includes('SMTP')) {
     return { icon: Settings2, tone: 'text-amber-600 bg-amber-500/10' }
   }
-  if (action.includes('WARN') || action.includes('SUSPEND') || action.includes('ALERT')) {
-    return { icon: AlertTriangle, tone: 'text-orange-600 bg-orange-500/10' }
-  }
   return { icon: Clock3, tone: 'text-blue-600 bg-blue-500/10' }
 }
 
 function SystemStatusIcon({ status }: { status: string }) {
   if (status === PlatformComponentStatus.OPERATIONAL) {
-    return <CheckCircle2 className="size-4 text-emerald-500" />
+    return <CheckCircle2 className="size-[18px] text-emerald-500" />
   }
   if (status === PlatformComponentStatus.DEGRADED) {
-    return <AlertTriangle className="size-4 text-amber-500" />
+    return <AlertTriangle className="size-[18px] text-amber-500" />
   }
   if (status === PlatformComponentStatus.DOWN) {
-    return <XCircle className="size-4 text-red-500" />
+    return <XCircle className="size-[18px] text-red-500" />
   }
-  return <Clock3 className="size-4 text-muted-foreground" />
+  return <Clock3 className="size-[18px] text-muted-foreground" />
 }
 
-function SectionLink({ to, label }: { to: string; label: string }) {
+function SectionLink({ to, label = 'View all' }: { to: string; label?: string }) {
   return (
-    <Link to={to} className="inline-flex items-center gap-0.5 text-[13px] font-medium text-primary hover:underline">
+    <Link
+      to={to}
+      className="inline-flex items-center gap-1 whitespace-nowrap text-[13px] font-medium text-primary hover:underline"
+    >
       {label}
-      <ArrowUpRight className="size-3.5" />
+      <ArrowRight className="size-3.5" />
     </Link>
+  )
+}
+
+function DashboardCard({
+  title,
+  description,
+  icon,
+  action,
+  className,
+  contentClassName,
+  children,
+}: {
+  title: string
+  description: string
+  icon?: ReactNode
+  action?: ReactNode
+  className?: string
+  contentClassName?: string
+  children: ReactNode
+}) {
+  return (
+    <Card className={cn('portal-card gap-3 rounded-xl border-border py-5', className)}>
+      <CardHeader className="px-5">
+        <div className="flex items-start gap-3">
+          {icon}
+          <div className="min-w-0">
+            <CardTitle className="text-base font-semibold text-foreground">{title}</CardTitle>
+            <CardDescription className="mt-0.5 text-[13px]">{description}</CardDescription>
+          </div>
+        </div>
+        {action ? <CardAction>{action}</CardAction> : null}
+      </CardHeader>
+      <CardContent className={cn('px-5', contentClassName)}>{children}</CardContent>
+    </Card>
   )
 }
 
@@ -141,20 +188,20 @@ function EmptyRow({ message }: { message: string }) {
 function DashboardSkeleton() {
   return (
     <div className="flex flex-1 flex-col gap-4">
-      <Skeleton className="h-28 w-full rounded-[10px]" />
+      <Skeleton className="h-32 w-full rounded-xl" />
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {Array.from({ length: 4 }).map((_, index) => (
-          <Skeleton key={index} className="h-28 rounded-[10px]" />
+          <Skeleton key={index} className="h-[5.5rem] rounded-xl" />
         ))}
       </div>
       <div className="grid gap-4 xl:grid-cols-2">
-        <Skeleton className="h-72 rounded-[10px]" />
-        <Skeleton className="h-72 rounded-[10px]" />
+        <Skeleton className="h-72 rounded-xl" />
+        <Skeleton className="h-72 rounded-xl" />
       </div>
-      <div className="grid gap-4 xl:grid-cols-[1.2fr_0.9fr_0.9fr]">
-        <Skeleton className="h-64 rounded-[10px]" />
-        <Skeleton className="h-64 rounded-[10px]" />
-        <Skeleton className="h-64 rounded-[10px]" />
+      <div className="grid gap-4 xl:grid-cols-[1.35fr_1fr_0.85fr]">
+        <Skeleton className="h-64 rounded-xl" />
+        <Skeleton className="h-64 rounded-xl" />
+        <Skeleton className="h-64 rounded-xl" />
       </div>
     </div>
   )
@@ -222,39 +269,39 @@ export function PlatformDashboardPage() {
 
   if (loading) return <DashboardSkeleton />
 
+  const components = systemStatus?.components ?? []
+  const allOperational =
+    components.length > 0 && components.every((component) => component.status === PlatformComponentStatus.OPERATIONAL)
+
   return (
     <div className="flex flex-1 flex-col gap-4">
-      <section className="relative overflow-hidden rounded-[10px] border border-border bg-[linear-gradient(120deg,#eef4ff_0%,#f8fafc_55%,#ffffff_100%)] px-5 py-5 sm:px-6 dark:bg-[linear-gradient(120deg,#121c38_0%,#0e1833_60%,#0b142b_100%)]">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -top-8 right-8 size-32 rounded-full bg-[radial-gradient(circle,rgb(12_60_255_/_0.14),transparent_70%)]"
-        />
-        <div className="relative flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="max-w-2xl">
-            <p className="text-sm text-muted-foreground">Welcome back, {firstName} 👋</p>
-            <h1 className="mt-1 text-2xl font-semibold tracking-tight text-foreground">Platform Dashboard</h1>
-            <p className="mt-1.5 max-w-xl text-sm text-muted-foreground">
+      <section className={PAGE_HERO_SURFACE}>
+        <PageHeroGlow />
+        <div className="relative flex w-full flex-col gap-5 lg:flex-row lg:items-center lg:justify-between lg:gap-10">
+          <div className="min-w-0 flex-1">
+            <p className="text-[15px] text-muted-foreground">
+              Welcome back, <span className="font-semibold text-foreground">{firstName}</span> 👋
+            </p>
+            <h1 className="mt-1.5 text-3xl font-bold tracking-tight text-[#0f1f4d] dark:text-foreground">
+              Platform Dashboard
+            </h1>
+            <p className="mt-2 text-sm text-muted-foreground">
               Manage institutions, applications, subscriptions and platform configuration.
             </p>
           </div>
-          <blockquote className="max-w-xs rounded-[8px] border border-border/70 bg-card/80 px-4 py-3 text-sm text-muted-foreground">
-            <p className="italic">“Enabling education for a brighter tomorrow”</p>
-            <p className="mt-2 text-[11px] font-semibold tracking-[0.12em] text-primary uppercase">Taleem AI CMS</p>
-          </blockquote>
+          <PageHeroQuote lines={['Enabling education', 'for a brighter tomorrow']} />
         </div>
       </section>
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {STAT_META.map((stat) => {
           const metric = counts?.[stat.key]
-          const value = metric?.value ?? 0
-          const delta = metric?.vsPreviousMonth ?? 0
           return (
             <StatMetricCard
               key={stat.key}
               title={stat.title}
-              value={value}
-              delta={delta}
+              value={metric?.value ?? 0}
+              delta={metric?.vsPreviousMonth ?? 0}
               icon={stat.icon}
               tone={stat.tone}
             />
@@ -263,19 +310,16 @@ export function PlatformDashboardPage() {
       </section>
 
       <section className="grid gap-4 xl:grid-cols-2">
-        <Card size="sm" className="portal-card border-border">
-          <CardHeader className="flex-row items-center justify-between gap-2 space-y-0 border-b border-border pb-3">
-            <div>
-              <CardTitle className="text-sm">Requires attention</CardTitle>
-              <CardDescription className="text-xs">Items that need a platform administrator action.</CardDescription>
-            </div>
-            <SectionLink to="/platform/tenants" label="View all" />
-          </CardHeader>
-          <CardContent className="space-y-2 pt-3">
-            {attention.length === 0 ? (
-              <EmptyRow message="Nothing needs attention right now." />
-            ) : (
-              attention.map((item) => {
+        <DashboardCard
+          title="Requires attention"
+          description="Items that need a platform administrator action."
+          action={<SectionLink to="/platform/tenants" />}
+        >
+          {attention.length === 0 ? (
+            <EmptyRow message="Nothing needs attention right now." />
+          ) : (
+            <div className="space-y-2">
+              {attention.map((item) => {
                 const meta = ATTENTION_META[item.key] ?? {
                   icon: AlertTriangle,
                   tone: 'bg-slate-500 text-white',
@@ -303,38 +347,32 @@ export function PlatformDashboardPage() {
                     </span>
                   </div>
                 )
-              })
-            )}
-          </CardContent>
-        </Card>
-
-        <Card size="sm" className="portal-card border-border">
-          <CardHeader className="flex-row items-center justify-between gap-2 space-y-0 border-b border-border pb-3">
-            <div>
-              <CardTitle className="text-sm">Recent tenants</CardTitle>
-              <CardDescription className="text-xs">Latest institutions in the platform registry.</CardDescription>
+              })}
             </div>
-            <SectionLink to="/platform/tenants" label="View all" />
-          </CardHeader>
-          <CardContent className="space-y-2 pt-3">
-            {recentTenants.length === 0 ? (
-              <EmptyRow message="No tenants registered yet." />
-            ) : (
-              recentTenants.map((tenant) => (
-                <div
-                  key={tenant.id}
-                  className="flex min-w-0 items-center gap-3 rounded-[8px] border border-border/80 bg-background/70 px-3 py-2.5"
-                >
+          )}
+        </DashboardCard>
+
+        <DashboardCard
+          title="Recent tenants"
+          description="Latest institutions in the platform registry."
+          action={<SectionLink to="/platform/tenants" />}
+        >
+          {recentTenants.length === 0 ? (
+            <EmptyRow message="No tenants registered yet." />
+          ) : (
+            <div className="divide-y divide-border">
+              {recentTenants.map((tenant) => (
+                <div key={tenant.id} className="flex min-w-0 items-center gap-3 py-3 first:pt-1 last:pb-0">
                   <TenantLogo
                     name={tenant.displayName}
                     logoUrl={tenant.logoUrl}
                     logoDarkUrl={tenant.logoDarkUrl}
-                    className="size-8 rounded-md"
+                    className="size-9 rounded-full"
                   />
                   <div className="min-w-0 flex-1 overflow-hidden">
                     <Link
                       to={`/platform/tenants/${tenant.id}`}
-                      className="block truncate text-sm font-medium hover:text-primary hover:underline"
+                      className="block truncate text-sm font-semibold text-foreground hover:text-primary hover:underline"
                       title={tenant.displayName}
                     >
                       {tenant.displayName}
@@ -343,11 +381,10 @@ export function PlatformDashboardPage() {
                       {tenant.tenantCode}
                     </p>
                   </div>
-                  <div className="hidden shrink-0 items-center gap-2.5 sm:flex">
-                    <StatusBadge value={String(tenant.status)} />
-                    <p className="whitespace-nowrap text-xs text-muted-foreground">
-                      Joined {formatJoined(tenant.joinedAt)}
-                    </p>
+                  <StatusBadge value={String(tenant.status)} className="hidden shrink-0 uppercase sm:inline-flex" />
+                  <div className="hidden w-24 shrink-0 text-right sm:block">
+                    <p className="text-[11px] text-muted-foreground">Joined</p>
+                    <p className="whitespace-nowrap text-xs font-medium text-foreground">{formatJoined(tenant.joinedAt)}</p>
                   </div>
                   <Button
                     variant="ghost"
@@ -361,28 +398,23 @@ export function PlatformDashboardPage() {
                     </Link>
                   </Button>
                 </div>
-              ))
-            )}
-          </CardContent>
-        </Card>
+              ))}
+            </div>
+          )}
+        </DashboardCard>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-[1.2fr_0.9fr_0.9fr]">
-        <Card size="sm" className="portal-card border-border">
-          <CardHeader className="flex-row items-center justify-between gap-2 space-y-0 border-b border-border pb-3">
-            <div>
-              <CardTitle className="text-sm">Application catalogue</CardTitle>
-              <CardDescription className="text-xs">Independently deployable apps registered on the platform.</CardDescription>
-            </div>
-            <SectionLink to="/platform/applications" label="View all" />
-          </CardHeader>
-          <CardContent className="grid gap-2.5 pt-3 sm:grid-cols-2">
-            {applications.length === 0 ? (
-              <div className="sm:col-span-2">
-                <EmptyRow message="No applications registered yet." />
-              </div>
-            ) : (
-              applications.map((app) => {
+      <section className="grid gap-4 xl:grid-cols-[1.35fr_1fr_0.85fr]">
+        <DashboardCard
+          title="Application catalogue"
+          description="Independently deployable apps registered on the platform."
+          action={<SectionLink to="/platform/applications" />}
+        >
+          {applications.length === 0 ? (
+            <EmptyRow message="No applications registered yet." />
+          ) : (
+            <div className="grid gap-2.5 sm:grid-cols-2">
+              {applications.map((app) => {
                 const launchUrl = app.launchUrl?.trim()
                 return (
                   <div key={app.id} className="rounded-[8px] border border-border/80 bg-background/70 p-3">
@@ -419,66 +451,78 @@ export function PlatformDashboardPage() {
                     )}
                   </div>
                 )
-              })
-            )}
-          </CardContent>
-        </Card>
+              })}
+            </div>
+          )}
+        </DashboardCard>
 
-        <Card size="sm" className="portal-card border-border">
-          <CardHeader className="border-b border-border pb-3">
-            <CardTitle className="text-sm">Recent activity</CardTitle>
-            <CardDescription className="text-xs">Latest platform administrator actions.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3 pt-3">
-            {activityUnavailable ? (
-              <EmptyRow message="Activity feed requires audit access." />
-            ) : activity.length === 0 ? (
-              <EmptyRow message="No recent activity." />
-            ) : (
-              activity.map((item) => {
+        <DashboardCard title="Recent activity" description="Latest platform administrator actions.">
+          {activityUnavailable ? (
+            <EmptyRow message="Activity feed requires audit access." />
+          ) : activity.length === 0 ? (
+            <EmptyRow message="No recent activity." />
+          ) : (
+            <div className="divide-y divide-border">
+              {activity.map((item) => {
                 const meta = activityIcon(item.action)
                 const Icon = meta.icon
+                const when = formatActivityTime(item.createdAt)
                 return (
-                  <div key={item.id} className="flex gap-3">
-                    <span className={cn('mt-0.5 inline-flex size-8 shrink-0 items-center justify-center rounded-md', meta.tone)}>
+                  <div key={item.id} className="flex items-center gap-3 py-3 first:pt-1 last:pb-0">
+                    <span className={cn('inline-flex size-8 shrink-0 items-center justify-center rounded-full', meta.tone)}>
                       <Icon className="size-4" />
                     </span>
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-foreground">{item.summary}</p>
-                      <p className="text-xs text-muted-foreground">{item.action.replaceAll('_', ' ')}</p>
-                      <p className="mt-0.5 text-[11px] text-muted-foreground/80">{formatActivityTime(item.createdAt)}</p>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-foreground" title={item.summary}>
+                        {item.summary}
+                      </p>
+                      <p className="truncate text-xs text-muted-foreground capitalize">
+                        {item.action.replaceAll('_', ' ').toLowerCase()}
+                      </p>
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <p className="whitespace-nowrap text-xs text-foreground">{when.time}</p>
+                      <p className="whitespace-nowrap text-[11px] text-muted-foreground">{when.day}</p>
                     </div>
                   </div>
                 )
-              })
-            )}
-          </CardContent>
-        </Card>
+              })}
+            </div>
+          )}
+        </DashboardCard>
 
-        <Card size="sm" className="portal-card border-border">
-          <CardHeader className="border-b border-border pb-3">
-            <CardTitle className="text-sm">System status</CardTitle>
-            <CardDescription className="text-xs">Current health of platform services.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-2 pt-3">
-            {(systemStatus?.components ?? []).map((component: PlatformDashboardSystemComponent) => (
-              <div
-                key={component.key}
-                className="flex items-center justify-between gap-2 rounded-[8px] border border-border/70 px-3 py-2.5"
-                title={component.detail}
-              >
-                <div className="flex items-center gap-2.5">
-                  <SystemStatusIcon status={component.status} />
-                  <p className="text-sm font-medium">{component.label}</p>
+        <DashboardCard
+          title="System status"
+          description={
+            components.length === 0
+              ? 'Current health of platform services.'
+              : allOperational
+                ? 'All systems operational.'
+                : 'Some services need attention.'
+          }
+        >
+          {components.length === 0 ? (
+            <EmptyRow message="System status unavailable." />
+          ) : (
+            <div className="divide-y divide-border">
+              {components.map((component: PlatformDashboardSystemComponent) => (
+                <div
+                  key={component.key}
+                  className="flex items-center justify-between gap-2 py-3 first:pt-1 last:pb-0"
+                  title={component.detail}
+                >
+                  <div className="flex min-w-0 items-center gap-2.5">
+                    <SystemStatusIcon status={component.status} />
+                    <p className="truncate text-sm font-medium text-foreground">{component.label}</p>
+                  </div>
+                  <p className={cn('text-xs font-medium capitalize', statusTone[component.status] ?? statusTone.UNKNOWN)}>
+                    {component.status.toLowerCase()}
+                  </p>
                 </div>
-                <p className={cn('text-xs font-medium capitalize', statusTone[component.status] ?? statusTone.UNKNOWN)}>
-                  {component.status.toLowerCase()}
-                </p>
-              </div>
-            ))}
-            {!systemStatus?.components.length ? <EmptyRow message="System status unavailable." /> : null}
-          </CardContent>
-        </Card>
+              ))}
+            </div>
+          )}
+        </DashboardCard>
       </section>
     </div>
   )

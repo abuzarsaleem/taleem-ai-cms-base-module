@@ -54,7 +54,6 @@ export function PlatformAddressesPage() {
 
   return (
     <ResourceWorkspace
-      eyebrow="Tenant configuration"
       title="Tenant addresses"
       description="Physical addresses across every institution. Filter by tenant, then open a record to edit it."
       addLabel="Add address"

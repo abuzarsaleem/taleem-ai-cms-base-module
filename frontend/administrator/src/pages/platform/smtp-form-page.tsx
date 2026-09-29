@@ -76,7 +76,6 @@ export function PlatformSmtpFormPage() {
 
   return (
     <ResourceFormLayout
-      eyebrow="Tenant configuration"
       title={exists ? 'Edit SMTP' : 'Add SMTP'}
       description="Host is required. Store a secret reference, not a password."
       backTo="/platform/smtp"

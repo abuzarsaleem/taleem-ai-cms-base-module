@@ -53,7 +53,6 @@ export function PlatformAssetsPage() {
 
   return (
     <ResourceWorkspace
-      eyebrow="Tenant configuration"
       title="Tenant assets"
       description="Logos, banners, and documents across every institution."
       addLabel="Add asset"

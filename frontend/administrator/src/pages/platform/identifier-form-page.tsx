@@ -69,7 +69,6 @@ export function PlatformIdentifierFormPage() {
 
   return (
     <ResourceFormLayout
-      eyebrow="Tenant configuration"
       title={isEdit ? 'Edit identifier' : 'Add identifier'}
       description="Type and value are required."
       backTo="/platform/identifiers"

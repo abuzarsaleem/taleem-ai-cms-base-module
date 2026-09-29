@@ -496,7 +496,9 @@ export function AppShell() {
 
         <div className="min-h-0 flex-1 overflow-y-auto">
           <main className="mx-auto flex w-full min-w-0 max-w-[1440px] flex-col px-5 py-5 sm:px-6">
-            <Outlet />
+            <div key={location.pathname} className="page-enter">
+              <Outlet />
+            </div>
           </main>
         </div>
       </div>

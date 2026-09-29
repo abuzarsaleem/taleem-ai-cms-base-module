@@ -6,16 +6,14 @@ import {
   CircleDashed,
   PauseCircle,
   Plus,
-  Search,
   UserX,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { SearchableSelect } from '@/components/ui/searchable-select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { PageHeader, FilterField } from '@/components/page-header'
+import { FilterBar, FilterSearch, FilterSelect } from '@/components/filters'
+import { PageHeader } from '@/components/page-header'
 import { StatMetricCard, type StatMetricTone } from '@/components/stat-metric-card'
 import { StatusBadge } from '@/components/status-badge'
 import { TablePagination } from '@/components/table-pagination'
@@ -173,6 +171,7 @@ export function TenantsPage() {
         eyebrow="Tenants"
         title="Tenants"
         description="Manage institutions registered on the platform. Create, activate, suspend, or retire tenants."
+        quote={['Empowering institutions', 'through technology']}
         actions={
           <Button asChild>
             <Link to="/platform/tenants/new">
@@ -204,80 +203,58 @@ export function TenantsPage() {
         </section>
       )}
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-        <FilterField label="Search" className="min-w-0 flex-1">
-          <div className="relative">
-            <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              className="h-9 border-border bg-background pl-8"
-              placeholder="Search by institution name, code, or description..."
-              value={searchInput}
-              onChange={(event) => setSearchInput(event.target.value)}
-            />
-          </div>
-        </FilterField>
-        <FilterField label="Status" className="w-full sm:w-40">
-          <SearchableSelect
-            value={statusFilter}
-            onValueChange={(value) => patchParams({ status: value })}
-            className="w-full"
-            options={[
-              { value: 'ALL', label: 'All statuses' },
-              { value: TenantStatus.ACTIVE, label: 'Active' },
-              { value: TenantStatus.ONBOARDING, label: 'Onboarding' },
-              { value: TenantStatus.SUSPENDED, label: 'Suspended' },
-              { value: TenantStatus.RETIRED, label: 'Retired' },
-            ]}
-            placeholder="Status"
-          />
-        </FilterField>
-        <FilterField label="Type" className="w-full sm:w-44">
-          <SearchableSelect
-            value={typeFilter}
-            onValueChange={(value) => patchParams({ type: value })}
-            className="w-full"
-            options={[
-              { value: 'ALL', label: 'All types' },
-              ...typeOptions.map((type) => ({ value: type, label: labelType(type) })),
-            ]}
-            placeholder="Type"
-          />
-        </FilterField>
-        <FilterField label="Deployment" className="w-full sm:w-44">
-          <SearchableSelect
-            value={deploymentFilter}
-            onValueChange={(value) => patchParams({ deployment: value })}
-            className="w-full"
-            options={[
-              { value: 'ALL', label: 'All models' },
-              { value: DeploymentModel.SAAS, label: 'SaaS' },
-              { value: DeploymentModel.ON_PREMISES, label: 'On premises' },
-            ]}
-            placeholder="Deployment"
-          />
-        </FilterField>
-        {hasFilters ? (
-          <Button
-            type="button"
-            variant="ghost"
-            className="shrink-0 text-muted-foreground"
-            onClick={() => {
-              setSearchInput('')
-              setSearchParams((prev) => {
-                const params = new URLSearchParams(prev)
-                params.delete('q')
-                params.delete('status')
-                params.delete('type')
-                params.delete('deployment')
-                params.set('page', '1')
-                return params
-              })
-            }}
-          >
-            Clear filters
-          </Button>
-        ) : null}
-      </div>
+      <FilterBar
+        canClear={hasFilters || Boolean(searchInput.trim())}
+        onClear={() => {
+          setSearchInput('')
+          setSearchParams((prev) => {
+            const params = new URLSearchParams(prev)
+            params.delete('q')
+            params.delete('status')
+            params.delete('type')
+            params.delete('deployment')
+            params.set('page', '1')
+            return params
+          })
+        }}
+      >
+        <FilterSearch
+          value={searchInput}
+          onChange={setSearchInput}
+          placeholder="Search by institution name, code, or description..."
+        />
+        <FilterSelect
+          label="Status"
+          value={statusFilter}
+          onValueChange={(value) => patchParams({ status: value })}
+          options={[
+            { value: 'ALL', label: 'All' },
+            { value: TenantStatus.ACTIVE, label: 'Active' },
+            { value: TenantStatus.ONBOARDING, label: 'Onboarding' },
+            { value: TenantStatus.SUSPENDED, label: 'Suspended' },
+            { value: TenantStatus.RETIRED, label: 'Retired' },
+          ]}
+        />
+        <FilterSelect
+          label="Type"
+          value={typeFilter}
+          onValueChange={(value) => patchParams({ type: value })}
+          options={[
+            { value: 'ALL', label: 'All' },
+            ...typeOptions.map((type) => ({ value: type, label: labelType(type) })),
+          ]}
+        />
+        <FilterSelect
+          label="Deployment"
+          value={deploymentFilter}
+          onValueChange={(value) => patchParams({ deployment: value })}
+          options={[
+            { value: 'ALL', label: 'All' },
+            { value: DeploymentModel.SAAS, label: 'SaaS' },
+            { value: DeploymentModel.ON_PREMISES, label: 'On premises' },
+          ]}
+        />
+      </FilterBar>
 
       {loading ? (
         <Skeleton className="h-72 rounded-xl" />

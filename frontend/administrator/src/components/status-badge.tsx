@@ -15,7 +15,7 @@ const tone: Record<string, string> = {
   SAAS: 'border-transparent bg-[#00c2b2]/15 text-[#0a7d73] dark:text-[#7ef0e6]',
   ON_PREMISES: 'border-transparent bg-secondary text-secondary-foreground',
   EXPIRED: 'bg-destructive/10 text-destructive',
-  SUSPENDED: 'border-transparent bg-amber-500/15 text-amber-700 dark:text-amber-300',
+  SUSPENDED: 'border-transparent bg-rose-500/15 text-rose-700 dark:text-rose-300',
   INACTIVE: 'bg-destructive/10 text-destructive',
   CANCELLED: 'bg-destructive/10 text-destructive',
   RETIRED: 'bg-secondary text-secondary-foreground',
@@ -25,7 +25,7 @@ const tone: Record<string, string> = {
   NOT_ENTITLED: 'border-border text-muted-foreground',
 }
 
-export function StatusBadge({ value }: { value: string }) {
+export function StatusBadge({ value, className }: { value: string; className?: string }) {
   const label =
     value === 'NOT_STARTED'
       ? 'Not started'
@@ -42,7 +42,7 @@ export function StatusBadge({ value }: { value: string }) {
                 : value.replaceAll('_', ' ')
 
   return (
-    <Badge variant="outline" className={cn('font-medium tracking-wide', tone[value])}>
+    <Badge variant="outline" className={cn('font-medium tracking-wide', tone[value], className)}>
       {label}
     </Badge>
   )

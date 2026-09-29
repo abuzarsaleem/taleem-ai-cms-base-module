@@ -321,6 +321,7 @@ export function PlatformConfigurationFormPage() {
         eyebrow="Tenant configuration"
         title="Configure tenant"
         description="Configure tenant-level branding, identifiers and email delivery settings."
+        quote={['Configured once', 'trusted everywhere']}
         actions={
           <Button variant="outline" asChild>
             <Link to="/platform/configuration">

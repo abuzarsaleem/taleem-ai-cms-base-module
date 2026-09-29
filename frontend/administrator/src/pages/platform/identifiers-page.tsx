@@ -60,7 +60,6 @@ export function PlatformIdentifiersPage() {
 
   return (
     <ResourceWorkspace
-      eyebrow="Tenant configuration"
       title="Tenant identifiers"
       description="Registration and accreditation identifiers across every institution."
       addLabel="Add identifier"

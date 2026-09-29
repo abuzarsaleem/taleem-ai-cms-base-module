@@ -20,6 +20,8 @@ type SearchableSelectProps = {
   className?: string
   triggerClassName?: string
   contentClassName?: string
+  /** Renders a small caption inside the trigger above the selected value */
+  triggerLabel?: string
   /** Marks the trigger as invalid for inline form validation */
   'aria-invalid'?: boolean
 }
@@ -35,6 +37,7 @@ export function SearchableSelect({
   className,
   triggerClassName,
   contentClassName,
+  triggerLabel,
   'aria-invalid': ariaInvalid,
 }: SearchableSelectProps) {
   const listId = useId()
@@ -88,6 +91,7 @@ export function SearchableSelect({
         aria-haspopup="listbox"
         aria-controls={listId}
         aria-invalid={ariaInvalid || undefined}
+        aria-label={triggerLabel ? `${triggerLabel}: ${selected?.label ?? placeholder}` : undefined}
         className={cn(
           'flex h-9 w-full items-center justify-between gap-2 rounded-lg border border-input bg-transparent px-2.5 text-left text-sm outline-none transition-colors',
           'focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50',
@@ -99,8 +103,28 @@ export function SearchableSelect({
         )}
         onClick={() => setOpen((current) => !current)}
       >
-        <span className="min-w-0 flex-1 truncate">{selected?.label ?? placeholder}</span>
-        <ChevronDown className={cn('size-4 shrink-0 text-muted-foreground transition-transform', open && 'rotate-180')} />
+        {triggerLabel ? (
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-[11px] leading-4 font-medium text-muted-foreground">{triggerLabel}</span>
+            <span
+              className={cn(
+                'block truncate text-sm leading-5 font-semibold',
+                selected ? 'text-foreground' : 'text-muted-foreground',
+              )}
+            >
+              {selected?.label ?? placeholder}
+            </span>
+          </span>
+        ) : (
+          <span className="min-w-0 flex-1 truncate">{selected?.label ?? placeholder}</span>
+        )}
+        <ChevronDown
+          className={cn(
+            'shrink-0 transition-transform',
+            triggerLabel ? 'size-[18px] stroke-[2.5] text-foreground/80' : 'size-4 text-muted-foreground',
+            open && 'rotate-180',
+          )}
+        />
       </button>
 
       {open ? (

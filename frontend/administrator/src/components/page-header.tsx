@@ -1,11 +1,11 @@
 import type { ReactNode } from 'react'
-import { PageHero } from '@/components/page-hero'
-import { cn } from '@/lib/utils'
+import { PageHero, PageHeroQuote } from '@/components/page-hero'
 
 export function PageHeader({
   eyebrow,
   title,
   description,
+  quote,
   actions,
   toolbar,
   badge,
@@ -14,6 +14,7 @@ export function PageHeader({
   eyebrow?: string
   title: string
   description?: string
+  quote?: string[]
   actions?: ReactNode
   toolbar?: ReactNode
   badge?: ReactNode
@@ -22,14 +23,15 @@ export function PageHeader({
   return (
     <div className="flex flex-col gap-4">
       <PageHero
-        eyebrow={eyebrow ?? 'Taleem AI'}
+        eyebrow={eyebrow}
         title={title}
         description={description}
         badge={badge}
         media={media}
+        aside={quote?.length ? <PageHeroQuote lines={quote} /> : null}
         actions={actions}
       />
-      {toolbar ? <div className="flex flex-wrap items-end gap-3">{toolbar}</div> : null}
+      {toolbar ? <div className="flex flex-wrap items-center gap-3">{toolbar}</div> : null}
     </div>
   )
 }
@@ -39,24 +41,6 @@ export function EmptyState({ title, description }: { title: string; description:
     <div className="rounded-xl border border-dashed border-border px-6 py-10 text-center">
       <p className="font-medium">{title}</p>
       {description ? <p className="mt-1 text-sm text-muted-foreground">{description}</p> : null}
-    </div>
-  )
-}
-
-/** Compact labeled control for listing filter bars. */
-export function FilterField({
-  label,
-  children,
-  className,
-}: {
-  label: string
-  children: ReactNode
-  className?: string
-}) {
-  return (
-    <div className={cn('grid min-w-0 gap-1.5', className)}>
-      <span className="text-xs font-medium text-muted-foreground">{label}</span>
-      {children}
     </div>
   )
 }

@@ -54,7 +54,6 @@ export function PlatformSmtpPage() {
 
   return (
     <ResourceWorkspace
-      eyebrow="Tenant configuration"
       title="Tenant SMTP"
       description="Outbound email hosts across every institution."
       addLabel="Add SMTP"

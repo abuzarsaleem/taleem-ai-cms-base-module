@@ -7,7 +7,6 @@ import {
   MapPin,
   Pencil,
   Plus,
-  Search,
   Trash2,
   Users,
 } from 'lucide-react'
@@ -15,8 +14,6 @@ import { toast } from 'sonner'
 import { AddressFields } from '@/components/address-fields'
 import { ContactFields } from '@/components/contact-fields'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { SearchableSelect } from '@/components/ui/searchable-select'
 import {
   Sheet,
   SheetContent,
@@ -26,7 +23,8 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { PageHeader, FilterField } from '@/components/page-header'
+import { FilterBar, FilterSearch, FilterSelect } from '@/components/filters'
+import { PageHeader } from '@/components/page-header'
 import { StatusBadge } from '@/components/status-badge'
 import { TenantFields } from '@/components/tenant-fields'
 import { COUNTRY_OPTIONS, provinceLabel } from '@/data/pakistan-locations'
@@ -254,7 +252,8 @@ export function CreateTenantPage() {
       <PageHeader
         eyebrow="Tenants"
         title="Add tenant"
-        description="Create a new institution on the platform. After creation, you can assign application subscriptions and invite a tenant administrator."
+        description="Create a new institution on the platform."
+        quote={['Onboard once', 'scale with confidence']}
         actions={
           <Button variant="outline" asChild>
             <Link to="/platform/tenants">
@@ -332,7 +331,7 @@ export function CreateTenantPage() {
               filterValue={contactTypeFilter}
               onFilterChange={(value) => setContactTypeFilter(value as 'ALL' | ContactType)}
               filterOptions={[
-                { value: 'ALL', label: 'All types' },
+                { value: 'ALL', label: 'All' },
                 ...Object.values(ContactType).map((type) => ({ value: type, label: labelize(type) })),
               ]}
               addLabel="Add contact"
@@ -407,7 +406,7 @@ export function CreateTenantPage() {
               filterValue={addressTypeFilter}
               onFilterChange={(value) => setAddressTypeFilter(value as 'ALL' | AddressType)}
               filterOptions={[
-                { value: 'ALL', label: 'All types' },
+                { value: 'ALL', label: 'All' },
                 { value: 'HEAD_OFFICE', label: 'Head office' },
                 { value: 'CAMPUS', label: 'Campus' },
                 { value: 'BRANCH', label: 'Branch' },
@@ -481,7 +480,7 @@ export function CreateTenantPage() {
                   Confirm the institution details, then create the tenant with its contacts and addresses.
                 </p>
               </div>
-              <div className="grid max-w-3xl gap-4">
+              <div className="grid w-full gap-4">
                 <ReviewCard title="Tenant information">
                   <ReviewRow label="Legal name" value={tenant.legalName} />
                   <ReviewRow label="Display name" value={tenant.displayName} />
@@ -652,32 +651,22 @@ function WizardListStep({
           <p className="mt-1 text-sm text-muted-foreground">{description}</p>
         </div>
       </div>
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-        <FilterField label="Search" className="min-w-0 flex-1">
-          <div className="relative">
-            <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              className="h-9 border-border bg-background pl-8"
-              placeholder={queryPlaceholder}
-              value={query}
-              onChange={(event) => onQuery(event.target.value)}
-            />
-          </div>
-        </FilterField>
-        <FilterField label="Type" className="w-full sm:w-40">
-          <SearchableSelect
-            value={filterValue}
-            onValueChange={onFilterChange}
-            className="w-full"
-            options={filterOptions}
-            placeholder="Type"
-          />
-        </FilterField>
-        <Button className="shrink-0 sm:ml-auto" onClick={onAdd}>
-          <Plus className="size-4" />
-          {addLabel}
-        </Button>
-      </div>
+      <FilterBar
+        canClear={Boolean(query) || filterValue !== 'ALL'}
+        onClear={() => {
+          onQuery('')
+          onFilterChange('ALL')
+        }}
+        trailing={
+          <Button className="shrink-0" onClick={onAdd}>
+            <Plus className="size-4" />
+            {addLabel}
+          </Button>
+        }
+      >
+        <FilterSearch value={query} onChange={onQuery} placeholder={queryPlaceholder} />
+        <FilterSelect label="Type" value={filterValue} onValueChange={onFilterChange} options={filterOptions} />
+      </FilterBar>
       <div className="overflow-hidden rounded-xl border border-border/70 bg-card">{children}</div>
     </section>
   )

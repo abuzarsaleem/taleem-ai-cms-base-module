@@ -167,6 +167,7 @@ export function AccountPage() {
         eyebrow="Account"
         title="Your profile"
         description="Name, email, password, and profile picture for this administrator account."
+        quote={['Your workspace', 'on Taleem AI CMS']}
       />
 
       <div className="grid gap-6 xl:grid-cols-2">

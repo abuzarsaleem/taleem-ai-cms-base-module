@@ -1,14 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { Plus, Search } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { toast } from 'sonner'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { SearchableSelect } from '@/components/ui/searchable-select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { PageHeader, FilterField } from '@/components/page-header'
+import { FilterBar, FilterSearch, FilterSelect } from '@/components/filters'
+import { PageHeader } from '@/components/page-header'
 import { StatusBadge } from '@/components/status-badge'
 import { TablePagination } from '@/components/table-pagination'
 import { errorMessage } from '@/lib/auth'
@@ -134,6 +133,7 @@ export function PlatformConfigurationPage() {
         eyebrow="Tenant configuration"
         title="Tenant Configurations"
         description="View and manage configuration settings for all tenants across the platform."
+        quote={['One setup', 'for every institution']}
         actions={
           <Button asChild>
             <Link to="/platform/configuration/new">
@@ -144,79 +144,58 @@ export function PlatformConfigurationPage() {
         }
       />
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-        <FilterField label="Search" className="min-w-0 flex-1">
-          <div className="relative">
-            <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              className="h-9 border-border bg-background pl-8"
-              placeholder="Search by tenant name, code, domain..."
-              value={searchInput}
-              onChange={(event) => setSearchInput(event.target.value)}
-            />
-          </div>
-        </FilterField>
-        <FilterField label="Status" className="w-full sm:w-40">
-          <SearchableSelect
-            value={statusFilter}
-            onValueChange={(value) => patchParams({ status: value })}
-            className="w-full"
-            options={[
-              { value: 'ALL', label: 'All statuses' },
-              { value: TenantStatus.ACTIVE, label: 'Active' },
-              { value: TenantStatus.ONBOARDING, label: 'Onboarding' },
-              { value: TenantStatus.SUSPENDED, label: 'Suspended' },
-              { value: TenantStatus.RETIRED, label: 'Retired' },
-            ]}
-            placeholder="Status"
-          />
-        </FilterField>
-        <FilterField label="Progress" className="w-full sm:w-48">
-          <SearchableSelect
-            value={progressFilter}
-            onValueChange={(value) => patchParams({ progress: value })}
-            className="w-full"
-            options={[
-              { value: 'ALL', label: 'All progress' },
-              { value: TenantSetupProgressStatus.NOT_STARTED, label: 'Not started' },
-              { value: TenantSetupProgressStatus.IN_PROGRESS, label: 'In progress' },
-              { value: TenantSetupProgressStatus.COMPLETE, label: 'Complete' },
-            ]}
-            placeholder="Progress"
-          />
-        </FilterField>
+      <FilterBar
+        canClear={hasFilters || Boolean(searchInput.trim())}
+        onClear={() => {
+          setSearchInput('')
+          setSearchParams((prev) => {
+            const params = new URLSearchParams(prev)
+            params.delete('q')
+            params.delete('status')
+            params.delete('progress')
+            params.set('page', '1')
+            return params
+          })
+        }}
+      >
+        <FilterSearch
+          value={searchInput}
+          onChange={setSearchInput}
+          placeholder="Search by tenant name, code, domain..."
+        />
+        <FilterSelect
+          label="Status"
+          value={statusFilter}
+          onValueChange={(value) => patchParams({ status: value })}
+          options={[
+            { value: 'ALL', label: 'All' },
+            { value: TenantStatus.ACTIVE, label: 'Active' },
+            { value: TenantStatus.ONBOARDING, label: 'Onboarding' },
+            { value: TenantStatus.SUSPENDED, label: 'Suspended' },
+            { value: TenantStatus.RETIRED, label: 'Retired' },
+          ]}
+        />
+        <FilterSelect
+          label="Progress"
+          value={progressFilter}
+          onValueChange={(value) => patchParams({ progress: value })}
+          options={[
+            { value: 'ALL', label: 'All' },
+            { value: TenantSetupProgressStatus.NOT_STARTED, label: 'Not started' },
+            { value: TenantSetupProgressStatus.IN_PROGRESS, label: 'In progress' },
+            { value: TenantSetupProgressStatus.COMPLETE, label: 'Complete' },
+          ]}
+        />
         {timezoneOptions.length ? (
-          <FilterField label="Timezone" className="hidden w-full sm:grid sm:w-44">
-            <SearchableSelect
-              value="ALL"
-              onValueChange={() => undefined}
-              className="w-full"
-              options={[{ value: 'ALL', label: 'All timezones' }]}
-              placeholder="Timezone"
-            />
-          </FilterField>
+          <FilterSelect
+            label="Timezone"
+            value="ALL"
+            onValueChange={() => undefined}
+            options={[{ value: 'ALL', label: 'All' }]}
+            className="hidden sm:block"
+          />
         ) : null}
-        {hasFilters ? (
-          <Button
-            type="button"
-            variant="ghost"
-            className="shrink-0 text-muted-foreground"
-            onClick={() => {
-              setSearchInput('')
-              setSearchParams((prev) => {
-                const params = new URLSearchParams(prev)
-                params.delete('q')
-                params.delete('status')
-                params.delete('progress')
-                params.set('page', '1')
-                return params
-              })
-            }}
-          >
-            Clear filters
-          </Button>
-        ) : null}
-      </div>
+      </FilterBar>
 
       {loading ? (
         <Skeleton className="h-72 rounded-xl" />

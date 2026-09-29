@@ -46,7 +46,6 @@ export function PlatformContactsPage() {
 
   return (
     <ResourceWorkspace
-      eyebrow="Tenant configuration"
       title="Tenant contacts"
       description="Contact persons across every institution. Filter by tenant, then open a record to edit it."
       addLabel="Add contact"

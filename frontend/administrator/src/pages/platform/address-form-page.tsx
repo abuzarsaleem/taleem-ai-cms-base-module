@@ -74,7 +74,6 @@ export function PlatformAddressFormPage() {
 
   return (
     <ResourceFormLayout
-      eyebrow="Tenant configuration"
       title={isEdit ? 'Edit address' : 'Add address'}
       description="Type, line 1, and city are required."
       backTo="/platform/addresses"

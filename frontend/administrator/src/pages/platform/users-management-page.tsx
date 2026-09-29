@@ -3,12 +3,12 @@ import {
   Info,
   MoreHorizontal,
   Plus,
-  Search,
   Users,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { ApplicationIcon } from '@/components/application-icon'
-import { PageHeader, FilterField } from '@/components/page-header'
+import { FilterBar, FilterSearch, FilterSelect } from '@/components/filters'
+import { PageHeader } from '@/components/page-header'
 import { PasswordInput } from '@/components/password-input'
 import { StatusBadge } from '@/components/status-badge'
 import { TablePagination } from '@/components/table-pagination'
@@ -407,6 +407,7 @@ export function UsersManagementPage() {
         eyebrow="Catalogue"
         title="Users Management"
         description="Manage tenant administrator users and their application access."
+        quote={['Secure access', 'for every administrator']}
         actions={
           <Button type="button" onClick={openCreate}>
             <Plus className="size-4" />
@@ -415,70 +416,50 @@ export function UsersManagementPage() {
         }
       />
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
-        <FilterField label="Search" className="min-w-0 flex-1 sm:min-w-[16rem]">
-          <div className="relative">
-            <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              className="h-9 border-border bg-background pl-8"
-              placeholder="Search by name, email, tenant, or application..."
-              value={searchInput}
-              onChange={(event) => setSearchInput(event.target.value)}
-            />
-          </div>
-        </FilterField>
-        <FilterField label="Tenant" className="w-full sm:w-44">
-          <SearchableSelect
-            value={tenantFilter}
-            onValueChange={setTenantFilter}
-            className="w-full"
-            options={[
-              { value: 'ALL', label: 'All tenants' },
-              ...tenants.map((tenant) => ({
-                value: tenant.id,
-                label: tenant.displayName,
-                description: tenant.tenantCode,
-              })),
-            ]}
-            placeholder="Tenant"
-          />
-        </FilterField>
-        <FilterField label="Application" className="w-full sm:w-44">
-          <SearchableSelect
-            value={applicationFilter}
-            onValueChange={setApplicationFilter}
-            className="w-full"
-            options={[
-              { value: 'ALL', label: 'All applications' },
-              ...adminPortalApps.map((app) => ({
-                value: app.id,
-                label: app.name,
-                description: app.applicationCode,
-              })),
-            ]}
-            placeholder="Application"
-          />
-        </FilterField>
-        <FilterField label="Status" className="w-full sm:w-36">
-          <SearchableSelect
-            value={statusFilter}
-            onValueChange={(value) => setStatusFilter(value as 'ALL' | DisplayStatus)}
-            className="w-full"
-            options={[
-              { value: 'ALL', label: 'All statuses' },
-              { value: 'ACTIVE', label: 'Active' },
-              { value: 'PENDING', label: 'Pending' },
-              { value: 'INACTIVE', label: 'Inactive' },
-            ]}
-            placeholder="Status"
-          />
-        </FilterField>
-        {hasFilters ? (
-          <Button type="button" variant="ghost" className="shrink-0 text-primary" onClick={clearFilters}>
-            Clear filters
-          </Button>
-        ) : null}
-      </div>
+      <FilterBar canClear={hasFilters || Boolean(searchInput)} onClear={clearFilters}>
+        <FilterSearch
+          value={searchInput}
+          onChange={setSearchInput}
+          placeholder="Search by name, email, tenant, or application..."
+        />
+        <FilterSelect
+          label="Tenant"
+          value={tenantFilter}
+          onValueChange={setTenantFilter}
+          options={[
+            { value: 'ALL', label: 'All' },
+            ...tenants.map((tenant) => ({
+              value: tenant.id,
+              label: tenant.displayName,
+              description: tenant.tenantCode,
+            })),
+          ]}
+        />
+        <FilterSelect
+          label="Application"
+          value={applicationFilter}
+          onValueChange={setApplicationFilter}
+          options={[
+            { value: 'ALL', label: 'All' },
+            ...adminPortalApps.map((app) => ({
+              value: app.id,
+              label: app.name,
+              description: app.applicationCode,
+            })),
+          ]}
+        />
+        <FilterSelect
+          label="Status"
+          value={statusFilter}
+          onValueChange={(value) => setStatusFilter(value as 'ALL' | DisplayStatus)}
+          options={[
+            { value: 'ALL', label: 'All' },
+            { value: 'ACTIVE', label: 'Active' },
+            { value: 'PENDING', label: 'Pending' },
+            { value: 'INACTIVE', label: 'Inactive' },
+          ]}
+        />
+      </FilterBar>
 
       {loading || tenantsLoading ? (
         <Skeleton className="h-72 rounded-xl" />

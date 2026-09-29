@@ -74,7 +74,6 @@ export function PlatformContactFormPage() {
 
   return (
     <ResourceFormLayout
-      eyebrow="Tenant configuration"
       title={isEdit ? 'Edit contact' : 'Add contact'}
       description="First name, email, and contact type are required."
       backTo="/platform/contacts"

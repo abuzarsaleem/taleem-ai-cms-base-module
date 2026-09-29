@@ -1,9 +1,7 @@
 import { useMemo, useState } from 'react'
-import { Pencil, Plus, Search, Trash2 } from 'lucide-react'
+import { Pencil, Plus, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { SearchableSelect } from '@/components/ui/searchable-select'
 import {
   Sheet,
   SheetContent,
@@ -14,7 +12,7 @@ import {
 } from '@/components/ui/sheet'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { AddressFields } from '@/components/address-fields'
-import { FilterField } from '@/components/page-header'
+import { FilterBar, FilterSearch, FilterSelect } from '@/components/filters'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import { StatusBadge } from '@/components/status-badge'
 import { addressDraftFrom, addressFieldErrors, addressPayload, emptyAddressDraft, type AddressDraft } from '@/lib/address'
@@ -99,35 +97,30 @@ export function TenantAddressesPanel({
         </p>
       </div>
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-        <FilterField label="Search" className="min-w-0 flex-1">
-          <div className="relative">
-            <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              className="h-9 border-border bg-background pl-8"
-              placeholder="Search addresses by city, line, or province..."
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-            />
-          </div>
-        </FilterField>
-        <FilterField label="Type" className="w-full sm:w-44">
-          <SearchableSelect
-            value={typeFilter}
-            onValueChange={(value) => setTypeFilter(value as 'ALL' | AddressType)}
-            className="w-full"
-            options={[
-              { value: 'ALL', label: 'All types' },
-              ...Object.values(AddressType).map((type) => ({ value: type, label: labelize(type) })),
-            ]}
-            placeholder="Type"
-          />
-        </FilterField>
-        <Button className="shrink-0 sm:ml-auto" onClick={openCreate}>
-          <Plus className="size-4" />
-          Add address
-        </Button>
-      </div>
+      <FilterBar
+        canClear={Boolean(query) || typeFilter !== 'ALL'}
+        onClear={() => {
+          setQuery('')
+          setTypeFilter('ALL')
+        }}
+        trailing={
+          <Button className="shrink-0" onClick={openCreate}>
+            <Plus className="size-4" />
+            Add address
+          </Button>
+        }
+      >
+        <FilterSearch value={query} onChange={setQuery} placeholder="Search addresses by city, line, or province..." />
+        <FilterSelect
+          label="Type"
+          value={typeFilter}
+          onValueChange={(value) => setTypeFilter(value as 'ALL' | AddressType)}
+          options={[
+            { value: 'ALL', label: 'All' },
+            ...Object.values(AddressType).map((type) => ({ value: type, label: labelize(type) })),
+          ]}
+        />
+      </FilterBar>
 
       <div className="overflow-hidden rounded-xl border border-border/70 bg-card">
         <Table>

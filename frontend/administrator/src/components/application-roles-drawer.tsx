@@ -330,10 +330,6 @@ export function ApplicationRolesDrawer({
                 ) : (
                   <div className="rounded-xl border border-dashed border-border px-4 py-10 text-center">
                     <p className="text-sm text-muted-foreground">No roles yet for this application.</p>
-                    <Button className="mt-4" size="sm" onClick={() => setView('create')}>
-                      <Plus className="size-3.5" />
-                      Create first role
-                    </Button>
                   </div>
                 )}
 

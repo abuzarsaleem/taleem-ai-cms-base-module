@@ -8,7 +8,6 @@ import {
   Lock,
   Pencil,
   Plus,
-  Search,
   Shield,
   XCircle,
 } from 'lucide-react'
@@ -23,7 +22,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
-import { SearchableSelect } from '@/components/ui/searchable-select'
 import {
   Sheet,
   SheetContent,
@@ -39,7 +37,8 @@ import { ApplicationIcon } from '@/components/application-icon'
 import { ApplicationRolesDrawer } from '@/components/application-roles-drawer'
 import { CreateOAuthClientDialog } from '@/components/create-oauth-client-dialog'
 import { Field } from '@/components/field'
-import { PageHeader, FilterField } from '@/components/page-header'
+import { FilterBar, FilterSearch, FilterSelect } from '@/components/filters'
+import { PageHeader } from '@/components/page-header'
 import { StatMetricCard } from '@/components/stat-metric-card'
 import { StatusBadge } from '@/components/status-badge'
 import { errorMessage } from '@/lib/auth'
@@ -305,6 +304,7 @@ export function ApplicationsPage() {
         eyebrow="Catalogue"
         title="Application catalogue"
         description="Register independently deployable applications. The catalogue does not store application business data."
+        quote={['Modular applications', 'for modern education']}
         actions={
           <Button onClick={openCreate}>
             <Plus className="size-4" />
@@ -335,32 +335,26 @@ export function ApplicationsPage() {
       )}
 
       <div className="overflow-hidden rounded-xl border border-border/70 bg-card">
-        <div className="flex flex-col gap-3 border-b border-border p-3 sm:flex-row sm:items-end">
-          <FilterField label="Search" className="min-w-0 flex-1">
-            <div className="relative">
-              <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                className="h-9 border-border bg-background pl-8"
-                placeholder="Search applications by name or code..."
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-              />
-            </div>
-          </FilterField>
-          <FilterField label="Status" className="w-full sm:w-40">
-            <SearchableSelect
-              value={statusFilter}
-              onValueChange={(value) => setStatusFilter(value as 'ALL' | ApplicationStatus)}
-              className="w-full"
-              options={[
-                { value: 'ALL', label: 'All statuses' },
-                { value: ApplicationStatus.ACTIVE, label: 'Active' },
-                { value: ApplicationStatus.INACTIVE, label: 'Inactive' },
-              ]}
-              placeholder="Status"
-            />
-          </FilterField>
-        </div>
+        <FilterBar
+          className="border-b border-border p-3"
+          canClear={Boolean(search) || statusFilter !== 'ALL'}
+          onClear={() => {
+            setSearch('')
+            setStatusFilter('ALL')
+          }}
+        >
+          <FilterSearch value={search} onChange={setSearch} placeholder="Search applications by name or code..." />
+          <FilterSelect
+            label="Status"
+            value={statusFilter}
+            onValueChange={(value) => setStatusFilter(value as 'ALL' | ApplicationStatus)}
+            options={[
+              { value: 'ALL', label: 'All' },
+              { value: ApplicationStatus.ACTIVE, label: 'Active' },
+              { value: ApplicationStatus.INACTIVE, label: 'Inactive' },
+            ]}
+          />
+        </FilterBar>
 
         {loading ? (
           <div className="p-4">

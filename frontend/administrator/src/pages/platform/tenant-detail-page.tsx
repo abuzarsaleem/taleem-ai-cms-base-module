@@ -139,9 +139,10 @@ export function TenantDetailPage() {
   return (
     <div className="flex flex-1 flex-col gap-5">
       <PageHeader
-        eyebrow={tenant.tenantCode}
+        eyebrow="Tenant"
         title={tenant.displayName}
-        description={tenant.legalName}
+        description={`${tenant.legalName} · ${tenant.tenantCode}`}
+        quote={['Institution profile', 'and platform access']}
         badge={
           <>
             <span className="rounded-full bg-white/14 px-2.5 py-1 text-xs font-medium tracking-wide">
@@ -162,7 +163,7 @@ export function TenantDetailPage() {
             </Button>
             {lifecycleFor(tenant.status).canActivate ? (
               <Button
-                variant="outline"
+                className="border-emerald-600/30 bg-emerald-600 text-white hover:bg-emerald-600/90"
                 loading={actionBusy}
                 onClick={() => void run(() => tenantService.activate(tenant.id), 'Tenant activated')}
               >
@@ -171,7 +172,7 @@ export function TenantDetailPage() {
             ) : null}
             {lifecycleFor(tenant.status).canSuspend ? (
               <Button
-                variant="outline"
+                className="border-amber-500/30 bg-amber-500 text-white hover:bg-amber-500/90"
                 onClick={() =>
                   setConfirmAction({
                     title: `Suspend ${tenant.displayName}?`,
