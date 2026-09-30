@@ -213,10 +213,12 @@ function PasswordField({
   id,
   value,
   onChange,
+  invalid,
 }: {
   id: string
   value: string
   onChange: (value: string) => void
+  invalid?: boolean
 }) {
   const [visible, setVisible] = useState(false)
 
@@ -227,6 +229,7 @@ function PasswordField({
         type={visible ? 'text' : 'password'}
         placeholder="Enter your password"
         autoComplete="current-password"
+        aria-invalid={invalid ? true : undefined}
         value={value}
         onChange={(e) => onChange(e.target.value)}
       />
@@ -242,6 +245,7 @@ function LoginCard({
   password,
   remember,
   busy,
+  formError,
   onEmailChange,
   onPasswordChange,
   onRememberChange,
@@ -251,6 +255,7 @@ function LoginCard({
   password: string
   remember: boolean
   busy: boolean
+  formError: string | null
   onEmailChange: (value: string) => void
   onPasswordChange: (value: string) => void
   onRememberChange: (value: boolean) => void
@@ -273,13 +278,20 @@ function LoginCard({
             type="email"
             placeholder="name@yourorganization.com"
             autoComplete="email"
+            aria-invalid={formError ? true : undefined}
             value={email}
             onChange={(e) => onEmailChange(e.target.value)}
           />
           <Mail className="ei pointer-events-none size-[17px]" aria-hidden />
         </LoginField>
 
-        <PasswordField id="login-password" value={password} onChange={onPasswordChange} />
+        <PasswordField id="login-password" value={password} onChange={onPasswordChange} invalid={Boolean(formError)} />
+
+        {formError ? (
+          <p className="login-form-error" role="alert">
+            {formError}
+          </p>
+        ) : null}
 
         <div className="login-row">
           <label>
@@ -330,20 +342,22 @@ export function LoginPage() {
   const [password, setPassword] = useState('')
   const [remember, setRemember] = useState(true)
   const [busy, setBusy] = useState(false)
+  const [formError, setFormError] = useState<string | null>(null)
 
   async function submit() {
     if (!email || !password || busy) return
     setBusy(true)
+    setFormError(null)
     try {
       const session = await login(email.trim(), password)
       if (roleFrom(session) !== APP_ROLE) {
         signOut()
-        toast.error('This portal is for platform administrators only.')
+        setFormError('This portal is for platform administrators only.')
         return
       }
       navigate(APP_HOME)
     } catch (error) {
-      toast.error(errorMessage(error))
+      setFormError(errorMessage(error))
     } finally {
       setBusy(false)
     }
@@ -372,8 +386,15 @@ export function LoginPage() {
             password={password}
             remember={remember}
             busy={busy}
-            onEmailChange={setEmail}
-            onPasswordChange={setPassword}
+            formError={formError}
+            onEmailChange={(value) => {
+              setFormError(null)
+              setEmail(value)
+            }}
+            onPasswordChange={(value) => {
+              setFormError(null)
+              setPassword(value)
+            }}
             onRememberChange={setRemember}
             onSubmit={() => void submit()}
           />

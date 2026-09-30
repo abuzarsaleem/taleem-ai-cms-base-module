@@ -598,6 +598,23 @@ main table tbody tr:hover td {
     box-shadow: 0 0 0 3px rgb(47 109 246 / 0.15);
   }
 
+  .login-inp input[aria-invalid='true'] {
+    border-color: #e11d48;
+  }
+
+  .login-inp input[aria-invalid='true']:focus {
+    border-color: #e11d48;
+    box-shadow: 0 0 0 3px rgb(225 29 72 / 0.15);
+  }
+
+  .login-form-error {
+    margin: -6px 0 14px;
+    font-size: 12.5px;
+    font-weight: 500;
+    line-height: 1.4;
+    color: #e11d48;
+  }
+
   .login-inp .ei,
   .login-inp button {
     position: absolute;
