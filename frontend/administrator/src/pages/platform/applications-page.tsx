@@ -632,7 +632,7 @@ export function ApplicationsPage() {
             </section>
           </div>
 
-          <SheetFooter className="flex-row items-center justify-between gap-2 border-t border-border sm:flex-row">
+          <SheetFooter className="justify-between">
             <Button type="button" variant="outline" disabled={busy} onClick={closeDrawer}>
               Cancel
             </Button>

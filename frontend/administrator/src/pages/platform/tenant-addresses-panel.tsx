@@ -188,7 +188,7 @@ export function TenantAddressesPanel({
               }}
             />
           </div>
-          <SheetFooter className="border-t border-border">
+          <SheetFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>
               Cancel
             </Button>

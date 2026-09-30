@@ -440,7 +440,7 @@ export function ApplicationRolesDrawer({
                   </Field>
                 ) : null}
               </div>
-              <SheetFooter className="flex-row items-center justify-between gap-2 border-t border-border sm:flex-row">
+              <SheetFooter className="justify-between">
                 <Button type="button" variant="outline" disabled={createBusy} onClick={backToList}>
                   <ArrowLeft className="size-3.5" />
                   Back
@@ -473,7 +473,7 @@ export function ApplicationRolesDrawer({
                   />
                 </Field>
               </div>
-              <SheetFooter className="flex-row flex-wrap items-center justify-between gap-2 border-t border-border sm:flex-row">
+              <SheetFooter className="justify-between">
                 <Button type="button" variant="outline" disabled={editBusy} onClick={backToList}>
                   <ArrowLeft className="size-3.5" />
                   Back
@@ -515,7 +515,7 @@ export function ApplicationRolesDrawer({
                   </p>
                 )}
               </div>
-              <SheetFooter className="border-t border-border">
+              <SheetFooter className="justify-start">
                 <Button variant="outline" onClick={backToList}>
                   <ArrowLeft className="size-3.5" />
                   Back to roles

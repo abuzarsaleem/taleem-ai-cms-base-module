@@ -574,7 +574,7 @@ export function CreateTenantPage() {
               }}
             />
           </div>
-          <SheetFooter className="border-t border-border">
+          <SheetFooter>
             <Button variant="outline" onClick={() => setContactOpen(false)}>
               Cancel
             </Button>
@@ -601,7 +601,7 @@ export function CreateTenantPage() {
               }}
             />
           </div>
-          <SheetFooter className="border-t border-border">
+          <SheetFooter>
             <Button variant="outline" onClick={() => setAddressOpen(false)}>
               Cancel
             </Button>

@@ -222,7 +222,7 @@ export function CreateOAuthClientDialog({
           ) : null}
         </div>
 
-        <SheetFooter className="flex-row items-center justify-between gap-2 border-t border-border sm:flex-row">
+        <SheetFooter className="justify-between">
           <Button type="button" variant="outline" loading={busy} onClick={() => onOpenChange(false)}>
             Cancel
           </Button>

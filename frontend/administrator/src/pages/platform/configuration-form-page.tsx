@@ -639,7 +639,7 @@ export function PlatformConfigurationFormPage() {
               }}
             />
           </div>
-          <SheetFooter className="border-t border-border">
+          <SheetFooter>
             <Button variant="outline" onClick={() => setIdentifierOpen(false)}>
               Cancel
             </Button>

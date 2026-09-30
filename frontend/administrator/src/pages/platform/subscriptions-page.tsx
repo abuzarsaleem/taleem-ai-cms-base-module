@@ -650,7 +650,7 @@ export function SubscriptionsPage() {
               }}
             />
           </div>
-          <SheetFooter className="border-t border-border">
+          <SheetFooter>
             <Button type="button" variant="outline" onClick={() => setCreateOpen(false)}>
               Cancel
             </Button>
