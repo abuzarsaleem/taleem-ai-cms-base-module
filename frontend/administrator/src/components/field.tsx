@@ -27,7 +27,7 @@ export function Field({
   })
 
   return (
-    <div className={cn('grid gap-1.5', className)}>
+    <div className={cn('grid min-w-0 gap-1.5', className)}>
       <Label>
         {label}
         {required ? <span className="text-destructive"> *</span> : null}
@@ -52,7 +52,7 @@ export function FieldGrid({
   className?: string
 }) {
   return (
-    <div className={cn('grid grid-cols-1 items-start gap-x-4 gap-y-4 sm:grid-cols-2', className)}>
+    <div className={cn('grid grid-cols-1 items-start gap-x-4 gap-y-4 sm:grid-cols-2 [&>*]:min-w-0', className)}>
       {children}
     </div>
   )

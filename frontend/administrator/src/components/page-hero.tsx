@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 
 /** Shared shell: same padding and height as the Platform Dashboard header. */
 export const PAGE_HERO_SURFACE =
-  'relative flex min-h-[9.5rem] flex-col justify-center overflow-hidden rounded-xl border border-[#dce6fb] bg-[linear-gradient(105deg,#e2ebff_0%,#eaf1ff_40%,#f3f7ff_72%,#fbfcff_100%)] px-6 py-6 sm:px-7 lg:h-[9.5rem] lg:min-h-0 lg:py-0 dark:border-border dark:bg-[linear-gradient(105deg,#121c38_0%,#0e1833_60%,#0b142b_100%)]'
+  'relative flex min-h-[9.5rem] flex-col justify-center overflow-hidden rounded-xl border border-[#dce6fb] bg-[linear-gradient(105deg,#e2ebff_0%,#eaf1ff_40%,#f3f7ff_72%,#fbfcff_100%)] px-6 py-6 sm:px-7 lg:py-6 dark:border-border dark:bg-[linear-gradient(105deg,#121c38_0%,#0e1833_60%,#0b142b_100%)]'
 
 export function PageHeroGlow() {
   return (
@@ -58,10 +58,10 @@ export function PageHero({
   return (
     <header className={PAGE_HERO_SURFACE}>
       <PageHeroGlow />
-      <div className="relative flex w-full flex-col gap-5 lg:flex-row lg:items-center lg:justify-between lg:gap-10">
+      <div className="relative flex w-full flex-col gap-5 lg:flex-row lg:items-center lg:justify-between lg:gap-8">
         <div className="flex min-w-0 flex-1 items-center gap-4">
           {media ? <div className="shrink-0">{media}</div> : null}
-          <div className="min-w-0 flex-1">
+          <div className="min-w-0 flex-1 pr-0 lg:pr-2">
             {eyebrow ? (
               <p className="text-[15px] font-semibold tracking-[0.14em] text-[#00a89d] uppercase dark:text-[#5eead4]">
                 {eyebrow}
@@ -72,13 +72,13 @@ export function PageHero({
               {badge}
             </div>
             {description ? (
-              <p className="mt-2 text-sm text-muted-foreground lg:whitespace-nowrap">{description}</p>
+              <p className="mt-2 max-w-2xl text-sm text-muted-foreground text-pretty">{description}</p>
             ) : null}
           </div>
         </div>
 
         {(aside || actions) && (
-          <div className="flex shrink-0 flex-wrap items-center justify-end gap-6 lg:gap-8">
+          <div className="flex shrink-0 flex-wrap items-center justify-end gap-6 lg:max-w-[42%] lg:gap-8">
             {aside}
             {actions ? (
               <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 self-start lg:-mt-1 lg:self-start [&_[data-slot=button]]:h-11 [&_[data-slot=button]]:gap-2 [&_[data-slot=button]]:px-5 [&_[data-slot=button]]:text-[15px] [&_[data-slot=button]]:[&_svg:not([class*='size-'])]:size-[18px]">

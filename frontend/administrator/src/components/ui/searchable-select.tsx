@@ -83,7 +83,7 @@ export function SearchableSelect({
   }, [open])
 
   return (
-    <div ref={rootRef} className={cn('relative w-full', className)}>
+    <div ref={rootRef} className={cn('relative w-full min-w-0', className)}>
       <button
         type="button"
         disabled={disabled}
@@ -93,7 +93,7 @@ export function SearchableSelect({
         aria-invalid={ariaInvalid || undefined}
         aria-label={triggerLabel ? `${triggerLabel}: ${selected?.label ?? placeholder}` : undefined}
         className={cn(
-          'flex h-9 w-full items-center justify-between gap-2 rounded-lg border border-input bg-transparent px-2.5 text-left text-sm outline-none transition-colors',
+          'flex h-9 w-full min-w-0 items-center justify-between gap-2 rounded-lg border border-input bg-transparent px-2.5 text-left text-sm outline-none transition-colors',
           'focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50',
           'disabled:cursor-not-allowed disabled:opacity-50',
           'aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20',
