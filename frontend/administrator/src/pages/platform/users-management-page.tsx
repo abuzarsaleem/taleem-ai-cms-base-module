@@ -67,7 +67,7 @@ import {
   platformTenantAdminService,
 } from '@/services/platform'
 
-type DisplayStatus = 'ACTIVE' | 'PENDING' | 'INACTIVE'
+type DisplayStatus = 'ACTIVE' | 'PENDING' | 'SUSPENDED'
 
 type UserListRow =
   | { kind: 'admin'; key: string; admin: PlatformTenantAdmin }
@@ -82,7 +82,7 @@ function formatDate(value?: string) {
 
 function displayStatusForAdmin(status: string): DisplayStatus {
   if (status === MembershipStatus.ACTIVE) return 'ACTIVE'
-  return 'INACTIVE'
+  return 'SUSPENDED'
 }
 
 export function UsersManagementPage() {
@@ -100,6 +100,7 @@ export function UsersManagementPage() {
   const [statusFilter, setStatusFilter] = useState<'ALL' | DisplayStatus>('ALL')
 
   const [createOpen, setCreateOpen] = useState(false)
+  const [detailAdmin, setDetailAdmin] = useState<PlatformTenantAdmin | null>(null)
   const [draft, setDraft] = useState<TenantAdminDraft>(emptyTenantAdminDraft())
   const [errors, setErrors] = useState<ReturnType<typeof tenantAdminFieldErrors>>({})
   const [busy, setBusy] = useState(false)
@@ -154,8 +155,8 @@ export function UsersManagementPage() {
               status:
                 statusFilter === 'ACTIVE'
                   ? MembershipStatus.ACTIVE
-                  : statusFilter === 'INACTIVE'
-                    ? MembershipStatus.INACTIVE
+                  : statusFilter === 'SUSPENDED'
+                    ? MembershipStatus.SUSPENDED
                     : undefined,
               search: search || undefined,
             })
@@ -213,6 +214,12 @@ export function UsersManagementPage() {
             setRows(adminRows)
             setTotal(adminResult?.meta.total ?? 0)
           }
+
+          setDetailAdmin((current) => {
+            if (!current) return current
+            const refreshed = (adminResult?.data ?? []).find((admin) => admin.id === current.id)
+            return refreshed ?? current
+          })
         })
         .catch((error) => toast.error(errorMessage(error)))
         .finally(() => {
@@ -353,7 +360,10 @@ export function UsersManagementPage() {
     setActionId(admin.id)
     try {
       await membershipService.update(admin.tenantId, admin.id, { status })
-      toast.success(status === MembershipStatus.ACTIVE ? 'User activated' : 'User set inactive')
+      toast.success(status === MembershipStatus.ACTIVE ? 'User activated' : 'User suspended')
+      if (detailAdmin?.id === admin.id) {
+        setDetailAdmin({ ...admin, status })
+      }
       await load(true)
     } catch (error) {
       toast.error(errorMessage(error))
@@ -456,7 +466,7 @@ export function UsersManagementPage() {
             { value: 'ALL', label: 'All' },
             { value: 'ACTIVE', label: 'Active' },
             { value: 'PENDING', label: 'Pending' },
-            { value: 'INACTIVE', label: 'Inactive' },
+            { value: 'SUSPENDED', label: 'Suspended' },
           ]}
         />
       </FilterBar>
@@ -533,7 +543,11 @@ export function UsersManagementPage() {
                 const admin = row.admin
                 const apps = admin.applications ?? []
                 return (
-                  <TableRow key={row.key} className="border-border">
+                  <TableRow
+                    key={row.key}
+                    className="cursor-pointer border-border"
+                    onClick={() => setDetailAdmin(admin)}
+                  >
                     <TableCell className="tabular-nums text-muted-foreground">
                       {(page - 1) * pageSize + index + 1}
                     </TableCell>
@@ -579,7 +593,7 @@ export function UsersManagementPage() {
                     <TableCell className="whitespace-nowrap text-foreground/80">
                       {formatDate(admin.createdAt)}
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right" onClick={(event) => event.stopPropagation()}>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button type="button" size="icon-sm" variant="ghost" loading={actionId === admin.id} aria-label={`Actions for ${admin.userEmail}`}>
@@ -587,11 +601,15 @@ export function UsersManagementPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => setDetailAdmin(admin)}>
+                            View details
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
                           {displayStatusForAdmin(String(admin.status)) === 'ACTIVE' ? (
                             <DropdownMenuItem
-                              onClick={() => void setMembershipStatus(admin, MembershipStatus.INACTIVE)}
+                              onClick={() => void setMembershipStatus(admin, MembershipStatus.SUSPENDED)}
                             >
-                              Set inactive
+                              Suspend user
                             </DropdownMenuItem>
                           ) : (
                             <DropdownMenuItem
@@ -856,6 +874,132 @@ export function UsersManagementPage() {
               </SheetFooter>
             </>
           )}
+        </SheetContent>
+      </Sheet>
+
+      <Sheet open={Boolean(detailAdmin)} onOpenChange={(open) => !open && setDetailAdmin(null)}>
+        <SheetContent side="right" className="w-full gap-0 overflow-y-auto p-0 data-[side=right]:sm:max-w-xl" showCloseButton>
+          <SheetHeader className="border-b border-border pr-12">
+            <SheetTitle>User details</SheetTitle>
+            <SheetDescription>Membership role and assigned applications for this administrator.</SheetDescription>
+          </SheetHeader>
+
+          {detailAdmin ? (
+            <div className="space-y-5 p-5">
+              <div className="flex items-start gap-3">
+                <Avatar size="default" className="size-12 bg-muted">
+                  <AvatarFallback className="bg-[#e8eef8] text-sm font-semibold text-[#19316f] dark:bg-white/10 dark:text-white">
+                    {initialsFromName(detailAdmin.userFullName || detailAdmin.userEmail) || (
+                      <Users className="size-4" />
+                    )}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-lg font-semibold text-foreground">
+                    {detailAdmin.userFullName || detailAdmin.userEmail}
+                  </p>
+                  <p className="truncate text-sm text-muted-foreground">{detailAdmin.userEmail}</p>
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <StatusBadge value={displayStatusForAdmin(String(detailAdmin.status))} />
+                    {detailAdmin.isTenantAdmin ? (
+                      <span className="rounded-md bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                        Tenant admin
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid gap-3 rounded-xl border border-border bg-muted/20 p-4 sm:grid-cols-2">
+                <div>
+                  <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Tenant</p>
+                  <p className="mt-1 text-sm font-medium">{detailAdmin.tenantDisplayName}</p>
+                  <p className="text-xs text-muted-foreground">{detailAdmin.tenantCode}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Membership role</p>
+                  <p className="mt-1 text-sm font-medium">
+                    {String(detailAdmin.role).replaceAll('_', ' ')}
+                  </p>
+                  <p className="text-xs text-muted-foreground">Joined {formatDate(detailAdmin.joinedAt)}</p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <p className="text-sm font-medium">Assigned applications</p>
+                  <p className="text-xs text-muted-foreground">
+                    Applications and roles currently linked to this membership.
+                  </p>
+                </div>
+
+                {(detailAdmin.applications ?? []).length === 0 ? (
+                  <p className="rounded-xl border border-dashed px-3 py-6 text-center text-sm text-muted-foreground">
+                    No applications assigned yet.
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {(detailAdmin.applications ?? []).map((item) => {
+                      const app = appById[item.applicationId]
+                      return (
+                        <div
+                          key={`${detailAdmin.id}-${item.applicationId}`}
+                          className="flex items-center gap-3 rounded-xl border border-border px-3 py-3"
+                        >
+                          <ApplicationIcon
+                            code={item.applicationCode}
+                            logoUrl={app?.logoUrl}
+                            size="sm"
+                            className="size-9 rounded-lg"
+                          />
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-medium">
+                              {item.applicationName || app?.name || item.applicationCode}
+                            </p>
+                            <p className="truncate font-mono text-[11px] text-muted-foreground">
+                              {item.applicationCode}
+                            </p>
+                          </div>
+                          <div className="shrink-0 text-right">
+                            <p className="text-sm font-medium">
+                              {item.roleName || item.roleCode?.replaceAll('_', ' ') || '—'}
+                            </p>
+                            {item.roleCode ? (
+                              <p className="font-mono text-[11px] text-muted-foreground">{item.roleCode}</p>
+                            ) : null}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+
+              <SheetFooter className="border-0 px-0 pt-1">
+                {displayStatusForAdmin(String(detailAdmin.status)) === 'ACTIVE' ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    loading={actionId === detailAdmin.id}
+                    onClick={() => void setMembershipStatus(detailAdmin, MembershipStatus.SUSPENDED)}
+                  >
+                    Suspend user
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    loading={actionId === detailAdmin.id}
+                    onClick={() => void setMembershipStatus(detailAdmin, MembershipStatus.ACTIVE)}
+                  >
+                    Activate user
+                  </Button>
+                )}
+                <Button type="button" variant="outline" onClick={() => setDetailAdmin(null)}>
+                  Close
+                </Button>
+              </SheetFooter>
+            </div>
+          ) : null}
         </SheetContent>
       </Sheet>
     </div>
